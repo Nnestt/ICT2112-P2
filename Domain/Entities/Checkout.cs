@@ -13,6 +13,10 @@ public partial class Checkout
 
     public string? Deliverymethodid { get; set; }
 
+    public string Paymentmethodtype { get; set; } = null!;
+
+    public string Status { get; set; } = null!;
+
     public bool? Notifyoptin { get; set; }
 
     public DateTime Createdat { get; set; }
@@ -20,6 +24,4 @@ public partial class Checkout
     public virtual Cart Cart { get; set; } = null!;
 
     public virtual Customer Customer { get; set; } = null!;
-
-    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }
