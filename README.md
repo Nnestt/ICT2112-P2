@@ -398,17 +398,25 @@ A: No. Those files are auto-generated and will be overwritten on the next scaffo
 
 ---
 
-## Scaffolding Reference
+## Workflow for schema change
+
+1. Drop tables in postgres 
+
+2. Execute new initial_schema as a query
+
+3. Verify Change
+
+4. Scaffold command
 
 Run this command any time the schema changes or you need to regenerate entity classes:
 
 ```bash
-dotnet ef dbcontext scaffold \
-  "Host=localhost;Port=5432;Database=pro_rental;Username=devuser;Password=devpassword" \
-  Npgsql.EntityFrameworkCore.PostgreSQL \
-  --output-dir Domain/Entities \
-  --context-dir Data/UnitOfWork \
-  --context AppDbContext \
+dotnet ef dbcontext scaffold
+  "Host=localhost;Port=5432;Database=pro_rental;Username=devuser;Password=devpassword"
+  Npgsql.EntityFrameworkCore.PostgreSQL
+  --output-dir Domain/Entities
+  --context-dir Data/UnitOfWork
+  --context AppDbContext
   --force
 ```
 

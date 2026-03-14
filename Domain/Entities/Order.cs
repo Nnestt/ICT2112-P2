@@ -29,6 +29,8 @@ public partial class Order
 
     public virtual ICollection<Loanlist> Loanlists { get; private set; } = new List<Loanlist>();
 
+    public virtual ICollection<Ordercarbondatum> Ordercarbondata { get; private set; } = new List<Ordercarbondatum>();
+
     public virtual ICollection<Orderitem> Orderitems { get; private set; } = new List<Orderitem>();
 
     public virtual ICollection<Orderstatushistory> Orderstatushistories { get; private set; } = new List<Orderstatushistory>();

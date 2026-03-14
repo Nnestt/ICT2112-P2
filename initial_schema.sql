@@ -493,6 +493,8 @@ CREATE TYPE inventory_status AS ENUM
 ('AVAILABLE', 'RETIRED', 'CLEARANCE', 'SOLD', 
  'MAINTENANCE', 'RESERVED', 'ON_LOAN', 'BROKEN');
 
+CREATE TYPE alert_status AS ENUM ('OPEN', 'ACKNOWLEDGED', 'RESOLVED');
+
 CREATE TYPE clearance_status AS ENUM ('CLEARANCE', 'SOLD');
 
 CREATE TYPE clearance_batch_status AS ENUM ('SCHEDULED', 'ACTIVE', 'CLOSED');
@@ -510,6 +512,7 @@ CREATE TABLE Product (
     CategoryId INT NOT NULL,
     Sku VARCHAR(255) NOT NULL,
     Status product_status NOT NULL DEFAULT 'AVAILABLE',
+    Threshold DECIMAL(5,4) NOT NULL DEFAULT 0.0,
     CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -546,6 +549,22 @@ CREATE TABLE InventoryItem (
     ExpiryDate TIMESTAMP,
 
     CONSTRAINT fk_inventory_product
+        FOREIGN KEY (ProductId)
+        REFERENCES Product(ProductId)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE Alert (
+    AlertId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ProductId INT NOT NULL,
+    Status alert_status NOT NULL DEFAULT 'OPEN',
+    MinThreshold INT NOT NULL,
+    CurrentStock INT NOT NULL,
+    Message VARCHAR(255) NOT NULL,
+    CreatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_alert_product
         FOREIGN KEY (ProductId)
         REFERENCES Product(ProductId)
         ON DELETE CASCADE
@@ -1157,20 +1176,45 @@ CREATE TABLE IF NOT EXISTS StaffFootprint (
         ON DELETE CASCADE
 );
 
--- 006_CustomerRewards
-CREATE TABLE IF NOT EXISTS CustomerRewards (
-    customerRewardsID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    customerId INT NOT NULL,
-    discount DOUBLE PRECISION NOT NULL,
-    totalCarbon DOUBLE PRECISION NOT NULL,
+-- 006_OrderCarbondata
+CREATE TABLE IF NOT EXISTS ordercarbondata (
+    ordercarbondataid INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    orderid INT NOT NULL,
+    productcarbon DOUBLE PRECISION NOT NULL,
+    packagingcarbon DOUBLE PRECISION NOT NULL,
+    staffcarbon DOUBLE PRECISION NOT NULL,
+    buildingcarbon DOUBLE PRECISION NOT NULL,
+    totalcarbon DOUBLE PRECISION NOT NULL,
+    impactlevel VARCHAR(20),
+    calculatedat TIMESTAMP NOT NULL,
 
-    CONSTRAINT fk_customerrewards_customer
-        FOREIGN KEY (customerId)
-        REFERENCES Customer(customerId)
+    CONSTRAINT fk_ordercarbondata_order
+        FOREIGN KEY (orderid)
+        REFERENCES "Order"(orderid)
         ON DELETE CASCADE
 );
 
--- 007_PackagingProfile
+-- 007_CustomerRewards
+CREATE TABLE IF NOT EXISTS customerrewards (
+    rewardid INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customerid INT NOT NULL,
+    ordercarbondataid INT NOT NULL,
+    rewardtype VARCHAR(50) NOT NULL,
+    rewardvalue DOUBLE PRECISION NOT NULL,
+    createdat TIMESTAMP NOT NULL,
+
+    CONSTRAINT fk_customerrewards_customer
+        FOREIGN KEY (customerid)
+        REFERENCES customer(customerid)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_customerrewards_ordercarbondata
+        FOREIGN KEY (ordercarbondataid)
+        REFERENCES ordercarbondata(ordercarbondataid)
+        ON DELETE CASCADE
+);
+
+-- 008_PackagingProfile
 CREATE TABLE IF NOT EXISTS PackagingProfile (
     profileId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     orderId INT NOT NULL,

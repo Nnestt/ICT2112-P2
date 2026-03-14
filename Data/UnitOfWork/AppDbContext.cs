@@ -19,6 +19,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Airport> Airports { get; set; }
 
+    public virtual DbSet<Alert> Alerts { get; set; }
+
     public virtual DbSet<Analytic> Analytics { get; set; }
 
     public virtual DbSet<BatchOrder> BatchOrders { get; set; }
@@ -76,6 +78,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Notificationpreference> Notificationpreferences { get; set; }
 
     public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<Ordercarbondatum> Ordercarbondata { get; set; }
 
     public virtual DbSet<Orderitem> Orderitems { get; set; }
 
@@ -179,6 +183,7 @@ public partial class AppDbContext : DbContext
     {
         modelBuilder
             .HasPostgresEnum("access_event_type", new[] { "IN", "OUT" })
+            .HasPostgresEnum("alert_status", new[] { "OPEN", "ACKNOWLEDGED", "RESOLVED" })
             .HasPostgresEnum("batch_status", new[] { "PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED" })
             .HasPostgresEnum("carbon_stage_type", new[] { "DAMAGE_INSPECTION", "REPAIRING", "SERVICING", "CLEANING", "RETURN" })
             .HasPostgresEnum("cart_status_enum", new[] { "ACTIVE", "CHECKED_OUT", "EXPIRED" })
@@ -245,6 +250,35 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("fk_airport_hub");
         });
 
+        modelBuilder.Entity<Alert>(entity =>
+        {
+            entity.HasKey(e => e.Alertid).HasName("alert_pkey");
+
+            entity.ToTable("alert");
+
+            entity.Property(e => e.Alertid)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("alertid");
+            entity.Property(e => e.Createdat)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdat");
+            entity.Property(e => e.Currentstock).HasColumnName("currentstock");
+            entity.Property(e => e.Message)
+                .HasMaxLength(255)
+                .HasColumnName("message");
+            entity.Property(e => e.Minthreshold).HasColumnName("minthreshold");
+            entity.Property(e => e.Productid).HasColumnName("productid");
+            entity.Property(e => e.Updatedat)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updatedat");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.Alerts)
+                .HasForeignKey(d => d.Productid)
+                .HasConstraintName("fk_alert_product");
+        });
+
         modelBuilder.Entity<Analytic>(entity =>
         {
             entity.HasKey(e => e.Analyticsid).HasName("analytics_pkey");
@@ -288,7 +322,6 @@ public partial class AppDbContext : DbContext
                     {
                         j.HasKey("Analyticsid", "Transactionlogid").HasName("analyticslist_pkey");
                         j.ToTable("analyticslist");
-                        j.HasIndex(new[] { "Transactionlogid" }, "IX_analyticslist_transactionlogid");
                         j.IndexerProperty<int>("Analyticsid").HasColumnName("analyticsid");
                         j.IndexerProperty<int>("Transactionlogid").HasColumnName("transactionlogid");
                     });
@@ -299,8 +332,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => new { e.BatchId, e.OrderId }).HasName("batch_order_pkey");
 
             entity.ToTable("batch_order");
-
-            entity.HasIndex(e => e.OrderId, "IX_batch_order_order_id");
 
             entity.Property(e => e.BatchId).HasColumnName("batch_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
@@ -352,8 +383,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("carbon_emission");
 
-            entity.HasIndex(e => e.StageId, "IX_carbon_emission_stage_id");
-
             entity.Property(e => e.EmissionId)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("emission_id");
@@ -391,10 +420,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("cart");
 
-            entity.HasIndex(e => e.Customerid, "IX_cart_customerid");
-
-            entity.HasIndex(e => e.Sessionid, "IX_cart_sessionid");
-
             entity.Property(e => e.Cartid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("cartid");
@@ -423,10 +448,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Cartitemid).HasName("cartitem_pkey");
 
             entity.ToTable("cartitem");
-
-            entity.HasIndex(e => e.Cartid, "IX_cartitem_cartid");
-
-            entity.HasIndex(e => e.Productid, "IX_cartitem_productid");
 
             entity.Property(e => e.Cartitemid)
                 .UseIdentityAlwaysColumn()
@@ -476,10 +497,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Checkoutid).HasName("checkout_pkey");
 
             entity.ToTable("checkout");
-
-            entity.HasIndex(e => e.Cartid, "IX_checkout_cartid");
-
-            entity.HasIndex(e => e.Customerid, "IX_checkout_customerid");
 
             entity.Property(e => e.Checkoutid)
                 .UseIdentityAlwaysColumn()
@@ -533,8 +550,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("clearanceitem");
 
-            entity.HasIndex(e => e.Clearancebatchid, "IX_clearanceitem_clearancebatchid");
-
             entity.HasIndex(e => e.Inventoryitemid, "clearanceitem_inventoryitemid_key").IsUnique();
 
             entity.Property(e => e.Clearanceitemid)
@@ -567,8 +582,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("clearancelog");
 
-            entity.HasIndex(e => e.Clearancebatchid, "IX_clearancelog_clearancebatchid");
-
             entity.Property(e => e.Clearancelogid)
                 .ValueGeneratedNever()
                 .HasColumnName("clearancelogid");
@@ -596,8 +609,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("customer");
 
-            entity.HasIndex(e => e.Userid, "IX_customer_userid");
-
             entity.Property(e => e.Customerid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("customerid");
@@ -618,8 +629,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("customer_choice");
 
-            entity.HasIndex(e => e.OrderId, "IX_customer_choice_order_id");
-
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.CreatedAt)
@@ -638,22 +647,30 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<Customerreward>(entity =>
         {
-            entity.HasKey(e => e.Customerrewardsid).HasName("customerrewards_pkey");
+            entity.HasKey(e => e.Rewardid).HasName("customerrewards_pkey");
 
             entity.ToTable("customerrewards");
 
-            entity.HasIndex(e => e.Customerid, "IX_customerrewards_customerid");
-
-            entity.Property(e => e.Customerrewardsid)
+            entity.Property(e => e.Rewardid)
                 .UseIdentityAlwaysColumn()
-                .HasColumnName("customerrewardsid");
+                .HasColumnName("rewardid");
+            entity.Property(e => e.Createdat)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdat");
             entity.Property(e => e.Customerid).HasColumnName("customerid");
-            entity.Property(e => e.Discount).HasColumnName("discount");
-            entity.Property(e => e.Totalcarbon).HasColumnName("totalcarbon");
+            entity.Property(e => e.Ordercarbondataid).HasColumnName("ordercarbondataid");
+            entity.Property(e => e.Rewardtype)
+                .HasMaxLength(50)
+                .HasColumnName("rewardtype");
+            entity.Property(e => e.Rewardvalue).HasColumnName("rewardvalue");
 
             entity.HasOne(d => d.Customer).WithMany(p => p.Customerrewards)
                 .HasForeignKey(d => d.Customerid)
                 .HasConstraintName("fk_customerrewards_customer");
+
+            entity.HasOne(d => d.Ordercarbondata).WithMany(p => p.Customerrewards)
+                .HasForeignKey(d => d.Ordercarbondataid)
+                .HasConstraintName("fk_customerrewards_ordercarbondata");
         });
 
         modelBuilder.Entity<Damagereport>(entity =>
@@ -661,8 +678,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Damagereportid).HasName("damagereport_pkey");
 
             entity.ToTable("damagereport");
-
-            entity.HasIndex(e => e.Returnitemid, "IX_damagereport_returnitemid");
 
             entity.Property(e => e.Damagereportid)
                 .UseIdentityAlwaysColumn()
@@ -694,8 +709,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("delivery_batch");
 
-            entity.HasIndex(e => e.SourceHubId, "IX_delivery_batch_source_hub_id");
-
             entity.Property(e => e.DeliveryBatchId)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("delivery_batch_id");
@@ -718,8 +731,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Deliveryid).HasName("deliverymethod_pkey");
 
             entity.ToTable("deliverymethod");
-
-            entity.HasIndex(e => e.Orderid, "IX_deliverymethod_orderid");
 
             entity.Property(e => e.Deliveryid)
                 .UseIdentityAlwaysColumn()
@@ -745,10 +756,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("deposit");
 
-            entity.HasIndex(e => e.Orderid, "IX_deposit_orderid");
-
-            entity.HasIndex(e => e.Transactionid, "IX_deposit_transactionid");
-
             entity.Property(e => e.Depositid)
                 .HasMaxLength(50)
                 .HasColumnName("depositid");
@@ -757,7 +764,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("createdat");
             entity.Property(e => e.Forfeitedamount)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0.0")
+                .HasDefaultValueSql("0")
                 .HasColumnName("forfeitedamount");
             entity.Property(e => e.Heldamount)
                 .HasPrecision(10, 2)
@@ -768,7 +775,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("originalamount");
             entity.Property(e => e.Refundedamount)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0.0")
+                .HasDefaultValueSql("0")
                 .HasColumnName("refundedamount");
             entity.Property(e => e.Transactionid).HasColumnName("transactionid");
 
@@ -805,8 +812,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("inventoryitem");
 
-            entity.HasIndex(e => e.Productid, "IX_inventoryitem_productid");
-
             entity.HasIndex(e => e.Serialnumber, "inventoryitem_serialnumber_key").IsUnique();
 
             entity.Property(e => e.Inventoryid)
@@ -839,10 +844,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("leg_carbon");
 
-            entity.HasIndex(e => e.CarbonResultId, "IX_leg_carbon_carbon_result_id");
-
-            entity.HasIndex(e => e.RouteLegId, "IX_leg_carbon_route_leg_id");
-
             entity.Property(e => e.LegId)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("leg_id");
@@ -867,10 +868,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Lineitemid).HasName("lineitem_pkey");
 
             entity.ToTable("lineitem");
-
-            entity.HasIndex(e => e.Productid, "IX_lineitem_productid");
-
-            entity.HasIndex(e => e.Requestid, "IX_lineitem_requestid");
 
             entity.Property(e => e.Lineitemid)
                 .UseIdentityAlwaysColumn()
@@ -897,10 +894,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("loanitem");
 
-            entity.HasIndex(e => e.Inventoryitemid, "IX_loanitem_inventoryitemid");
-
-            entity.HasIndex(e => e.Loanlistid, "IX_loanitem_loanlistid");
-
             entity.Property(e => e.Loanitemid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("loanitemid");
@@ -923,10 +916,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Loanlistid).HasName("loanlist_pkey");
 
             entity.ToTable("loanlist");
-
-            entity.HasIndex(e => e.Customerid, "IX_loanlist_customerid");
-
-            entity.HasIndex(e => e.Orderid, "IX_loanlist_orderid");
 
             entity.Property(e => e.Loanlistid)
                 .UseIdentityAlwaysColumn()
@@ -961,10 +950,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Loanlogid).HasName("loanlog_pkey");
 
             entity.ToTable("loanlog");
-
-            entity.HasIndex(e => e.Loanlistid, "IX_loanlog_loanlistid");
-
-            entity.HasIndex(e => e.Rentalorderlogid, "IX_loanlog_rentalorderlogid");
 
             entity.Property(e => e.Loanlogid)
                 .ValueGeneratedNever()
@@ -1001,8 +986,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("notification");
 
-            entity.HasIndex(e => e.Userid, "IX_notification_userid");
-
             entity.Property(e => e.Notificationid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("notificationid");
@@ -1010,7 +993,9 @@ public partial class AppDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("datesent");
-            entity.Property(e => e.Isread).HasColumnName("isread");
+            entity.Property(e => e.Isread)
+                .HasDefaultValue(false)
+                .HasColumnName("isread");
             entity.Property(e => e.Message)
                 .HasMaxLength(255)
                 .HasColumnName("message");
@@ -1027,15 +1012,15 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("notificationpreference");
 
-            entity.HasIndex(e => e.Userid, "IX_notificationpreference_userid");
-
             entity.Property(e => e.Preferenceid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("preferenceid");
             entity.Property(e => e.Emailenabled)
                 .HasDefaultValue(true)
                 .HasColumnName("emailenabled");
-            entity.Property(e => e.Smsenabled).HasColumnName("smsenabled");
+            entity.Property(e => e.Smsenabled)
+                .HasDefaultValue(false)
+                .HasColumnName("smsenabled");
             entity.Property(e => e.Userid).HasColumnName("userid");
 
             entity.HasOne(d => d.User).WithMany(p => p.Notificationpreferences)
@@ -1048,10 +1033,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Orderid).HasName("Order_pkey");
 
             entity.ToTable("Order");
-
-            entity.HasIndex(e => e.Checkoutid, "IX_Order_checkoutid");
-
-            entity.HasIndex(e => e.Customerid, "IX_Order_customerid");
 
             entity.Property(e => e.Orderid)
                 .UseIdentityAlwaysColumn()
@@ -1075,15 +1056,38 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("fk_order_customer");
         });
 
+        modelBuilder.Entity<Ordercarbondatum>(entity =>
+        {
+            entity.HasKey(e => e.Ordercarbondataid).HasName("ordercarbondata_pkey");
+
+            entity.ToTable("ordercarbondata");
+
+            entity.Property(e => e.Ordercarbondataid)
+                .UseIdentityAlwaysColumn()
+                .HasColumnName("ordercarbondataid");
+            entity.Property(e => e.Buildingcarbon).HasColumnName("buildingcarbon");
+            entity.Property(e => e.Calculatedat)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("calculatedat");
+            entity.Property(e => e.Impactlevel)
+                .HasMaxLength(20)
+                .HasColumnName("impactlevel");
+            entity.Property(e => e.Orderid).HasColumnName("orderid");
+            entity.Property(e => e.Packagingcarbon).HasColumnName("packagingcarbon");
+            entity.Property(e => e.Productcarbon).HasColumnName("productcarbon");
+            entity.Property(e => e.Staffcarbon).HasColumnName("staffcarbon");
+            entity.Property(e => e.Totalcarbon).HasColumnName("totalcarbon");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Ordercarbondata)
+                .HasForeignKey(d => d.Orderid)
+                .HasConstraintName("fk_ordercarbondata_order");
+        });
+
         modelBuilder.Entity<Orderitem>(entity =>
         {
             entity.HasKey(e => e.Orderitemid).HasName("orderitem_pkey");
 
             entity.ToTable("orderitem");
-
-            entity.HasIndex(e => e.Orderid, "IX_orderitem_orderid");
-
-            entity.HasIndex(e => e.Productid, "IX_orderitem_productid");
 
             entity.Property(e => e.Orderitemid)
                 .UseIdentityAlwaysColumn()
@@ -1117,8 +1121,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("orderstatushistory");
 
-            entity.HasIndex(e => e.Orderid, "IX_orderstatushistory_orderid");
-
             entity.Property(e => e.Historyid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("historyid");
@@ -1145,8 +1147,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("packagingconfigmaterials");
 
-            entity.HasIndex(e => e.Materialid, "IX_packagingconfigmaterials_materialid");
-
             entity.Property(e => e.Configurationid).HasColumnName("configurationid");
             entity.Property(e => e.Materialid).HasColumnName("materialid");
             entity.Property(e => e.Category)
@@ -1168,8 +1168,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Configurationid).HasName("packagingconfiguration_pkey");
 
             entity.ToTable("packagingconfiguration");
-
-            entity.HasIndex(e => e.Profileid, "IX_packagingconfiguration_profileid");
 
             entity.Property(e => e.Configurationid)
                 .UseIdentityAlwaysColumn()
@@ -1193,8 +1191,12 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
-            entity.Property(e => e.Recyclable).HasColumnName("recyclable");
-            entity.Property(e => e.Reusable).HasColumnName("reusable");
+            entity.Property(e => e.Recyclable)
+                .HasDefaultValue(false)
+                .HasColumnName("recyclable");
+            entity.Property(e => e.Reusable)
+                .HasDefaultValue(false)
+                .HasColumnName("reusable");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
                 .HasColumnName("type");
@@ -1205,8 +1207,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Profileid).HasName("packagingprofile_pkey");
 
             entity.ToTable("packagingprofile");
-
-            entity.HasIndex(e => e.Orderid, "IX_packagingprofile_orderid");
 
             entity.Property(e => e.Profileid)
                 .UseIdentityAlwaysColumn()
@@ -1227,10 +1227,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Paymentid).HasName("payment_pkey");
 
             entity.ToTable("payment");
-
-            entity.HasIndex(e => e.Orderid, "IX_payment_orderid");
-
-            entity.HasIndex(e => e.Transactionid, "IX_payment_transactionid");
 
             entity.Property(e => e.Paymentid)
                 .HasMaxLength(50)
@@ -1280,10 +1276,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Polineid).HasName("polineitem_pkey");
 
             entity.ToTable("polineitem");
-
-            entity.HasIndex(e => e.Poid, "IX_polineitem_poid");
-
-            entity.HasIndex(e => e.Productid, "IX_polineitem_productid");
 
             entity.Property(e => e.Polineid)
                 .UseIdentityAlwaysColumn()
@@ -1335,8 +1327,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("product");
 
-            entity.HasIndex(e => e.Categoryid, "IX_product_categoryid");
-
             entity.Property(e => e.Productid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("productid");
@@ -1348,6 +1338,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Sku)
                 .HasMaxLength(255)
                 .HasColumnName("sku");
+            entity.Property(e => e.Threshold)
+                .HasPrecision(5, 4)
+                .HasColumnName("threshold");
             entity.Property(e => e.Updatedat)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
@@ -1389,7 +1382,7 @@ public partial class AppDbContext : DbContext
                 .HasColumnName("detailsid");
             entity.Property(e => e.Depositrate)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0.0")
+                .HasDefaultValueSql("0")
                 .HasColumnName("depositrate");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Image)
@@ -1402,7 +1395,9 @@ public partial class AppDbContext : DbContext
                 .HasPrecision(10, 2)
                 .HasColumnName("price");
             entity.Property(e => e.Productid).HasColumnName("productid");
-            entity.Property(e => e.Totalquantity).HasColumnName("totalquantity");
+            entity.Property(e => e.Totalquantity)
+                .HasDefaultValue(0)
+                .HasColumnName("totalquantity");
             entity.Property(e => e.Weight)
                 .HasPrecision(10, 2)
                 .HasColumnName("weight");
@@ -1417,10 +1412,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Productcarbonfootprintid).HasName("productfootprint_pkey");
 
             entity.ToTable("productfootprint");
-
-            entity.HasIndex(e => e.Badgeid, "IX_productfootprint_badgeid");
-
-            entity.HasIndex(e => e.Productid, "IX_productfootprint_productid");
 
             entity.Property(e => e.Productcarbonfootprintid)
                 .UseIdentityAlwaysColumn()
@@ -1465,8 +1456,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("purchaseorderlog");
 
-            entity.HasIndex(e => e.Poid, "IX_purchaseorderlog_poid");
-
             entity.Property(e => e.Purchaseorderlogid)
                 .ValueGeneratedOnAdd()
                 .UseIdentityAlwaysColumn()
@@ -1499,10 +1488,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("refund");
 
-            entity.HasIndex(e => e.Customerid, "IX_refund_customerid");
-
-            entity.HasIndex(e => e.Orderid, "IX_refund_orderid");
-
             entity.Property(e => e.Refundid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("refundid");
@@ -1513,7 +1498,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Orderid).HasColumnName("orderid");
             entity.Property(e => e.Penaltyamount)
                 .HasPrecision(10, 2)
-                .HasDefaultValueSql("0.0")
+                .HasDefaultValueSql("0.00")
                 .HasColumnName("penaltyamount");
             entity.Property(e => e.Returndate)
                 .HasColumnType("timestamp without time zone")
@@ -1539,8 +1524,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("reliabilityrating");
 
-            entity.HasIndex(e => e.Supplierid, "IX_reliabilityrating_supplierid");
-
             entity.Property(e => e.Ratingid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("ratingid");
@@ -1565,8 +1548,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Rentalorderlogid).HasName("rentalorderlog_pkey");
 
             entity.ToTable("rentalorderlog");
-
-            entity.HasIndex(e => e.Orderid, "IX_rentalorderlog_orderid");
 
             entity.Property(e => e.Rentalorderlogid)
                 .ValueGeneratedNever()
@@ -1621,8 +1602,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("reportexport");
 
-            entity.HasIndex(e => e.Refanalyticsid, "IX_reportexport_refanalyticsid");
-
             entity.Property(e => e.Reportid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("reportid");
@@ -1645,8 +1624,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.StageId).HasName("return_stage_pkey");
 
             entity.ToTable("return_stage");
-
-            entity.HasIndex(e => e.ReturnId, "IX_return_stage_return_id");
 
             entity.Property(e => e.StageId)
                 .UseIdentityAlwaysColumn()
@@ -1671,10 +1648,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Returnitemid).HasName("returnitem_pkey");
 
             entity.ToTable("returnitem");
-
-            entity.HasIndex(e => e.Inventoryitemid, "IX_returnitem_inventoryitemid");
-
-            entity.HasIndex(e => e.Returnrequestid, "IX_returnitem_returnrequestid");
 
             entity.Property(e => e.Returnitemid)
                 .UseIdentityAlwaysColumn()
@@ -1703,10 +1676,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Returnlogid).HasName("returnlog_pkey");
 
             entity.ToTable("returnlog");
-
-            entity.HasIndex(e => e.Rentalorderlogid, "IX_returnlog_rentalorderlogid");
-
-            entity.HasIndex(e => e.Returnrequestid, "IX_returnlog_returnrequestid");
 
             entity.Property(e => e.Returnlogid)
                 .ValueGeneratedNever()
@@ -1746,10 +1715,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("returnrequest");
 
-            entity.HasIndex(e => e.Customerid, "IX_returnrequest_customerid");
-
-            entity.HasIndex(e => e.Orderid, "IX_returnrequest_orderid");
-
             entity.Property(e => e.Returnrequestid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("returnrequestid");
@@ -1779,10 +1744,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.RouteId).HasName("route_pkey");
 
             entity.ToTable("route");
-
-            entity.HasIndex(e => e.DestinationHubId, "IX_route_destination_hub_id");
-
-            entity.HasIndex(e => e.OriginHubId, "IX_route_origin_hub_id");
 
             entity.Property(e => e.RouteId)
                 .UseIdentityAlwaysColumn()
@@ -1814,10 +1775,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.LegId).HasName("route_leg_pkey");
 
             entity.ToTable("route_leg");
-
-            entity.HasIndex(e => e.RouteId, "IX_route_leg_route_id");
-
-            entity.HasIndex(e => e.TransportId, "IX_route_leg_transport_id");
 
             entity.Property(e => e.LegId)
                 .UseIdentityAlwaysColumn()
@@ -1854,8 +1811,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Sessionid).HasName("session_pkey");
 
             entity.ToTable("session");
-
-            entity.HasIndex(e => e.Userid, "IX_session_userid");
 
             entity.Property(e => e.Sessionid)
                 .UseIdentityAlwaysColumn()
@@ -1907,10 +1862,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("shipment");
 
-            entity.HasIndex(e => e.Batchid, "IX_shipment_batchid");
-
-            entity.HasIndex(e => e.Orderid, "IX_shipment_orderid");
-
             entity.Property(e => e.Trackingid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("trackingid");
@@ -1937,8 +1888,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.OptionId).HasName("shipping_option_pkey");
 
             entity.ToTable("shipping_option");
-
-            entity.HasIndex(e => e.RouteId, "IX_shipping_option_route_id");
 
             entity.Property(e => e.OptionId)
                 .UseIdentityAlwaysColumn()
@@ -1994,8 +1943,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("staff");
 
-            entity.HasIndex(e => e.Userid, "IX_staff_userid");
-
             entity.Property(e => e.Staffid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("staffid");
@@ -2015,8 +1962,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("staffaccesslog");
 
-            entity.HasIndex(e => e.Staffid, "IX_staffaccesslog_staffid");
-
             entity.Property(e => e.Accessid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("accessid");
@@ -2035,8 +1980,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Staffcarbonfootprintid).HasName("stafffootprint_pkey");
 
             entity.ToTable("stafffootprint");
-
-            entity.HasIndex(e => e.Staffid, "IX_stafffootprint_staffid");
 
             entity.Property(e => e.Staffcarbonfootprintid)
                 .UseIdentityAlwaysColumn()
@@ -2099,8 +2042,6 @@ public partial class AppDbContext : DbContext
 
             entity.ToTable("suppliercategorychangelog");
 
-            entity.HasIndex(e => e.Supplierid, "IX_suppliercategorychangelog_supplierid");
-
             entity.Property(e => e.Logid)
                 .UseIdentityAlwaysColumn()
                 .HasColumnName("logid");
@@ -2145,8 +2086,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Transactionid).HasName("transaction_pkey");
 
             entity.ToTable("transaction");
-
-            entity.HasIndex(e => e.Orderid, "IX_transaction_orderid");
 
             entity.Property(e => e.Transactionid)
                 .UseIdentityAlwaysColumn()
@@ -2276,10 +2215,6 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Vettingid).HasName("vettingrecord_pkey");
 
             entity.ToTable("vettingrecord");
-
-            entity.HasIndex(e => e.Ratingid, "IX_vettingrecord_ratingid");
-
-            entity.HasIndex(e => e.Supplierid, "IX_vettingrecord_supplierid");
 
             entity.Property(e => e.Vettingid)
                 .UseIdentityAlwaysColumn()

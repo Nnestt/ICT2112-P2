@@ -11,9 +11,13 @@ public partial class Product
 
     public string Sku { get; private set; } = null!;
 
+    public decimal Threshold { get; private set; }
+
     public DateTime Createdat { get; private set; }
 
     public DateTime Updatedat { get; private set; }
+
+    public virtual ICollection<Alert> Alerts { get; private set; } = new List<Alert>();
 
     public virtual ICollection<Cartitem> Cartitems { get; private set; } = new List<Cartitem>();
 
