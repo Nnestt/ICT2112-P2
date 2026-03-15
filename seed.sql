@@ -72,6 +72,8 @@ INSERT INTO InventoryItem (ProductId, SerialNumber) VALUES
 (7,'RVP-0009'),
 (7,'RVP-0010');
 
+-- Team 2-4 Seed Data
+
 INSERT INTO "User" (name, email, passwordHash, phoneCountry, phoneNumber)
 VALUES
   ('Alice Tan',        'alice.tan@example.com',        '$2b$12$hashAlice', 65, '90000001'),
@@ -113,3 +115,321 @@ VALUES
   (14, 'Finance'),
   (15, 'IT')
 ON CONFLICT (userId) DO NOTHING;
+
+-- Team 2-6 Seed Data
+
+-- ================================================================
+-- 1. SESSION (15 rows)
+-- Roles: CUSTOMER (users 1–11), STAFF (users 12–15)
+-- Mix of: active, expired
+-- ================================================================
+INSERT INTO Session (userId, role, createdAt, expiresAt) VALUES
+(1,  'CUSTOMER', NOW() - INTERVAL '30 days',  NOW() - INTERVAL '29 days'),   -- 1  expired (old order)
+(2,  'CUSTOMER', NOW() - INTERVAL '25 days',  NOW() - INTERVAL '24 days'),   -- 2  expired
+(3,  'CUSTOMER', NOW() - INTERVAL '20 days',  NOW() - INTERVAL '19 days'),   -- 3  expired
+(4,  'CUSTOMER', NOW() - INTERVAL '18 days',  NOW() - INTERVAL '17 days'),   -- 4  expired
+(5,  'CUSTOMER', NOW() - INTERVAL '15 days',  NOW() - INTERVAL '14 days'),   -- 5  expired
+(6,  'CUSTOMER', NOW() - INTERVAL '12 days',  NOW() - INTERVAL '11 days'),   -- 6  expired
+(7,  'CUSTOMER', NOW() - INTERVAL '10 days',  NOW() - INTERVAL '9 days'),    -- 7  expired
+(8,  'CUSTOMER', NOW() - INTERVAL '7 days',   NOW() - INTERVAL '6 days'),    -- 8  expired
+(9,  'CUSTOMER', NOW() - INTERVAL '5 days',   NOW() - INTERVAL '4 days'),    -- 9  expired
+(10, 'CUSTOMER', NOW() - INTERVAL '4 days',   NOW() - INTERVAL '3 days'),    -- 10 expired
+(11, 'CUSTOMER', NOW() - INTERVAL '6 days',   NOW() - INTERVAL '5 days'),    -- 11 expired
+(1,  'CUSTOMER', NOW() - INTERVAL '1 hour',   NOW() + INTERVAL '23 hours'),  -- 12 ACTIVE
+(2,  'CUSTOMER', NOW() - INTERVAL '30 mins',  NOW() + INTERVAL '23 hours'),  -- 13 ACTIVE
+(12, 'STAFF',    NOW() - INTERVAL '2 hours',  NOW() + INTERVAL '6 hours'),   -- 14 ACTIVE
+(15, 'STAFF',    NOW() - INTERVAL '3 hours',  NOW() - INTERVAL '30 mins');   -- 15 expired
+
+-- ================================================================
+-- 2. CART (15 rows)
+-- cart_status_enum: ACTIVE | CHECKED_OUT | EXPIRED
+-- Each cart linked to a customer + the session from above
+-- Carts 1–11: CHECKED_OUT (completed flow)
+-- Cart 12–13: CHECKED_OUT (in-progress checkout)
+-- Cart 14: ACTIVE (browsing, not checked out)
+-- Cart 15: EXPIRED (abandoned)
+-- ================================================================
+INSERT INTO Cart (customerId, sessionId, rentalStart, rentalEnd, status) VALUES
+-- Historical carts (all checked out / led to orders)
+(1,  1,  NOW() - INTERVAL '30 days', NOW() - INTERVAL '27 days', 'CHECKED_OUT'),  -- 1
+(2,  2,  NOW() - INTERVAL '25 days', NOW() - INTERVAL '22 days', 'CHECKED_OUT'),  -- 2
+(3,  3,  NOW() - INTERVAL '20 days', NOW() - INTERVAL '15 days', 'CHECKED_OUT'),  -- 3
+(4,  4,  NOW() - INTERVAL '18 days', NOW() - INTERVAL '15 days', 'CHECKED_OUT'),  -- 4
+(5,  5,  NOW() - INTERVAL '15 days', NOW() - INTERVAL '12 days', 'CHECKED_OUT'),  -- 5
+(6,  6,  NOW() - INTERVAL '12 days', NOW() - INTERVAL '5 days',  'CHECKED_OUT'),  -- 6
+(7,  7,  NOW() - INTERVAL '10 days', NOW() - INTERVAL '7 days',  'CHECKED_OUT'),  -- 7
+(8,  8,  NOW() - INTERVAL '7 days',  NOW() - INTERVAL '4 days',  'CHECKED_OUT'),  -- 8
+(9,  9,  NOW() + INTERVAL '2 days',  NOW() + INTERVAL '7 days',  'CHECKED_OUT'),  -- 9  future rental
+(10, 10, NOW() - INTERVAL '4 days',  NOW() - INTERVAL '1 day',   'CHECKED_OUT'),  -- 10 cancelled checkout
+(11, 11, NOW() + INTERVAL '5 days',  NOW() + INTERVAL '12 days', 'CHECKED_OUT'),  -- 11 future rental (customer 1 repeat)
+-- Recent / in-progress
+(1,  11, NOW() - INTERVAL '3 days',  NOW() - INTERVAL '1 day',   'CHECKED_OUT'),  -- 12 customer 11 order
+(2,  13, NOW() + INTERVAL '3 days',  NOW() + INTERVAL '7 days',  'CHECKED_OUT'),  -- 13 pending checkout
+(3,  12, NOW() + INTERVAL '1 day',   NOW() + INTERVAL '4 days',  'CHECKED_OUT'),  -- 14 pending checkout
+-- Abandoned / active
+(5,  5,  NOW() - INTERVAL '8 days',  NOW() - INTERVAL '5 days',  'EXPIRED');      -- 15 abandoned (led to cancelled order)
+
+-- ================================================================
+-- 3. CART ITEM
+-- productId: 1=Canon R5 ($150), 2=Sony A7IV ($130), 3=Sony 24-70mm ($90),
+--            4=Canon 70-200mm ($110), 5=Manfrotto Tripod ($25),
+--            6=DJI RS3 ($60), 7=Rode VideoMic Pro+ ($20)
+-- ================================================================
+INSERT INTO CartItem (cartId, productId, quantity, isSelected) VALUES
+-- Cart 1: Canon R5 + tripod
+(1, 1, 1, TRUE),
+(1, 5, 1, TRUE),
+-- Cart 2: Sony A7IV + Sony 24-70mm
+(2, 2, 1, TRUE),
+(2, 3, 1, TRUE),
+-- Cart 3: Sony 24-70mm + mic
+(3, 3, 1, TRUE),
+(3, 7, 1, TRUE),
+-- Cart 4: Canon 70-200 + DJI RS3
+(4, 4, 1, TRUE),
+(4, 6, 1, TRUE),
+-- Cart 5: Canon 70-200 only
+(5, 4, 1, TRUE),
+-- Cart 6: Full kit (R5 + Sony lens + tripod)
+(6, 1, 1, TRUE),
+(6, 3, 1, TRUE),
+(6, 5, 1, TRUE),
+-- Cart 7: Canon R5 + mic
+(7, 1, 1, TRUE),
+(7, 7, 1, TRUE),
+-- Cart 8: Tripod + mic
+(8, 5, 1, TRUE),
+(8, 7, 1, TRUE),
+-- Cart 9: Sony 24-70mm (future rental)
+(9, 3, 1, TRUE),
+-- Cart 10: Sony A7IV + Sony 24-70mm (cancelled)
+(10, 2, 1, TRUE),
+(10, 3, 1, TRUE),
+-- Cart 11: Canon R5 + Sony 24-70mm (future rental)
+(11, 1, 1, TRUE),
+(11, 3, 1, TRUE),
+-- Cart 12: DJI RS3 gimbal (customer 11 order)
+(12, 6, 1, TRUE),
+-- Cart 13: Sony A7IV (pending)
+(13, 2, 1, TRUE),
+-- Cart 14: DJI RS3 + tripod (pending)
+(14, 6, 1, TRUE),
+(14, 5, 1, TRUE),
+-- Cart 15: R5 + Canon 70-200 + DJI RS3 (abandoned — cancelled order)
+(15, 1, 1, TRUE),
+(15, 4, 1, FALSE),  -- deselected before abandoning
+(15, 6, 1, TRUE);
+
+-- ================================================================
+-- 4. CHECKOUT (15 rows)
+-- checkout_status_enum: IN_PROGRESS | CONFIRMED | CANCELLED
+-- All columns now provided including cartId
+-- ================================================================
+INSERT INTO Checkout (customerId, cartId, paymentMethodType, status, notifyOptIn, createdAt) VALUES
+(1,  1,  'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '30 days'),  -- 1
+(2,  2,  'CREDIT_CARD', 'CONFIRMED',   FALSE, NOW() - INTERVAL '25 days'),  -- 2
+(3,  3,  'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '20 days'),  -- 3
+(4,  4,  'CREDIT_CARD', 'CONFIRMED',   FALSE, NOW() - INTERVAL '18 days'),  -- 4
+(5,  5,  'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '15 days'),  -- 5
+(6,  6,  'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '12 days'),  -- 6
+(7,  7,  'CREDIT_CARD', 'CONFIRMED',   FALSE, NOW() - INTERVAL '10 days'),  -- 7
+(8,  8,  'CREDIT_CARD', 'CONFIRMED',   FALSE, NOW() - INTERVAL '7 days'),   -- 8
+(9,  9,  'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '5 days'),   -- 9
+(10, 10, 'CREDIT_CARD', 'CANCELLED',   FALSE, NOW() - INTERVAL '4 days'),   -- 10
+(1,  11, 'CREDIT_CARD', 'CONFIRMED',   TRUE,  NOW() - INTERVAL '3 days'),   -- 11
+(11, 12, 'CREDIT_CARD', 'CONFIRMED',   FALSE, NOW() - INTERVAL '6 days'),   -- 12
+(2,  13, 'CREDIT_CARD', 'IN_PROGRESS', FALSE, NOW() - INTERVAL '1 day'),    -- 13
+(3,  14, 'CREDIT_CARD', 'IN_PROGRESS', TRUE,  NOW() - INTERVAL '2 hours'),  -- 14
+(5,  15, 'CREDIT_CARD', 'CANCELLED',   FALSE, NOW() - INTERVAL '8 days');   -- 15
+
+
+-- ================================================================
+-- 5. TRANSACTION (one per order — covers all statuses)
+-- transaction_type_enum:    PAYMENT | REFUND
+-- transaction_purpose_enum: ORDER | PENALTY | REFUND_DEPOSIT
+-- transaction_status_enum:  PENDING | COMPLETED | FAILED | CANCELLED
+-- ================================================================
+INSERT INTO Transaction (amount, type, purpose, status, providerTransactionId, createdAt) VALUES
+-- Orders 1–3: DELIVERED → COMPLETED payments
+(195.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_001', NOW() - INTERVAL '30 days'),  -- 1
+(220.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_002', NOW() - INTERVAL '25 days'),  -- 2
+(130.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_003', NOW() - INTERVAL '20 days'),  -- 3
+-- Orders 4–5: DISPATCHED → COMPLETED
+(175.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_004', NOW() - INTERVAL '18 days'),  -- 4
+(110.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_005', NOW() - INTERVAL '15 days'),  -- 5
+-- Orders 6–7: READY_FOR_DISPATCH → COMPLETED
+(265.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_006', NOW() - INTERVAL '12 days'),  -- 6
+(60.00,  'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_007', NOW() - INTERVAL '6 days'),   -- 7
+-- Orders 8–9: PROCESSING → COMPLETED
+(150.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_008', NOW() - INTERVAL '10 days'),  -- 8
+(45.00,  'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_009', NOW() - INTERVAL '7 days'),   -- 9
+-- Orders 10–11: CONFIRMED → COMPLETED
+(90.00,  'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_010', NOW() - INTERVAL '5 days'),   -- 10
+(210.00, 'PAYMENT', 'ORDER', 'COMPLETED', 'stripe_txn_011', NOW() - INTERVAL '3 days'),   -- 11
+-- Orders 12–13: PENDING → PENDING (payment initiated, awaiting confirmation)
+(155.00, 'PAYMENT', 'ORDER', 'PENDING',   'stripe_txn_012', NOW() - INTERVAL '1 day'),    -- 12
+(80.00,  'PAYMENT', 'ORDER', 'PENDING',   'stripe_txn_013', NOW() - INTERVAL '2 hours'),  -- 13
+-- Order 14: CANCELLED checkout → CANCELLED transaction
+(130.00, 'PAYMENT', 'ORDER', 'CANCELLED', 'stripe_txn_014', NOW() - INTERVAL '4 days'),   -- 14
+-- Order 15: CANCELLED large order → REFUND issued
+(270.00, 'REFUND',  'ORDER', 'COMPLETED', 'stripe_txn_015', NOW() - INTERVAL '8 days'),   -- 15
+-- Penalty transaction (late return on Order 1)
+(30.00,  'PAYMENT', 'PENALTY',        'COMPLETED', 'stripe_txn_016', NOW() - INTERVAL '26 days'),  -- 16
+-- Deposit refund transaction (Order 2 deposit returned)
+(66.00,  'PAYMENT', 'REFUND_DEPOSIT', 'COMPLETED', 'stripe_txn_017', NOW() - INTERVAL '22 days');  -- 17
+
+
+-- ================================================================
+-- 6. ORDER (15 rows — all 7 statuses covered)
+-- transactionId references Transaction rows above (1–15)
+-- ================================================================
+INSERT INTO "Order" (customerId, checkoutId, transactionId, orderDate, status, deliveryType, totalAmount) VALUES
+-- DELIVERED
+(1,  1,  1,    NOW() - INTERVAL '30 days', 'DELIVERED',          'NextDay',    195.00),  -- 1
+(2,  2,  2,    NOW() - INTERVAL '25 days', 'DELIVERED',          'ThreeDays',  220.00),  -- 2
+(3,  3,  3,    NOW() - INTERVAL '20 days', 'DELIVERED',          'NextDay',    130.00),  -- 3
+-- DISPATCHED
+(4,  4,  4,    NOW() - INTERVAL '18 days', 'DISPATCHED',         'ThreeDays',  175.00),  -- 4
+(5,  5,  5,    NOW() - INTERVAL '15 days', 'DISPATCHED',         'NextDay',    110.00),  -- 5
+-- READY_FOR_DISPATCH
+(6,  6,  6,    NOW() - INTERVAL '12 days', 'READY_FOR_DISPATCH', 'OneWeek',    265.00),  -- 6
+(11, 12, 7,    NOW() - INTERVAL '6 days',  'READY_FOR_DISPATCH', 'NextDay',     60.00),  -- 7
+-- PROCESSING
+(7,  7,  8,    NOW() - INTERVAL '10 days', 'PROCESSING',         'ThreeDays',  150.00),  -- 8
+(8,  8,  9,    NOW() - INTERVAL '7 days',  'PROCESSING',         'NextDay',     45.00),  -- 9
+-- CONFIRMED
+(9,  9,  10,   NOW() - INTERVAL '5 days',  'CONFIRMED',          'ThreeDays',   90.00),  -- 10
+(1,  11, 11,   NOW() - INTERVAL '3 days',  'CONFIRMED',          'OneWeek',    210.00),  -- 11
+-- PENDING
+(2,  13, 12,   NOW() - INTERVAL '1 day',   'PENDING',            'NextDay',    155.00),  -- 12
+(3,  14, 13,   NOW() - INTERVAL '2 hours', 'PENDING',            'ThreeDays',   80.00),  -- 13
+-- CANCELLED
+(10, 10, 14,   NOW() - INTERVAL '4 days',  'CANCELLED',          'NextDay',    130.00),  -- 14
+(5,  15, 15,   NOW() - INTERVAL '8 days',  'CANCELLED',          'OneWeek',    270.00);  -- 15
+
+-- ================================================================
+-- 7. ORDER ITEM
+-- rentalStartDate/rentalEndDate = NULL → non-rental (purchase)
+-- ================================================================
+INSERT INTO OrderItem (orderId, productId, quantity, unitPrice, rentalStartDate, rentalEndDate) VALUES
+-- Order 1: Canon R5 (rental) + tripod (purchase)
+(1, 1, 1, 150.00, NOW() - INTERVAL '30 days', NOW() - INTERVAL '27 days'),
+(1, 5, 1,  25.00, NULL, NULL),
+-- Order 2: Sony A7IV (rental) + Sony 24-70mm (rental)
+(2, 2, 1, 130.00, NOW() - INTERVAL '25 days', NOW() - INTERVAL '22 days'),
+(2, 3, 1,  90.00, NOW() - INTERVAL '25 days', NOW() - INTERVAL '22 days'),
+-- Order 3: Sony 24-70mm (rental) + mic (purchase)
+(3, 3, 1,  90.00, NOW() - INTERVAL '20 days', NOW() - INTERVAL '15 days'),
+(3, 7, 1,  20.00, NULL, NULL),
+-- Order 4: Canon 70-200 (rental) + DJI RS3 (rental)
+(4, 4, 1, 110.00, NOW() - INTERVAL '18 days', NOW() - INTERVAL '15 days'),
+(4, 6, 1,  60.00, NOW() - INTERVAL '18 days', NOW() - INTERVAL '15 days'),
+-- Order 5: Canon 70-200 (rental)
+(5, 4, 1, 110.00, NOW() - INTERVAL '15 days', NOW() - INTERVAL '12 days'),
+-- Order 6: Canon R5 + Sony lens + tripod (all rental)
+(6, 1, 1, 150.00, NOW() - INTERVAL '12 days', NOW() - INTERVAL '5 days'),
+(6, 3, 1,  90.00, NOW() - INTERVAL '12 days', NOW() - INTERVAL '5 days'),
+(6, 5, 1,  25.00, NOW() - INTERVAL '12 days', NOW() - INTERVAL '5 days'),
+-- Order 7: DJI RS3 (rental)
+(7, 6, 1,  60.00, NOW() - INTERVAL '6 days', NOW() - INTERVAL '3 days'),
+-- Order 8: Canon R5 (rental) + mic (purchase)
+(8, 1, 1, 150.00, NOW() - INTERVAL '10 days', NOW() - INTERVAL '7 days'),
+(8, 7, 1,  20.00, NULL, NULL),
+-- Order 9: Tripod (purchase) + mic (purchase) — non-rental order
+(9, 5, 1, 25.00, NULL, NULL),
+(9, 7, 1, 20.00, NULL, NULL),
+-- Order 10: Sony 24-70mm (future rental, confirmed)
+(10, 3, 1, 90.00, NOW() + INTERVAL '2 days', NOW() + INTERVAL '7 days'),
+-- Order 11: Canon R5 + Sony 24-70mm (future rental, confirmed)
+(11, 1, 1, 150.00, NOW() + INTERVAL '5 days', NOW() + INTERVAL '12 days'),
+(11, 3, 1,  90.00, NOW() + INTERVAL '5 days', NOW() + INTERVAL '12 days'),
+-- Order 12: Sony A7IV (future rental, pending)
+(12, 2, 1, 130.00, NOW() + INTERVAL '3 days', NOW() + INTERVAL '7 days'),
+-- Order 13: DJI RS3 + tripod (future rental, pending)
+(13, 6, 1, 60.00, NOW() + INTERVAL '1 day', NOW() + INTERVAL '4 days'),
+(13, 5, 1, 25.00, NOW() + INTERVAL '1 day', NOW() + INTERVAL '4 days'),
+-- Order 14: Sony A7IV + Sony 24-70mm (cancelled — rental never started)
+(14, 2, 1, 130.00, NOW() + INTERVAL '1 day', NOW() + INTERVAL '5 days'),
+(14, 3, 1,  90.00, NOW() + INTERVAL '1 day', NOW() + INTERVAL '5 days'),
+-- Order 15: Canon R5 + Canon 70-200 + DJI RS3 (cancelled)
+(15, 1, 1, 150.00, NOW() + INTERVAL '2 days', NOW() + INTERVAL '9 days'),
+(15, 4, 1, 110.00, NOW() + INTERVAL '2 days', NOW() + INTERVAL '9 days'),
+(15, 6, 1,  60.00, NOW() + INTERVAL '2 days', NOW() + INTERVAL '9 days');
+
+-- ================================================================
+-- 8. PAYMENT (one per order, using Transaction ids 1–15)
+-- payment_purpose_enum: RENTAL_FEE_DEPOSIT | PENALTY_FEE
+-- paymentId = VARCHAR(50), using human-readable prefixed IDs
+-- ================================================================
+INSERT INTO Payment (paymentId, orderId, transactionId, amount, purpose, status, createdAt) VALUES
+('PAY-ORD-001',  1,  1,  195.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '30 days'),
+('PAY-ORD-002',  2,  2,  220.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '25 days'),
+('PAY-ORD-003',  3,  3,  130.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '20 days'),
+('PAY-ORD-004',  4,  4,  175.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '18 days'),
+('PAY-ORD-005',  5,  5,  110.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '15 days'),
+('PAY-ORD-006',  6,  6,  265.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '12 days'),
+('PAY-ORD-007',  7,  7,   60.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '6 days'),
+('PAY-ORD-008',  8,  8,  150.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '10 days'),
+('PAY-ORD-009',  9,  9,   45.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '7 days'),
+('PAY-ORD-010', 10, 10,   90.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '5 days'),
+('PAY-ORD-011', 11, 11,  210.00, 'RENTAL_FEE_DEPOSIT', 'COMPLETED', NOW() - INTERVAL '3 days'),
+('PAY-ORD-012', 12, 12,  155.00, 'RENTAL_FEE_DEPOSIT', 'PENDING',   NOW() - INTERVAL '1 day'),
+('PAY-ORD-013', 13, 13,   80.00, 'RENTAL_FEE_DEPOSIT', 'PENDING',   NOW() - INTERVAL '2 hours'),
+('PAY-ORD-014', 14, 14,  130.00, 'RENTAL_FEE_DEPOSIT', 'CANCELLED', NOW() - INTERVAL '4 days'),
+('PAY-ORD-015', 15, 15,  270.00, 'RENTAL_FEE_DEPOSIT', 'CANCELLED', NOW() - INTERVAL '8 days'),
+-- Penalty payment for Order 1 late return (uses Transaction 16)
+('PAY-PEN-001',  1, 16,   30.00, 'PENALTY_FEE',        'COMPLETED', NOW() - INTERVAL '26 days');
+
+-- ================================================================
+-- 9. DEPOSIT (rental orders only — orders with rentalStartDate set)
+-- DepositRate from ProductDetails: R5=30%, A7IV=30%, lenses=25%,
+--   tripod=10%, gimbal=20%, mic=10%
+-- Deposit = unitPrice * depositRate * quantity
+-- Orders 1–11 have rentals; orders 9 (purchase-only) excluded.
+-- Orders 14–15 cancelled → forfeitedAmount = 0, refundedAmount = originalAmount
+-- ================================================================
+INSERT INTO Deposit (depositId, orderId, transactionId, originalAmount, heldAmount, refundedAmount, forfeitedAmount, createdAt) VALUES
+
+-- Order 1: Canon R5 deposit (150 * 30% = 45). Late return → partial forfeit
+('DEP-ORD-001', 1,  1,  45.00, 45.00, 15.00, 30.00, NOW() - INTERVAL '30 days'),
+
+-- Order 2: Sony A7IV (130*30%=39) + Sony 24-70mm (90*25%=22.50) = 61.50. Clean return → full refund
+('DEP-ORD-002', 2,  2,  61.50, 61.50, 61.50,  0.00, NOW() - INTERVAL '25 days'),
+
+-- Order 3: Sony 24-70mm (90*25%=22.50). Clean return → full refund
+('DEP-ORD-003', 3,  3,  22.50, 22.50, 22.50,  0.00, NOW() - INTERVAL '20 days'),
+
+-- Order 4: Canon 70-200 (110*25%=27.50) + DJI RS3 (60*20%=12) = 39.50. Clean → full refund
+('DEP-ORD-004', 4,  4,  39.50, 39.50, 39.50,  0.00, NOW() - INTERVAL '18 days'),
+
+-- Order 5: Canon 70-200 (110*25%=27.50). Clean → full refund
+('DEP-ORD-005', 5,  5,  27.50, 27.50, 27.50,  0.00, NOW() - INTERVAL '15 days'),
+
+-- Order 6: R5 (45) + Sony 24-70mm (22.50) + Tripod (25*10%=2.50) = 70. Still held (in dispatch)
+('DEP-ORD-006', 6,  6,  70.00, 70.00,  0.00,  0.00, NOW() - INTERVAL '12 days'),
+
+-- Order 7: DJI RS3 (60*20%=12). Still held
+('DEP-ORD-007', 7,  7,  12.00, 12.00,  0.00,  0.00, NOW() - INTERVAL '6 days'),
+
+-- Order 8: Canon R5 (45). Still held (processing)
+('DEP-ORD-008', 8,  8,  45.00, 45.00,  0.00,  0.00, NOW() - INTERVAL '10 days'),
+
+-- Order 10: Sony 24-70mm (22.50). Held (confirmed, rental not started)
+('DEP-ORD-010', 10, 10, 22.50, 22.50,  0.00,  0.00, NOW() - INTERVAL '5 days'),
+
+-- Order 11: R5 (45) + Sony 24-70mm (22.50) = 67.50. Held (confirmed)
+('DEP-ORD-011', 11, 11, 67.50, 67.50,  0.00,  0.00, NOW() - INTERVAL '3 days'),
+
+-- Order 12: Sony A7IV (39). Pending — not yet captured
+('DEP-ORD-012', 12, 12, 39.00, 39.00,  0.00,  0.00, NOW() - INTERVAL '1 day'),
+
+-- Order 13: DJI RS3 (12) + Tripod (2.50) = 14.50. Pending
+('DEP-ORD-013', 13, 13, 14.50, 14.50,  0.00,  0.00, NOW() - INTERVAL '2 hours'),
+
+-- Order 14: CANCELLED → full refund, nothing forfeited
+('DEP-ORD-014', 14, 14, 32.50, 32.50, 32.50,  0.00, NOW() - INTERVAL '4 days'),
+-- (A7IV 39 + Sony lens 22.50 = 61.50; but order was cancelled before payment completed — refund matches what was captured: 0 in practice. Using 32.50 as partial capture example)
+
+-- Order 15: CANCELLED full kit → full refund
+('DEP-ORD-015', 15, 15, 84.50, 84.50, 84.50,  0.00, NOW() - INTERVAL '8 days');
+-- (R5 45 + Canon 70-200 27.50 + DJI RS3 12 = 84.50)
