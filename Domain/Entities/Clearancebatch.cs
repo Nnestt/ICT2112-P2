@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Domain.Entities;
 
@@ -8,6 +9,8 @@ public partial class Clearancebatch
     public int Clearancebatchid { get; private set; }
 
     public string Batchname { get; private set; } = null!;
+
+    public ClearanceBatchStatus ClearanceBatchStatus { get; private set; }
 
     public DateTime Createddate { get; private set; }
 

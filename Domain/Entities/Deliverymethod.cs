@@ -15,5 +15,7 @@ public partial class Deliverymethod
 
     public string Carrierid { get; private set; } = null!;
 
+    public virtual ICollection<Checkout> Checkouts { get; private set; } = new List<Checkout>();
+
     public virtual Order Order { get; private set; } = null!;
 }

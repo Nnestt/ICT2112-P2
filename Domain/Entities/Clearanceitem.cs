@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Domain.Entities;
 
@@ -14,6 +15,8 @@ public partial class Clearanceitem
     public decimal? Finalprice { get; private set; }
 
     public decimal? Recommendedprice { get; private set; }
+
+    public ClearanceStatus Status { get; private set; }
 
     public DateTime? Saledate { get; private set; }
 

@@ -11,7 +11,7 @@ public partial class Checkout
 
     public int Cartid { get; private set; }
 
-    public string? Deliverymethodid { get; private set; }
+    public int? Deliveryid { get; private set; }
 
     public bool? Notifyoptin { get; private set; }
 
@@ -20,6 +20,8 @@ public partial class Checkout
     public virtual Cart Cart { get; private set; } = null!;
 
     public virtual Customer Customer { get; private set; } = null!;
+
+    public virtual Deliverymethod? Delivery { get; private set; }
 
     public virtual ICollection<Order> Orders { get; private set; } = new List<Order>();
 }

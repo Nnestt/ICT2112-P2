@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Domain.Entities;
 
@@ -10,6 +11,8 @@ public partial class Loanlist
     public int Orderid { get; private set; }
 
     public int Customerid { get; private set; }
+
+    public LoanStatus Status { get; private set; }
 
     public DateTime Loandate { get; private set; }
 
