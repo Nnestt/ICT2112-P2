@@ -9,6 +9,54 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
+//Services builder(add your mappers/gateways, controllers, control and interface classes here)
+//Team P2-1
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+
+//Team P2-2
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+//Team P2-3
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+
+//Team P2-4
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+
+//Team P2-5
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+
+//Team P2-6
+// Data source
+
+// Domain
+
+// Presentation/Controllers
+
+
 var app = builder.Build();
 
 

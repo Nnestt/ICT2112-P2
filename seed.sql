@@ -1,4 +1,4 @@
--- Team 2-3 Seed Data
+-- Team 2-3 Seed Data (non business such as loan, returns, clearance, damage reports and alerts not seeded)
 
 INSERT INTO Category (Name, Description) VALUES
 ('Camera', 'Digital and mirrorless cameras'),
