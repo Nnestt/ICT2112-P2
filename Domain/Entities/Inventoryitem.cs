@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Domain.Entities;
 
@@ -10,6 +11,8 @@ public partial class Inventoryitem
     public int Productid { get; private set; }
 
     public string Serialnumber { get; private set; } = null!;
+
+    public InventoryStatus Status { get; private set; }
 
     public DateTime Createdat { get; private set; }
 
