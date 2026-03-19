@@ -1,3 +1,11 @@
+-- Clear tables and resetting the Identity counters 
+TRUNCATE 
+    Category, "User", TransactionLog, Supplier, PurchaseOrder, 
+    transportation_hub, transport, pricing_rule, carbon_result, 
+    product_return, Analytics, PackagingMaterial,
+    "transaction", "Order", Checkout, Cart, CartItem,
+    Session, Payment, Deposit, replenishmentrequest, LoanList, ReturnRequest, ClearanceBatch 
+RESTART IDENTITY CASCADE;
 -- Team 2-3 Seed Data (non business such as loan, returns, clearance, damage reports and alerts not seeded)
 
 INSERT INTO Category (Name, Description) VALUES
@@ -555,10 +563,10 @@ INSERT INTO StockItem (productID, sku, name, uom) VALUES
 
 -- poID 1, 2, 3
 INSERT INTO POLineItem (poID, productID, qty, unitPrice, lineTotal) VALUES
-(1, 101, 2, 2500.00, 5000.00),
-(1, 103, 1, 500.00, 500.00),
-(2, 102, 1, 1200.00, 1200.00),
-(3, 104, 1, 450.00, 450.00);
+(1, 1, 2, 2500.00, 5000.00),
+(1, 3, 1, 500.00, 500.00),
+(2, 2, 1, 1200.00, 1200.00),
+(3, 4, 1, 450.00, 450.00);
 
 -- SUPPLIERS & VETTING
 INSERT INTO Supplier (SupplierID, Name, Details, CreditPeriod, AvgTurnaroundTime, SupplierCategory, IsVerified, VettingResult) VALUES
@@ -583,31 +591,47 @@ INSERT INTO LineItem (RequestId, ProductId, QuantityRequest, ReasonCode, Remarks
 (1, 1, 5, 'LOWSTOCK', 'Immediate need'),
 (2, 2, 3, 'DEMANDSPIKE', 'Rental bookings increased');
 
--- TRANSACTION LOGGING SYSTEM
--- We must insert into TransactionLog first to get IDs for the child log tables
+-- 2-3 seed needed by 2-2
+INSERT INTO LoanList (LoanListId, OrderId, CustomerId, LoanDate, DueDate, ReturnDate, Status, Remarks)
+OVERRIDING SYSTEM VALUE
+VALUES (1, 1, 1, '2026-03-05', '2026-03-12', NULL, 'ON_LOAN', 'Seed loan for log reference');
+
+INSERT INTO ReturnRequest (ReturnRequestId, OrderId, CustomerId, Status, RequestDate, CompletionDate)
+OVERRIDING SYSTEM VALUE
+VALUES (1, 1, 1, 'COMPLETED', '2026-03-10', '2026-03-11');
+
+INSERT INTO ClearanceBatch (ClearanceBatchId, BatchName, CreatedDate, ClearanceDate, Status)
+OVERRIDING SYSTEM VALUE
+VALUES (1, 'Quarterly Cleanup', '2026-03-01', '2026-03-14', 'CLOSED');
+
+-- TransactionLog uses auto-generated IDs, so we don't need the override here
 INSERT INTO TransactionLog (LogType, CreatedAt) VALUES
-('PURCHASE_ORDER', '2026-03-01 09:00:00'), -- ID 1
-('RENTAL_ORDER',   '2026-03-05 10:00:00'), -- ID 2
-('LOAN',           '2026-03-05 11:00:00'), -- ID 3
-('RETURN',         '2026-03-10 16:00:00'), -- ID 4
-('CLEARANCE',      '2026-03-14 09:00:00'); -- ID 5
+('PURCHASE_ORDER', '2026-03-01 09:00:00'), -- Will get ID 1
+('RENTAL_ORDER',   '2026-03-05 10:00:00'), -- Will get ID 2
+('LOAN',           '2026-03-05 11:00:00'), -- Will get ID 3
+('RETURN',         '2026-03-10 16:00:00'), -- Will get ID 4
+('CLEARANCE',      '2026-03-14 09:00:00'); -- Will get ID 5
 
--- Link Transaction Log entries to specific details
-INSERT INTO PurchaseOrderLog (PurchaseOrderLogId, PoID, PoDate, SupplierId, Status, ExpectedDeliveryDate, TotalAmount, DetailsJSON) VALUES
-(1, 1, '2026-03-01', 1, 'COMPLETED', '2026-03-05', 5500.00, '{"note": "Initial spring stock"}');
+-- Use OVERRIDING SYSTEM VALUE because these IDs must match TransactionLog
+INSERT INTO PurchaseOrderLog (PurchaseOrderLogId, PoID, PoDate, SupplierId, Status, ExpectedDeliveryDate, TotalAmount, DetailsJSON) 
+OVERRIDING SYSTEM VALUE
+VALUES (1, 1, '2026-03-01', 1, 'COMPLETED', '2026-03-05', 5500.00, '{"note": "Initial spring stock"}');
 
--- Note: RentalOrderLog needs an OrderId. I am using dummy ID '501'
-INSERT INTO RentalOrderLog (RentalOrderLogId, OrderId, CustomerId, OrderDate, TotalAmount, DeliveryType, Status, DetailsJSON) VALUES
-(2, 501, 99, '2026-03-05', 300.00, 'EXPRESS', 'CONFIRMED', '{"items": ["Canon R5"]}');
+INSERT INTO RentalOrderLog (RentalOrderLogId, OrderId, CustomerId, OrderDate, TotalAmount, DeliveryType, Status, DetailsJSON) 
+OVERRIDING SYSTEM VALUE
+VALUES (2, 1, 1, '2026-03-05', 300.00, 'EXPRESS', 'COMPLETED', '{"items": ["Canon R5"]}');
 
-INSERT INTO LoanLog (LoanLogId, LoanListId, RentalOrderLogId, Status, LoanDate, ReturnDate, DueDate, DetailsJSON) VALUES
-(3, 701, 2, 'ONGOING', '2026-03-05', NULL, '2026-03-12', '{"assetTag": "PR-001"}');
+INSERT INTO LoanLog (LoanLogId, LoanListId, RentalOrderLogId, Status, LoanDate, ReturnDate, DueDate, DetailsJSON) 
+OVERRIDING SYSTEM VALUE
+VALUES (3, 1, 2, 'ONGOING', '2026-03-05', NULL, '2026-03-12', '{"assetTag": "PR-001"}');
 
-INSERT INTO ReturnLog (ReturnLogId, ReturnRequestId, RentalOrderLogId, CustomerId, Status, RequestDate, CompletionDate, ImageURL, DetailsJSON) VALUES
-(4, 801, 2, 'CUST-99', 'COMPLETED', '2026-03-10', '2026-03-11', 'img_ret_4.jpg', '{"condition": "Clean"}');
+INSERT INTO ReturnLog (ReturnLogId, ReturnRequestId, RentalOrderLogId, CustomerId, Status, RequestDate, CompletionDate, ImageURL, DetailsJSON) 
+OVERRIDING SYSTEM VALUE
+VALUES (4, 1, 2, '1', 'COMPLETED', '2026-03-10', '2026-03-11', 'img_ret_4.jpg', '{"condition": "Clean"}');
 
-INSERT INTO ClearanceLog (ClearanceLogId, ClearanceBatchId, BatchName, ClearanceDate, Status, DetailsJSON) VALUES
-(5, 901, 'Quarterly Cleanup', '2026-03-14', 'COMPLETED', '{"discardedCount": 5}');
+INSERT INTO ClearanceLog (ClearanceLogId, ClearanceBatchId, BatchName, ClearanceDate, Status, DetailsJSON) 
+OVERRIDING SYSTEM VALUE
+VALUES (5, 1, 'Quarterly Cleanup', '2026-03-14', 'COMPLETED', '{"discardedCount": 5}');
 
 -- ANALYTICS
 INSERT INTO Analytics (AnalyticsType, StartDate, EndDate, LoanAmt, ReturnAmt, RefPrimaryID, RefPrimaryName, RefValue) VALUES
