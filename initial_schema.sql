@@ -794,7 +794,7 @@ CREATE TABLE IF NOT EXISTS Checkout (
     checkoutId        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     customerId        INT          NOT NULL,
     cartId            INT          NOT NULL,
-    deliveryId        INT,
+    option_id         INT,
     paymentMethodType payment_method_enum,
     status            checkout_status_enum DEFAULT 'IN_PROGRESS',
     notifyOptIn       BOOLEAN DEFAULT FALSE,
@@ -1291,4 +1291,4 @@ ALTER TABLE return_stage
 -- Team 6 → Team 4: Checkout.deliveryId
 ALTER TABLE Checkout
 ADD CONSTRAINT fk_checkout_delivery
-    FOREIGN KEY (deliveryId) REFERENCES DeliveryMethod(deliveryId) ON DELETE RESTRICT; 
+    FOREIGN KEY (option_id) REFERENCES shipping_option(option_id) ON DELETE RESTRICT; 
