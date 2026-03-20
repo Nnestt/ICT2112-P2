@@ -82,23 +82,23 @@ INSERT INTO InventoryItem (ProductId, SerialNumber) VALUES
 
 -- Team 2-4 Seed Data
 
-INSERT INTO "User" (name, email, passwordHash, phoneCountry, phoneNumber)
+INSERT INTO "User" (name, userRole, email, passwordHash, phoneCountry, phoneNumber)
 VALUES
-  ('Alice Tan',        'alice.tan@example.com',        '$2b$12$hashAlice', 65, '90000001'),
-  ('Benjamin Lee',     'ben.lee@example.com',          '$2b$12$hashBen',   65, '90000002'),
-  ('Charlotte Ng',     'charlotte.ng@example.com',     '$2b$12$hashChar',  65, '90000003'),
-  ('Daniel Wong',      'daniel.wong@example.com',      '$2b$12$hashDan',   65, '90000004'),
-  ('Elaine Goh',       'elaine.goh@example.com',       '$2b$12$hashEla',   65, '90000005'),
-  ('Farid Ahmad',      'farid.ahmad@example.com',      '$2b$12$hashFarid', 65, '90000006'),
-  ('Grace Lim',        'grace.lim@example.com',        '$2b$12$hashGrace', 65, '90000007'),
-  ('Hannah Koh',       'hannah.koh@example.com',       '$2b$12$hashHan',   65, '90000008'),
-  ('Ivan Tan',         'ivan.tan@example.com',         '$2b$12$hashIvan',  65, '90000009'),
-  ('Jasmine Ong',      'jasmine.ong@example.com',      '$2b$12$hashJas',   65, '90000010'),
-  ('Kevin Chan',       'kevin.chan@example.com',       '$2b$12$hashKev',   65, '90000011'),
-  ('Lydia Chua',       'lydia.chua@example.com',       '$2b$12$hashLyd',   65, '90000012'),
-  ('Marcus Ho',        'marcus.ho@example.com',        '$2b$12$hashMar',   65, '90000013'),
-  ('Natalie Yeo',      'natalie.yeo@example.com',      '$2b$12$hashNat',   65, '90000014'),
-  ('Operations Admin', 'ops.admin@company.com',        '$2b$12$hashOps',   65, '90000015')
+  ('Alice Tan',        'CUSTOMER', 'alice.tan@example.com',        '$2b$12$hashAlice', 65, '90000001'),
+  ('Benjamin Lee',     'CUSTOMER', 'ben.lee@example.com',          '$2b$12$hashBen',   65, '90000002'),
+  ('Charlotte Ng',     'CUSTOMER', 'charlotte.ng@example.com',     '$2b$12$hashChar',  65, '90000003'),
+  ('Daniel Wong',      'CUSTOMER', 'daniel.wong@example.com',      '$2b$12$hashDan',   65, '90000004'),
+  ('Elaine Goh',       'CUSTOMER', 'elaine.goh@example.com',       '$2b$12$hashEla',   65, '90000005'),
+  ('Farid Ahmad',      'CUSTOMER', 'farid.ahmad@example.com',      '$2b$12$hashFarid', 65, '90000006'),
+  ('Grace Lim',        'CUSTOMER', 'grace.lim@example.com',        '$2b$12$hashGrace', 65, '90000007'),
+  ('Hannah Koh',       'CUSTOMER', 'hannah.koh@example.com',       '$2b$12$hashHan',   65, '90000008'),
+  ('Ivan Tan',         'CUSTOMER', 'ivan.tan@example.com',         '$2b$12$hashIvan',  65, '90000009'),
+  ('Jasmine Ong',      'CUSTOMER', 'jasmine.ong@example.com',      '$2b$12$hashJas',   65, '90000010'),
+  ('Kevin Chan',       'CUSTOMER', 'kevin.chan@example.com',       '$2b$12$hashKev',   65, '90000011'),
+  ('Lydia Chua',       'STAFF', 'lydia.chua@example.com',       '$2b$12$hashLyd',   65, '90000012'),
+  ('Marcus Ho',        'STAFF', 'marcus.ho@example.com',        '$2b$12$hashMar',   65, '90000013'),
+  ('Natalie Yeo',      'STAFF', 'natalie.yeo@example.com',      '$2b$12$hashNat',   65, '90000014'),
+  ('Operations Admin', 'ADMIN', 'ops.admin@company.com',        '$2b$12$hashOps',   65, '90000015')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO Customer (userId, address, customerType)

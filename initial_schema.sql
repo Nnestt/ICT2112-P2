@@ -78,6 +78,8 @@ CREATE TYPE order_history_status_enum AS ENUM (
 
 CREATE TYPE shipment_status_enum AS ENUM ('PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED');
 
+CREATE TYPE user_role_enum AS ENUM ('CUSTOMER', 'STAFF', 'ADMIN');
+
 --TEAM 1 PRIMARY KEY TABLES
 -- ============================================================
 -- TransportationHub (Parent — Table-Per-Subtype Inheritance)
@@ -606,6 +608,7 @@ CREATE TABLE ClearanceItem (
 --TEAM 4 PRIMARY KEY TABLES
 CREATE TABLE IF NOT EXISTS "User" (
     userId       INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    userRole   user_role_enum NOT NULL,
     name         VARCHAR(100) NOT NULL,
     email        VARCHAR(100) NOT NULL UNIQUE,
     passwordHash VARCHAR(255) NOT NULL,
@@ -1117,15 +1120,6 @@ CREATE TABLE IF NOT EXISTS Shipment (
     destination  VARCHAR(255)     NOT NULL,
     CONSTRAINT fk_shipment_order FOREIGN KEY (orderId) REFERENCES "Order"(orderId)                     ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_shipment_batch FOREIGN KEY (batchId) REFERENCES delivery_batch(delivery_batch_id)    ON UPDATE CASCADE ON DELETE RESTRICT
-  );
-
-CREATE TABLE IF NOT EXISTS DeliveryMethod (
-    deliveryId    INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    orderId       INT           NOT NULL,
-    durationDays  INT           NOT NULL,
-    deliveryCost  DECIMAL(10,2) NOT NULL,
-    carrierId     VARCHAR(50)   NOT NULL,
-    CONSTRAINT fk_deliverymethod_order FOREIGN KEY (orderId) REFERENCES "Order"(orderId) ON UPDATE CASCADE ON DELETE RESTRICT
   );
 
 --TEAM 5 CROSS TEAM FK TABLES
