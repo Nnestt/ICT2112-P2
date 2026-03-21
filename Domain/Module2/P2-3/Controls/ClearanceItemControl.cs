@@ -1,90 +1,350 @@
+using Microsoft.EntityFrameworkCore;
+using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
+using ProRental.Domain.Enums;
+using ProRental.Interfaces.Data;
 using ProRental.Interfaces.Module2;
 
 namespace ProRental.Domain.Module2.P23.Controls;
 
 public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 {
+    private readonly IClearanceItemMapper _itemMapper;
+    private readonly IClearanceBatchMapper _batchMapper;
+    private readonly IInventoryItemMapper _inventoryMapper;
+    private readonly AppDbContext _context;
+
+    // Default discount rate for recommended price calculation (30% off retail)
+    private const decimal DefaultDiscountRate = 0.30m;
+
+    public ClearanceItemControl(
+        IClearanceItemMapper itemMapper,
+        IClearanceBatchMapper batchMapper,
+        IInventoryItemMapper inventoryMapper,
+        AppDbContext context)
+    {
+        _itemMapper = itemMapper;
+        _batchMapper = batchMapper;
+        _inventoryMapper = inventoryMapper;
+        _context = context;
+    }
+
     // ── Item CRUD ──────────────────────────────────────────────────────────────
 
     public bool CreateClearanceItem(Clearanceitem clearanceItem)
     {
-        throw new NotImplementedException();
+        try
+        {
+            if (!ValidateClearanceItem(clearanceItem))
+                return false;
+
+            if (CheckClearanceItemConflict(clearanceItem))
+                return false;
+
+            clearanceItem.UpdateStatus(ClearanceStatus.CLEARANCE);
+            _itemMapper.Insert(clearanceItem);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public Clearanceitem GetClearanceItemById(int clearanceItemId)
     {
-        throw new NotImplementedException();
+        return _itemMapper.FindById(clearanceItemId)!;
     }
 
     public List<Clearanceitem> GetClearanceItemsByBatch(int batchId)
     {
-        throw new NotImplementedException();
+        var result = _itemMapper.FindByBatchId(batchId);
+        return result?.ToList() ?? new List<Clearanceitem>();
     }
 
     public List<Clearanceitem> GetClearanceItemsByStatus(string status)
     {
-        throw new NotImplementedException();
+        if (!Enum.TryParse<ClearanceStatus>(status, true, out var parsed))
+            return new List<Clearanceitem>();
+
+        var result = _itemMapper.FindByStatus(parsed);
+        return result?.ToList() ?? new List<Clearanceitem>();
     }
 
     public bool UpdateClearanceItem(Clearanceitem clearanceItem)
     {
-        throw new NotImplementedException();
+        try
+        {
+            _itemMapper.Update(clearanceItem);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public bool DeleteClearanceItem(int clearanceItemId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var item = _itemMapper.FindById(clearanceItemId);
+            if (item == null)
+                return false;
+
+            _itemMapper.Delete(item);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ── Item Assignment to Batch ───────────────────────────────────────────────
 
     public bool AddItemToBatch(int batchId, int inventoryItemId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            // Verify batch exists
+            var batch = _batchMapper.FindById(batchId);
+            if (batch == null)
+                return false;
+
+            // Verify inventory item exists
+            var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+            if (inventoryItem == null)
+                return false;
+
+            // Check eligibility
+            if (!CheckItemEligibility(inventoryItemId))
+                return false;
+
+            // Create the clearance item
+            var clearanceItem = new Clearanceitem();
+            clearanceItem.SetClearanceBatchId(batchId);
+            clearanceItem.SetInventoryItemId(inventoryItemId);
+            clearanceItem.UpdateStatus(ClearanceStatus.CLEARANCE);
+
+            // Calculate and set recommended price
+            decimal recommendedPrice = CalculateRecommendedPriceForInventoryItem(inventoryItemId);
+            clearanceItem.SetRecommendedPrice(recommendedPrice);
+
+            // Check for conflicts before inserting
+            if (CheckClearanceItemConflict(clearanceItem))
+                return false;
+
+            _itemMapper.Insert(clearanceItem);
+
+            // Update inventory item status to CLEARANCE
+            _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.CLEARANCE;
+            _inventoryMapper.Update(inventoryItem);
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public bool AddItemsToBatch(int batchId, List<int> inventoryItemIds)
     {
-        throw new NotImplementedException();
+        // Add each item individually — if any fails, the rest still get processed
+        bool allSucceeded = true;
+        foreach (int inventoryItemId in inventoryItemIds)
+        {
+            if (!AddItemToBatch(batchId, inventoryItemId))
+                allSucceeded = false;
+        }
+        return allSucceeded;
     }
 
     public bool RemoveItemFromBatch(int clearanceItemId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var item = _itemMapper.FindById(clearanceItemId);
+            if (item == null)
+                return false;
+
+            // Only allow removal if item hasn't been sold
+            if (item.GetStatus() == ClearanceStatus.SOLD)
+                return false;
+
+            // Revert inventory item status back to AVAILABLE
+            int inventoryItemId = item.GetInventoryItemId();
+            var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+            if (inventoryItem != null)
+            {
+                _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.AVAILABLE;
+                _inventoryMapper.Update(inventoryItem);
+            }
+
+            _itemMapper.Delete(item);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ── Item Status & Pricing ─────────────────────────────────────────────────
 
     public bool UpdateClearanceItemStatus(int clearanceItemId, string status)
     {
-        throw new NotImplementedException();
+        try
+        {
+            if (!Enum.TryParse<ClearanceStatus>(status, true, out var parsed))
+                return false;
+
+            var item = _itemMapper.FindById(clearanceItemId);
+            if (item == null)
+                return false;
+
+            item.UpdateStatus(parsed);
+            _itemMapper.Update(item);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public decimal CalculateClearancePrice(int clearanceItemId)
     {
-        throw new NotImplementedException();
+        var item = _itemMapper.FindById(clearanceItemId);
+        if (item == null)
+            return 0m;
+
+        return CalculateRecommendedPriceForInventoryItem(item.GetInventoryItemId());
     }
 
     public bool RecordSale(int clearanceItemId, decimal finalPrice, int staffId)
     {
-        throw new NotImplementedException();
+        try
+        {
+            var item = _itemMapper.FindById(clearanceItemId);
+            if (item == null)
+                return false;
+
+            // Cannot re-sell an already sold item
+            if (item.GetStatus() == ClearanceStatus.SOLD)
+                return false;
+
+            // Record sale details
+            item.SetFinalPrice(finalPrice);
+            item.SetSaleDate(DateTime.UtcNow);
+            item.UpdateStatus(ClearanceStatus.SOLD);
+
+            _itemMapper.Update(item);
+
+            // Update inventory item status to SOLD
+            var inventoryItem = _inventoryMapper.FindById(item.GetInventoryItemId());
+            if (inventoryItem != null)
+            {
+                _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.SOLD;
+                _inventoryMapper.Update(inventoryItem);
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ── Item Validation ───────────────────────────────────────────────────────
 
     public bool ValidateClearanceItem(Clearanceitem clearanceItem)
     {
-        throw new NotImplementedException();
+        // Batch ID must be set
+        if (clearanceItem.GetClearanceBatchId() <= 0)
+            return false;
+
+        // Inventory item ID must be set
+        if (clearanceItem.GetInventoryItemId() <= 0)
+            return false;
+
+        // Verify the referenced batch exists
+        var batch = _batchMapper.FindById(clearanceItem.GetClearanceBatchId());
+        if (batch == null)
+            return false;
+
+        return true;
     }
 
     public bool CheckItemEligibility(int inventoryItemId)
     {
-        throw new NotImplementedException();
+        // Verify the inventory item exists
+        var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+        if (inventoryItem == null)
+            return false;
+
+        // Check that the item is in AVAILABLE status (not already in maintenance, retired, etc.)
+        var currentStatus = _context.Entry(inventoryItem).Property<InventoryStatus>("Status").CurrentValue;
+        if (currentStatus != InventoryStatus.AVAILABLE)
+            return false;
+
+        // Check inactivity: item must have been updated more than 24 months ago
+        var lastUpdated = _context.Entry(inventoryItem).Property<DateTime>("Updatedat").CurrentValue;
+        var inactivityThreshold = DateTime.UtcNow.AddMonths(-24);
+        if (lastUpdated > inactivityThreshold)
+            return false;
+
+        // Check that item is not already in a clearance batch
+        var existingClearanceItem = _itemMapper.FindByInventoryItemId(inventoryItemId);
+        if (existingClearanceItem != null)
+            return false;
+
+        return true;
     }
 
     public bool CheckClearanceItemConflict(Clearanceitem clearanceItem)
     {
-        throw new NotImplementedException();
+        // Check if this inventory item is already in another active batch
+        var existing = _itemMapper.FindByInventoryItemId(clearanceItem.GetInventoryItemId());
+        if (existing == null)
+            return false; // No conflict
+
+        // If updating the same clearance item, not a conflict
+        if (existing.GetClearanceItemId() == clearanceItem.GetClearanceItemId()
+            && clearanceItem.GetClearanceItemId() != 0)
+            return false;
+
+        // Check if the existing clearance item's batch is still active or scheduled
+        var existingBatch = _batchMapper.FindById(existing.GetClearanceBatchId());
+        if (existingBatch != null && existingBatch.GetStatus() != ClearanceBatchStatus.CLOSED)
+            return true; // Conflict: item is in a non-closed batch
+
+        return false; // No conflict
+    }
+
+    // ── Private Helpers ───────────────────────────────────────────────────────
+
+    private decimal CalculateRecommendedPriceForInventoryItem(int inventoryItemId)
+    {
+        // Look up the product's retail price via the inventory item → product → product detail chain
+        var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+        if (inventoryItem == null)
+            return 0m;
+
+        int productId = _context.Entry(inventoryItem).Property<int>("Productid").CurrentValue;
+
+        // Query product detail for the retail price
+        var productDetail = _context.Productdetails
+            .FirstOrDefault(pd => EF.Property<int>(pd, "Productid") == productId);
+
+        if (productDetail == null)
+            return 0m;
+
+        decimal retailPrice = _context.Entry(productDetail).Property<decimal>("Price").CurrentValue;
+
+        // Apply the clearance discount (30% off retail price)
+        return Math.Round(retailPrice * (1 - DefaultDiscountRate), 2);
     }
 }
