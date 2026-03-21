@@ -1,7 +1,7 @@
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 
-namespace ProRental.Interfaces.Module2.P2_3;
+namespace ProRental.Interfaces.Domain;
 
 public interface iInventoryCRUDControl
 {

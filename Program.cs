@@ -7,13 +7,11 @@ using ProRental.Domain.Entities;
 
 // uncomment when ready to code
 using ProRental.Data;
-// using ProRental.Domain.Controls;
+using ProRental.Domain.Controls;
 // using ProRental.Domain.Entities;
-// using ProRental.Interfaces.Domain;
+using ProRental.Interfaces.Domain;
 using ProRental.Interfaces.Data;
 using ProRental.Controllers;
-using ProRental.Interfaces.Module2.P2_3;
-using ProRental.Domain.Module2.P2_3.Controls;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -158,10 +156,19 @@ builder.Services.AddScoped<ILoanItemMapper, LoanItemMapper>();
 builder.Services.AddScoped<ILoanListMapper, LoanListMapper>();
 
 // Domain - Control Classes
-builder.Services.AddScoped<iInventoryCRUDControl, InventoryManagementControl>();
-builder.Services.AddScoped<iInventoryStatusControl, InventoryManagementControl>();
-builder.Services.AddScoped<iInventoryQueryControl, InventoryManagementControl>();
-builder.Services.AddScoped<iStockSubject, InventoryManagementControl>();
+builder.Services.AddScoped<InventoryManagementControl>();
+
+builder.Services.AddScoped<iInventoryCRUDControl>(sp =>
+    sp.GetRequiredService<InventoryManagementControl>());
+
+builder.Services.AddScoped<iInventoryQueryControl>(sp =>
+    sp.GetRequiredService<InventoryManagementControl>());
+
+builder.Services.AddScoped<iInventoryStatusControl>(sp =>
+    sp.GetRequiredService<InventoryManagementControl>());
+
+builder.Services.AddScoped<iStockSubject>(sp =>
+    sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iAlertControl, LowStockAlertControl>();
 
 // Presentation/Controllers

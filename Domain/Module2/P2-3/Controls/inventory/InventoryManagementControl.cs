@@ -1,18 +1,19 @@
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Data;
-using ProRental.Interfaces.Module2.P2_3;
+using ProRental.Interfaces.Domain;
 
-namespace ProRental.Domain.Module2.P2_3.Controls;
+namespace ProRental.Domain.Controls;
 
 public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQueryControl, iInventoryStatusControl, iStockSubject
 {
-    private readonly ProRental.Interfaces.Data.IInventoryItemMapper _inventoryItemMapper;
+    private readonly IInventoryItemMapper _inventoryItemMapper;
     private readonly List<iStockObserver> _observers = new();
 
-    public InventoryManagementControl(ProRental.Interfaces.Data.IInventoryItemMapper inventoryItemMapper)
+    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers)
     {
         _inventoryItemMapper = inventoryItemMapper ?? throw new ArgumentNullException(nameof(inventoryItemMapper));
+        _observers = observers.ToList();
     }
 
     public bool CreateInventoryItem(int productId, string serialNumber, InventoryStatus status, DateTime? expiryDate)

@@ -1,9 +1,9 @@
 using ProRental.Domain.Enums;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces.Data;
-using ProRental.Interfaces.Module2.P2_3;
+using ProRental.Interfaces.Domain;
 
-namespace ProRental.Domain.Module2.P2_3.Controls;
+namespace ProRental.Domain.Controls;
 
 public class LowStockAlertControl : iAlertControl, iStockObserver
 {

@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
-using ProRental.Interfaces.Module2.P2_3;
+using ProRental.Interfaces.Domain;
 
-namespace ProRental.Controllers.Module2;
+namespace ProRental.Controllers;
 
 [Route("module2/[controller]")]
 public class InventoryAlertsController : Controller
