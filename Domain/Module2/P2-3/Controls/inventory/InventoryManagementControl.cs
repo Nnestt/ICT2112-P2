@@ -192,6 +192,33 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return items.Count(item => item.GetStatus() == status);
     }
 
+    public List<Inventoryitem> GetAllInventoryItems()
+    {
+        return _inventoryItemMapper.FindAll()?.ToList() ?? new List<Inventoryitem>();
+    }
+
+    public List<Inventoryitem> SearchInventoryItems(string query)
+    {
+        var allItems = _inventoryItemMapper.FindAll();
+        if (allItems is null || string.IsNullOrWhiteSpace(query))
+        {
+            return allItems?.ToList() ?? new List<Inventoryitem>();
+        }
+
+        var normalized = query.Trim().ToLower();
+        var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
+
+        var results = allItems.Where(item =>
+            item.GetSerialNumber().ToLower().Contains(normalized) ||
+            (hasNumericQuery && item.GetProductId() == numericQuery) ||
+            (hasNumericQuery && item.GetInventoryItemId() == numericQuery))
+        .ToList();
+
+        return results;
+    }
+
+
+
     public bool UpdateInventoryStatus(int inventoryItemId, InventoryStatus status)
     {
         var item = _inventoryItemMapper.FindById(inventoryItemId);

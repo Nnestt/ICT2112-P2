@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Module2.P2_3;
@@ -10,14 +8,12 @@ namespace ProRental.Controllers.Module2;
 [Route("module2/[controller]")]
 public class StaffInventoryController : Controller
 {
-    private readonly AppDbContext _dbContext;
     private readonly iInventoryCRUDControl _crudControl;
     private readonly iInventoryStatusControl _statusControl;
     private readonly iInventoryQueryControl _queryControl;
 
-    public StaffInventoryController(AppDbContext dbContext, iInventoryCRUDControl crudControl, iInventoryStatusControl statusControl, iInventoryQueryControl queryControl)
+    public StaffInventoryController(iInventoryCRUDControl crudControl, iInventoryStatusControl statusControl, iInventoryQueryControl queryControl)
     {
-        _dbContext = dbContext;
         _crudControl = crudControl;
         _statusControl = statusControl;
         _queryControl = queryControl;
@@ -30,11 +26,7 @@ public class StaffInventoryController : Controller
     {
         try
         {
-            var items = await _dbContext.Inventoryitems
-                .AsNoTracking()
-                .OrderBy(i => EF.Property<int>(i, "Inventoryid"))
-                .ToListAsync();
-
+            var items = _queryControl.GetAllInventoryItems();
             return View("~/Views/Module2/StaffInventory.cshtml", items);
         }
         catch
@@ -45,11 +37,9 @@ public class StaffInventoryController : Controller
     }
 
     [HttpGet("ShowProductDetails/{inventoryItemId:int}")]
-    public async Task<IActionResult> ShowProductDetails(int inventoryItemId)
+    public IActionResult ShowProductDetails(int inventoryItemId)
     {
-        var item = await _dbContext.Inventoryitems
-            .AsNoTracking()
-            .FirstOrDefaultAsync(i => EF.Property<int>(i, "Inventoryid") == inventoryItemId);
+        var item = _crudControl.GetInventoryItemById(inventoryItemId);
 
         if (item is null)
         {
@@ -120,27 +110,11 @@ public class StaffInventoryController : Controller
     }
 
     [HttpGet("HandleSearch")]
-    public async Task<IActionResult> HandleSearch(string? query)
+    public IActionResult HandleSearch(string? query)
     {
         try
         {
-            var inventoryQuery = _dbContext.Inventoryitems.AsNoTracking();
-
-            if (!string.IsNullOrWhiteSpace(query))
-            {
-                var normalized = query.Trim();
-                var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
-
-                inventoryQuery = inventoryQuery.Where(i =>
-                    EF.Property<string>(i, "Serialnumber").Contains(normalized) ||
-                    (hasNumericQuery && EF.Property<int>(i, "Productid") == numericQuery) ||
-                    (hasNumericQuery && EF.Property<int>(i, "Inventoryid") == numericQuery));
-            }
-
-            var items = await inventoryQuery
-                .OrderBy(i => EF.Property<int>(i, "Inventoryid"))
-                .ToListAsync();
-
+            var items = _queryControl.SearchInventoryItems(query ?? "");
             ViewData["Query"] = query;
             return View("~/Views/Module2/StaffInventory.cshtml", items);
         }
@@ -174,23 +148,6 @@ public class StaffInventoryController : Controller
                 return RedirectToAction(nameof(DisplayInventoryList));
             }
 
-            if (string.IsNullOrWhiteSpace(serialNumber) || serialNumber.Length > 255)
-            {
-                TempData["Message"] = "Serial number is required and must not exceed 255 characters.";
-                return RedirectToAction(nameof(DisplayInventoryList));
-            }
-
-            // Check for duplicate serial number
-            var existingSerial = await _dbContext.Inventoryitems
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => EF.Property<string>(i, "Serialnumber").ToLower() == serialNumber.ToLower());
-
-            if (existingSerial is not null)
-            {
-                TempData["Message"] = "An inventory item with this serial number already exists.";
-                return RedirectToAction(nameof(DisplayInventoryList));
-            }
-
             if (_crudControl.CreateInventoryItem(productId, serialNumber, status ?? InventoryStatus.AVAILABLE, expiryDate))
             {
                 TempData["Message"] = "Inventory item created successfully.";
@@ -198,7 +155,7 @@ public class StaffInventoryController : Controller
             }
             else
             {
-                TempData["Message"] = "Failed to create inventory item. Please check the data and try again.";
+                TempData["Message"] = "Failed to create inventory item. Please verify the product ID, serial number format, and ensure no duplicate serial number exists.";
                 return RedirectToAction(nameof(DisplayInventoryList));
             }
         }
@@ -212,9 +169,7 @@ public class StaffInventoryController : Controller
     [HttpGet("UpdateInventoryItem/{inventoryItemId:int}")]
     public IActionResult UpdateInventoryItem(int inventoryItemId)
     {
-        var item = _dbContext.Inventoryitems
-            .AsNoTracking()
-            .FirstOrDefault(i => EF.Property<int>(i, "Inventoryid") == inventoryItemId);
+        var item = _crudControl.GetInventoryItemById(inventoryItemId);
 
         if (item is null)
         {
@@ -244,23 +199,6 @@ public class StaffInventoryController : Controller
                 return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
             }
 
-            if (string.IsNullOrWhiteSpace(serialNumber) || serialNumber.Length > 255)
-            {
-                TempData["Message"] = "Serial number is required and must not exceed 255 characters.";
-                return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
-            }
-
-            // Check for duplicate serial number (excluding current item)
-            var duplicateSerial = await _dbContext.Inventoryitems
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => EF.Property<string>(i, "Serialnumber").ToLower() == serialNumber.ToLower() && EF.Property<int>(i, "Inventoryid") != inventoryItemId);
-
-            if (duplicateSerial is not null)
-            {
-                TempData["Message"] = "Another inventory item with this serial number already exists.";
-                return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
-            }
-
             if (_crudControl.UpdateInventoryItem(inventoryItemId, productId, serialNumber, status ?? InventoryStatus.AVAILABLE, expiryDate))
             {
                 TempData["Message"] = "Inventory item updated successfully.";
@@ -268,7 +206,7 @@ public class StaffInventoryController : Controller
             }
             else
             {
-                TempData["Message"] = "Failed to update inventory item. Please check the data and try again.";
+                TempData["Message"] = "Failed to update inventory item. Please verify the product ID, serial number format, and ensure no duplicate serial number exists.";
                 return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
             }
         }

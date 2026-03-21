@@ -162,6 +162,7 @@ builder.Services.AddScoped<iInventoryCRUDControl, InventoryManagementControl>();
 builder.Services.AddScoped<iInventoryStatusControl, InventoryManagementControl>();
 builder.Services.AddScoped<iInventoryQueryControl, InventoryManagementControl>();
 builder.Services.AddScoped<iStockSubject, InventoryManagementControl>();
+builder.Services.AddScoped<iAlertControl, LowStockAlertControl>();
 
 // Presentation/Controllers
 
