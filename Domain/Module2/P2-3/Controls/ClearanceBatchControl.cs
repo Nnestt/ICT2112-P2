@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Data;
@@ -11,16 +9,13 @@ public class ClearanceBatchControl : iClearanceBatchQuery, iClearanceBatchContro
 {
     private readonly IClearanceBatchMapper _batchMapper;
     private readonly IClearanceItemMapper _itemMapper;
-    private readonly AppDbContext _context;
 
     public ClearanceBatchControl(
         IClearanceBatchMapper batchMapper,
-        IClearanceItemMapper itemMapper,
-        AppDbContext context)
+        IClearanceItemMapper itemMapper)
     {
         _batchMapper = batchMapper;
         _itemMapper = itemMapper;
-        _context = context;
     }
 
     // ── Batch CRUD ─────────────────────────────────────────────────────────────

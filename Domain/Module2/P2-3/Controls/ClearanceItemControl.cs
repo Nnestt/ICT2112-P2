@@ -1,9 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Data;
 using ProRental.Interfaces.Module2;
+using ProRental.Interfaces.Module2.P2_3;
 
 namespace ProRental.Domain.Module2.P23.Controls;
 
@@ -11,8 +10,9 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 {
     private readonly IClearanceItemMapper _itemMapper;
     private readonly IClearanceBatchMapper _batchMapper;
-    private readonly IInventoryItemMapper _inventoryMapper;
-    private readonly AppDbContext _context;
+    private readonly iInventoryCRUDControl _inventoryCRUD;
+    private readonly iInventoryStatusControl _inventoryStatus;
+    private readonly IProductMapper _productMapper;
 
     // Default discount rate for recommended price calculation (30% off retail)
     private const decimal DefaultDiscountRate = 0.30m;
@@ -20,13 +20,15 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
     public ClearanceItemControl(
         IClearanceItemMapper itemMapper,
         IClearanceBatchMapper batchMapper,
-        IInventoryItemMapper inventoryMapper,
-        AppDbContext context)
+        iInventoryCRUDControl inventoryCRUD,
+        iInventoryStatusControl inventoryStatus,
+        IProductMapper productMapper)
     {
         _itemMapper = itemMapper;
         _batchMapper = batchMapper;
-        _inventoryMapper = inventoryMapper;
-        _context = context;
+        _inventoryCRUD = inventoryCRUD;
+        _inventoryStatus = inventoryStatus;
+        _productMapper = productMapper;
     }
 
     // ── Item CRUD ──────────────────────────────────────────────────────────────
@@ -112,8 +114,8 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
             if (batch == null)
                 return false;
 
-            // Verify inventory item exists
-            var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+            // Verify inventory item exists via InventoryManagementControl
+            var inventoryItem = _inventoryCRUD.GetInventoryItemById(inventoryItemId);
             if (inventoryItem == null)
                 return false;
 
@@ -137,9 +139,8 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 
             _itemMapper.Insert(clearanceItem);
 
-            // Update inventory item status to CLEARANCE
-            _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.CLEARANCE;
-            _inventoryMapper.Update(inventoryItem);
+            // Update inventory item status to CLEARANCE via InventoryManagementControl
+            _inventoryStatus.UpdateInventoryStatus(inventoryItemId, InventoryStatus.CLEARANCE);
 
             return true;
         }
@@ -173,14 +174,9 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
             if (item.GetStatus() == ClearanceStatus.SOLD)
                 return false;
 
-            // Revert inventory item status back to AVAILABLE
+            // Revert inventory item status back to AVAILABLE via InventoryManagementControl
             int inventoryItemId = item.GetInventoryItemId();
-            var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
-            if (inventoryItem != null)
-            {
-                _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.AVAILABLE;
-                _inventoryMapper.Update(inventoryItem);
-            }
+            _inventoryStatus.UpdateInventoryStatus(inventoryItemId, InventoryStatus.AVAILABLE);
 
             _itemMapper.Delete(item);
             return true;
@@ -242,13 +238,8 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 
             _itemMapper.Update(item);
 
-            // Update inventory item status to SOLD
-            var inventoryItem = _inventoryMapper.FindById(item.GetInventoryItemId());
-            if (inventoryItem != null)
-            {
-                _context.Entry(inventoryItem).Property("Status").CurrentValue = InventoryStatus.SOLD;
-                _inventoryMapper.Update(inventoryItem);
-            }
+            // Update inventory item status to SOLD via InventoryManagementControl
+            _inventoryStatus.UpdateInventoryStatus(item.GetInventoryItemId(), InventoryStatus.SOLD);
 
             return true;
         }
@@ -280,18 +271,20 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 
     public bool CheckItemEligibility(int inventoryItemId)
     {
-        // Verify the inventory item exists
-        var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+        // Verify the inventory item exists via InventoryManagementControl
+        var inventoryItem = _inventoryCRUD.GetInventoryItemById(inventoryItemId);
         if (inventoryItem == null)
             return false;
 
-        // Check that the item is in AVAILABLE status (not already in maintenance, retired, etc.)
-        var currentStatus = _context.Entry(inventoryItem).Property<InventoryStatus>("Status").CurrentValue;
+        return true;
+
+        // Check that the item is in AVAILABLE status using public accessor
+        var currentStatus = inventoryItem.GetStatus();
         if (currentStatus != InventoryStatus.AVAILABLE)
             return false;
 
         // Check inactivity: item must have been updated more than 24 months ago
-        var lastUpdated = _context.Entry(inventoryItem).Property<DateTime>("Updatedat").CurrentValue;
+        var lastUpdated = inventoryItem.GetUpdatedDate();
         var inactivityThreshold = DateTime.UtcNow.AddMonths(-24);
         if (lastUpdated > inactivityThreshold)
             return false;
@@ -328,21 +321,19 @@ public class ClearanceItemControl : iClearanceItemQuery, iClearanceItemControl
 
     private decimal CalculateRecommendedPriceForInventoryItem(int inventoryItemId)
     {
-        // Look up the product's retail price via the inventory item → product → product detail chain
-        var inventoryItem = _inventoryMapper.FindById(inventoryItemId);
+        // Look up the product's retail price via inventory item → product → product detail
+        var inventoryItem = _inventoryCRUD.GetInventoryItemById(inventoryItemId);
         if (inventoryItem == null)
             return 0m;
 
-        int productId = _context.Entry(inventoryItem).Property<int>("Productid").CurrentValue;
+        int productId = inventoryItem.GetProductId();
 
-        // Query product detail for the retail price
-        var productDetail = _context.Productdetails
-            .FirstOrDefault(pd => EF.Property<int>(pd, "Productid") == productId);
-
-        if (productDetail == null)
+        // Query product via IProductMapper (includes Productdetail composite)
+        var product = _productMapper.FindById(productId);
+        if (product == null || product.Productdetail == null)
             return 0m;
 
-        decimal retailPrice = _context.Entry(productDetail).Property<decimal>("Price").CurrentValue;
+        decimal retailPrice = product.Productdetail.GetPrice();
 
         // Apply the clearance discount (30% off retail price)
         return Math.Round(retailPrice * (1 - DefaultDiscountRate), 2);
