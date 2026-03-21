@@ -15,6 +15,8 @@ namespace ProRental.Data;
  * If a developer needs Products, they must use the IProductMapper.
  * 3. UTC TIMESTAMPS: Always override the "Updateddate" to DateTime.UtcNow 
  * using _context.Entry() during updates to maintain the TIMESTAMPTZ standard.
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -49,20 +51,26 @@ public class CategoryMapper : ICategoryMapper
 
     public void Update(Category category)
     {
-        // RULE: Automatically enforce the TIMESTAMPTZ standard for updates.
-        // We use Entry() to update the private Updateddate property safely without breaking encapsulation.
-        _context.Entry(category).Property("Updateddate").CurrentValue = DateTime.UtcNow;
+        var existing = _context.Categories
+            .FirstOrDefault(c => EF.Property<int>(c, "Categoryid") == category.GetCategoryId());
 
-        _context.Categories.Update(category);
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(category);
+        _context.Entry(existing).Property("Updateddate").CurrentValue = DateTime.UtcNow;
+
         _context.SaveChanges();
     }
 
     public void Delete(Category category)
     {
-        // Note: If this category has associated Products, Entity Framework will throw a 
-        // referential integrity constraint error due to the Restrict deletion behavior 
-        // configured in the DbContext. The products must be reassigned or deleted first.
-        _context.Categories.Remove(category);
-        _context.SaveChanges();
+        var existing = _context.Categories
+            .FirstOrDefault(c => EF.Property<int>(c, "Categoryid") == category.GetCategoryId());
+            
+        if (existing != null)
+        {
+            _context.Categories.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

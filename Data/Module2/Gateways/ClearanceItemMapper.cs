@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs the associated inventory or batch data, they must use those respective mappers.
  * 3. NO AUTO-UPDATEDAT: This specific entity relies on Saledate which is set 
  * when the item is sold. It DOES NOT have an Updatedat field. Do not hallucinate one in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -72,15 +74,24 @@ public class ClearanceItemMapper : IClearanceItemMapper
 
     public void Update(Clearanceitem item)
     {
-        // Note: Finalprice, Saledate, and Status are updated via domain logic methods 
-        // before calling this mapper Update. No automatic timestamping is applied here.
-        _context.Clearanceitems.Update(item);
+        var existing = _context.Clearanceitems
+            .FirstOrDefault(c => EF.Property<int>(c, "Clearanceitemid") == item.GetClearanceItemId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(item);
         _context.SaveChanges();
     }
 
     public void Delete(Clearanceitem item)
     {
-        _context.Clearanceitems.Remove(item);
-        _context.SaveChanges();
+        var existing = _context.Clearanceitems
+            .FirstOrDefault(c => EF.Property<int>(c, "Clearanceitemid") == item.GetClearanceItemId());
+            
+        if (existing != null)
+        {
+            _context.Clearanceitems.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

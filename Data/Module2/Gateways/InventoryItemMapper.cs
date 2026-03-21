@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs those, they must use their respective mappers.
  * 3. UTC TIMESTAMPS: Always override the "Updatedat" to DateTime.UtcNow 
  * using _context.Entry() during updates to maintain the TIMESTAMPTZ standard.
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -65,19 +67,26 @@ public class InventoryItemMapper : IInventoryItemMapper
 
     public void Update(Inventoryitem item)
     {
-        // Automatically enforce the TIMESTAMPTZ standard for updates
-        // We use Entry() to update the private Updatedat property safely
-        _context.Entry(item).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+        var existing = _context.Inventoryitems
+            .FirstOrDefault(i => EF.Property<int>(i, "Inventoryid") == item.GetInventoryItemId());
 
-        _context.Inventoryitems.Update(item);
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(item);
+        _context.Entry(existing).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+
         _context.SaveChanges();
     }
 
     public void Delete(Inventoryitem item)
     {
-        // In reality, you'd likely update the status to 'RETIRED' or 'BROKEN'
-        // using item.UpdateStatus() rather than hard deleting, but this handles the physical delete.
-        _context.Inventoryitems.Remove(item);
-        _context.SaveChanges();
+        var existing = _context.Inventoryitems
+            .FirstOrDefault(i => EF.Property<int>(i, "Inventoryid") == item.GetInventoryItemId());
+            
+        if (existing != null)
+        {
+            _context.Inventoryitems.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }
