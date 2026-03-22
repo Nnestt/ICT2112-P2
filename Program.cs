@@ -1,9 +1,15 @@
 using ProRental.Data.UnitOfWork;
+using ProRental.Data.Module3.P2_1.Gateways;
+using ProRental.Data.Module3.P2_1.Interfaces;
+using ProRental.Data.Module3.P2_1.Mappers;
+using ProRental.Domain.Module3.P2_1.Controls;
+using ProRental.Domain.Module3.P2_1.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Entities;
+using ProRental.Interfaces.Module3.P2_1;
 
 // uncomment when ready to code
 // using ProRental.Data;
@@ -128,8 +134,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Services builder(add your mappers/gateways, controllers, control and interface classes here)
 //Team P2-1
 // Data source
+builder.Services.AddScoped<ITransportMapper, TransportMapper>();
+builder.Services.AddScoped<TruckMapper>();
+builder.Services.AddScoped<ShipMapper>();
+builder.Services.AddScoped<PlaneMapper>();
+builder.Services.AddScoped<TrainMapper>();
+builder.Services.AddScoped<IPricingRuleGateway, PricingRuleGateway>();
 
 // Domain
+builder.Services.AddScoped<IShippingOptionService, ShippingOptionService>();
+builder.Services.AddScoped<IHubCarbonService, HubCarbonService>();
+builder.Services.AddScoped<IRouteDistanceCalculator, RouteDistanceCalculator>();
+builder.Services.AddScoped<ITransportService, TransportationManager>();
+builder.Services.AddScoped<ITransportCarbonService, TransportCarbonManager>();
+builder.Services.AddScoped<TransportationFactory>();
 
 // Presentation/Controllers
 
