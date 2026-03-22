@@ -16,11 +16,11 @@ public partial class Orderitem
                                    DateTime? rentalStart, DateTime? rentalEnd)
     {
         var item = new Orderitem();
-        typeof(Orderitem).GetProperty("Productid")!.SetValue(item, productId);
-        typeof(Orderitem).GetProperty("Quantity")!.SetValue(item, quantity);
-        typeof(Orderitem).GetProperty("Unitprice")!.SetValue(item, unitPrice);
-        typeof(Orderitem).GetProperty("Rentalstartdate")!.SetValue(item, rentalStart);
-        typeof(Orderitem).GetProperty("Rentalenddate")!.SetValue(item, rentalEnd);
+        typeof(Orderitem).GetProperty("Productid",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(item, productId);
+        typeof(Orderitem).GetProperty("Quantity",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(item, quantity);
+        typeof(Orderitem).GetProperty("Unitprice",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(item, unitPrice);
+        typeof(Orderitem).GetProperty("Rentalstartdate",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(item, rentalStart);
+        typeof(Orderitem).GetProperty("Rentalenddate",System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.SetValue(item, rentalEnd);
         return item;
     }
 }

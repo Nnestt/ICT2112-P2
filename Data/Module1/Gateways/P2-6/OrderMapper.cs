@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces.Data;
@@ -15,7 +16,7 @@ public class OrderMapper : IOrderMapper
 
     public void Insert(Order order)
     {
-        _db.Orders.Add(order);   // EF cascades to Orderitems automatically
+        _db.Orders.Add(order);
         _db.SaveChanges();
     }
 
@@ -28,6 +29,8 @@ public class OrderMapper : IOrderMapper
     public Order? FindById(int orderId)
     {
         return _db.Orders
+            .Include(o => o.Orderitems)
+            .Include(o => o.Orderstatushistories)
             .AsEnumerable()
             .FirstOrDefault(o => o.OrderId == orderId);
     }
@@ -35,6 +38,7 @@ public class OrderMapper : IOrderMapper
     public List<Order> FindAll()
     {
         return _db.Orders
+            .Include(o => o.Orderitems)
             .AsEnumerable()
             .ToList();
     }
@@ -42,6 +46,8 @@ public class OrderMapper : IOrderMapper
     public List<Order> FindByCustomer(int customerId)
     {
         return _db.Orders
+            .Include(o => o.Orderitems)
+            .Include(o => o.Orderstatushistories)
             .AsEnumerable()
             .Where(o => o.CustomerId == customerId)
             .ToList();

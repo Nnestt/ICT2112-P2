@@ -185,6 +185,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Team P2-6
 // Data source
 builder.Services.AddScoped<IOrderMapper, OrderMapper>();
+builder.Services.AddScoped<IOrderService, OrderManagementControl>();
+builder.Services.AddScoped<IInventoryService, FakeInventoryService>();
 // Domain
 
 // Presentation/Controllers

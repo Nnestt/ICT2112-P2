@@ -1,0 +1,304 @@
+@model List<ProRental.Domain.Entities.Order>
+@using ProRental.Domain.Enums
+
+@{
+    ViewData["Title"] = "My Orders";
+    int customerId  = ViewBag.CustomerId ?? 1;
+    string activeTab = ViewBag.ActiveTab ?? "all";
+
+    string TabClass(string tab) => tab == activeTab ? "order-tab active" : "order-tab";
+
+    string StatusBadgeClass(OrderStatus? s) => s switch {
+        OrderStatus.PENDING            => "badge-pending",
+        OrderStatus.CONFIRMED          => "badge-confirmed",
+        OrderStatus.PROCESSING         => "badge-processing",
+        OrderStatus.READY_FOR_DISPATCH => "badge-dispatch",
+        OrderStatus.DISPATCHED         => "badge-dispatched",
+        OrderStatus.DELIVERED          => "badge-delivered",
+        OrderStatus.CANCELLED          => "badge-cancelled",
+        _                              => "badge-pending"
+    };
+
+    string StatusLabel(OrderStatus? s) => s switch {
+        OrderStatus.PENDING            => "Pending",
+        OrderStatus.CONFIRMED          => "Confirmed",
+        OrderStatus.PROCESSING         => "Processing",
+        OrderStatus.READY_FOR_DISPATCH => "Ready for Dispatch",
+        OrderStatus.DISPATCHED         => "Dispatched",
+        OrderStatus.DELIVERED          => "Completed",
+        OrderStatus.CANCELLED          => "Cancelled",
+        _                              => "Unknown"
+    };
+
+    bool IsCancellable(OrderStatus? s) =>
+        s == OrderStatus.PENDING || s == OrderStatus.CONFIRMED;
+}
+
+<style>
+    .orders-page { background: #f5f5f5; min-height: 100vh; padding: 24px 0; }
+    .orders-container { max-width: 900px; margin: 0 auto; padding: 0 16px; }
+
+    .page-header { margin-bottom: 20px; }
+    .page-header h2 { font-size: 22px; font-weight: 700; color: #222; margin: 0; }
+    .page-header p { font-size: 13px; color: #888; margin: 4px 0 0; }
+
+    /* Tabs */
+    .tabs-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+    .tabs-row { display: flex; border-bottom: 1px solid #f0f0f0; overflow-x: auto; }
+    .order-tab {
+        padding: 14px 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #666;
+        text-decoration: none;
+        white-space: nowrap;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+    }
+    .order-tab:hover { color: #2d7a4f; background: #f9fffe; }
+    .order-tab.active { color: #2d7a4f; border-bottom-color: #2d7a4f; font-weight: 700; }
+    .tab-count {
+        background: #f0f0f0;
+        border-radius: 10px;
+        padding: 1px 7px;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+    .order-tab.active .tab-count { background: #e8f5ee; color: #2d7a4f; }
+
+    /* Order cards */
+    .order-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        margin-bottom: 12px;
+        overflow: hidden;
+        transition: box-shadow 0.2s;
+    }
+    .order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 1px solid #f5f5f5;
+        background: #fafafa;
+    }
+    .order-meta { font-size: 12px; color: #888; }
+    .order-meta strong { color: #333; margin-right: 12px; }
+
+    /* Status badges */
+    .status-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .badge-pending    { background: #fff8e6; color: #e6a817; }
+    .badge-confirmed  { background: #e8f4ff; color: #2979d9; }
+    .badge-processing { background: #f0eaff; color: #7c4dff; }
+    .badge-dispatch   { background: #fff3e0; color: #e65100; }
+    .badge-dispatched { background: #e3f2fd; color: #1565c0; }
+    .badge-delivered  { background: #e8f5e9; color: #2e7d32; }
+    .badge-cancelled  { background: #fce4e4; color: #c62828; }
+
+    /* Items */
+    .card-items { padding: 0 20px; }
+    .item-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-icon {
+        width: 52px; height: 52px;
+        background: #f0f7f4;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+    .item-info { flex: 1; }
+    .item-name { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 3px; }
+    .item-meta { font-size: 12px; color: #999; }
+    .item-price { font-size: 14px; font-weight: 700; color: #2d7a4f; }
+
+    /* Footer */
+    .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-top: 1px solid #f5f5f5;
+        background: #fafafa;
+    }
+    .order-total-label { font-size: 12px; color: #888; }
+    .order-total-amount { font-size: 18px; font-weight: 800; color: #2d7a4f; }
+
+    .btn-view {
+        background: white;
+        border: 1px solid #2d7a4f;
+        color: #2d7a4f;
+        padding: 7px 18px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-view:hover { background: #2d7a4f; color: white; }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e53935;
+        color: #e53935;
+        padding: 7px 18px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-cancel:hover { background: #e53935; color: white; }
+
+    .btn-create {
+        background: #2d7a4f;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+    .btn-create:hover { background: #245f3e; color: white; }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; color: #888; }
+
+    .rental-dates { font-size: 11px; color: #aaa; margin-top: 2px; }
+</style>
+
+<div class="orders-page">
+    <div class="orders-container">
+
+        <div class="page-header d-flex justify-content-between align-items-start">
+            <div>
+                <h2>My Orders</h2>
+                <p>Customer #@customerId — @Model.Count order(s) shown</p>
+            </div>
+            <a href="/Module1/CreateOrderTest" class="btn-create">+ Test CreateOrder</a>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-card">
+            <div class="tabs-row">
+                <a href="/Module1/Orders?customerId=@customerId&status=all"       class="@TabClass("all")">All <span class="tab-count">@ViewBag.AllCount</span></a>
+                <a href="/Module1/Orders?customerId=@customerId&status=pending"   class="@TabClass("pending")">To Pay <span class="tab-count">@ViewBag.PendingCount</span></a>
+                <a href="/Module1/Orders?customerId=@customerId&status=confirmed" class="@TabClass("confirmed")">To Ship <span class="tab-count">@ViewBag.ConfirmedCount</span></a>
+                <a href="/Module1/Orders?customerId=@customerId&status=dispatch"  class="@TabClass("dispatch")">To Receive <span class="tab-count">@ViewBag.DispatchCount</span></a>
+                <a href="/Module1/Orders?customerId=@customerId&status=delivered" class="@TabClass("delivered")">Completed <span class="tab-count">@ViewBag.DeliveredCount</span></a>
+                <a href="/Module1/Orders?customerId=@customerId&status=cancelled" class="@TabClass("cancelled")">Cancelled <span class="tab-count">@ViewBag.CancelledCount</span></a>
+            </div>
+        </div>
+
+        <!-- Order Cards -->
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="icon">📦</div>
+                <p>No orders found in this category.</p>
+            </div>
+        }
+
+        @foreach (var order in Model)
+        {
+            <div class="order-card">
+                <!-- Card Header -->
+                <div class="card-header">
+                    <div class="order-meta">
+                        <strong>Order #@order.OrderId</strong>
+                        @order.OrderDate.ToString("dd MMM yyyy · HH:mm")
+                    </div>
+                    <span class="status-badge @StatusBadgeClass(order.CurrentStatus)">
+                        @StatusLabel(order.CurrentStatus)
+                    </span>
+                </div>
+
+                <!-- Items -->
+                <div class="card-items">
+                    @if (order.Orderitems.Any())
+                    {
+                        @foreach (var item in order.Orderitems)
+                        {
+                            <div class="item-row">
+                                <div class="item-icon">📷</div>
+                                <div class="item-info">
+                                    <div class="item-name">Product #@item.ProductId</div>
+                                    <div class="item-meta">Qty: @item.OrderedQuantity</div>
+                                    @if (item.RentalStart.HasValue)
+                                    {
+                                        <div class="rental-dates">
+                                            @item.RentalStart.Value.ToString("dd MMM") – @item.RentalEnd?.ToString("dd MMM yyyy")
+                                        </div>
+                                    }
+                                </div>
+                                <div class="item-price">$@item.UnitPrice.ToString("F2")</div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="item-row">
+                            <div class="item-info" style="color:#aaa;font-size:13px;">No items loaded</div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Card Footer -->
+                <div class="card-footer">
+                    <div>
+                        <div class="order-total-label">Order Total</div>
+                        <div class="order-total-amount">$@order.TotalAmount.ToString("F2")</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/Module1/OrderDetail?orderId=@order.OrderId" class="btn-view">View Details</a>
+                        @if (IsCancellable(order.CurrentStatus))
+                        {
+                            <form method="post" action="/Module1/CancelOrder" style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="orderId" value="@order.OrderId" />
+                                <input type="hidden" name="customerId" value="@customerId" />
+                                <button type="submit" class="btn-cancel"
+                                    onclick="return confirm('Cancel order #@order.OrderId?')">
+                                    Cancel
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

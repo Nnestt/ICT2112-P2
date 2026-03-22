@@ -29,14 +29,22 @@ public partial class Order
 
     // ── Factory method ───────────────────────────────────────────────────
     public static Order Create(int customerId, int checkoutId, decimal totalAmount, DeliveryDuration deliveryType)
-    {
-        var order = new Order();
-        typeof(Order).GetProperty("Customerid")!.SetValue(order, customerId);
-        typeof(Order).GetProperty("Checkoutid")!.SetValue(order, checkoutId);
-        typeof(Order).GetProperty("Totalamount")!.SetValue(order, totalAmount);
-        typeof(Order).GetProperty("Orderdate")!.SetValue(order, DateTime.UtcNow);
-        order._status       = OrderStatus.PENDING;
-        order._deliveryType = deliveryType;
-        return order;
-    }
+{
+    var order = new Order();
+    typeof(Order).GetProperty("Customerid",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+        .SetValue(order, customerId);
+    typeof(Order).GetProperty("Checkoutid",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+        .SetValue(order, checkoutId);
+    typeof(Order).GetProperty("Totalamount",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+        .SetValue(order, totalAmount);
+    typeof(Order).GetProperty("Orderdate",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+        .SetValue(order, DateTime.UtcNow);
+    order._status       = OrderStatus.PENDING;
+    order._deliveryType = deliveryType;
+    return order;
+}
 }
