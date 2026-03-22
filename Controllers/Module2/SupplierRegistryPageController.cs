@@ -1,3 +1,4 @@
+// PATH: Controllers\Module2\SupplierRegistryPageController.cs
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +9,12 @@ using ProRental.Interfaces.Module2;
 
 namespace ProRental.Controllers.Module2;
 
-class SupplierRegistryPageController : Controller
+public class SupplierRegistryPageController : Controller  // <-- public added
 {
     private readonly ISupplier _supplier;
     private readonly ISupplierVettingGateway _supplierVettingGateway;
     private readonly IVerifiedSupplierRegistry _verifiedSupplierRegistry;
     private readonly SupplierCategoryChangeLogControl _categoryChangeLogControl;
-
     private string _currentPage = string.Empty;
     private Dictionary<string, string> _requestParams = new();
 
@@ -40,47 +40,39 @@ class SupplierRegistryPageController : Controller
         _currentPage = _requestParams.TryGetValue("page", out var page) ? page : string.Empty;
     }
 
+    // Full view path so MVC finds the view regardless of controller folder
     public IActionResult renderView(string viewName, object model)
     {
-        return View(viewName, model);
+        return View($"~/Views/Module2/{viewName}.cshtml", model);
     }
 
-    public void updateModel(string action, object data)
-    {
-        // Intentionally left as a small extension point for future integration.
-    }
+    public void updateModel(string action, object data) { }
 
-    public object getModelData(string query)
-    {
-        return new { query };
-    }
+    public object getModelData(string query) => new { query };
 
     [HttpGet]
     public IActionResult Index()
     {
         var requestParams = Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString());
         handleRequest(requestParams);
-
         var filter = _requestParams.TryGetValue("filter", out var f) ? f : "all";
-
         List<Supplier> suppliers = filter switch
         {
-            "vetted" => _verifiedSupplierRegistry.getVettedSuppliers(),
+            "vetted"     => _verifiedSupplierRegistry.getVettedSuppliers(),
             "unverified" => _supplierVettingGateway.getUnverifiedSuppliers(),
-            _ => supplierControl.getAllSuppliers()
+            _            => supplierControl.getAllSuppliers()
         };
-
         return renderView("supplierList", suppliers);
     }
 
     [HttpGet]
     public IActionResult Create()
     {
-        var model = new Supplier();
-        return renderView("supplierForm", model);
+        return renderView("supplierForm", new Supplier());
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Create(string name, string details, int creditPeriod, float avgTurnaroundTime)
     {
         try
@@ -92,7 +84,6 @@ class SupplierRegistryPageController : Controller
         {
             TempData["Error"] = "Failed to create supplier.";
         }
-
         return RedirectToAction(nameof(Index));
     }
 
@@ -104,36 +95,41 @@ class SupplierRegistryPageController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Edit(int id, string newDetails)
     {
         supplierControl.editSupplier(id, newDetails);
+        TempData["Success"] = "Supplier updated.";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Delete(int id)
     {
         supplierControl.deleteSupplier(id);
+        TempData["Success"] = "Supplier deleted.";
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Verify(int id, VettingDecision result)
     {
         supplierControl.updateSupplierStatus(id, result);
-        return RedirectToAction(nameof(Index));
+        TempData["Success"] = "Vetting status updated.";
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Categorize(int id, SupplierCategory newCategory, string reason)
     {
         var supplier = supplierControl.getSupplierById(id);
         var previousCategory = supplier.SupplierCategory;
-
         supplierControl.categorizeSupplier(id, newCategory);
         _categoryChangeLogControl.createLog(id, previousCategory, newCategory, reason);
-
-        return RedirectToAction(nameof(Index));
+        TempData["Success"] = "Supplier re-categorised.";
+        return RedirectToAction(nameof(Edit), new { id });
     }
 }
-

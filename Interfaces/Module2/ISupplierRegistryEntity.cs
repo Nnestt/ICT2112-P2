@@ -1,6 +1,6 @@
 namespace ProRental.Interfaces.Module2;
 
-interface ISupplierRegistryEntity
+public interface ISupplierRegistryEntity
 {
     string GetType();
 }

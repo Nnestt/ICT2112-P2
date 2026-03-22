@@ -99,28 +99,6 @@ else
         </div>
 
         <div class="col-lg-5">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="mb-3">Vetting Decision</h5>
-
-                    <form asp-controller="SupplierRegistryPage" asp-action="Verify" asp-route-id="@Model.SupplierID" method="post">
-                        <div class="mb-3">
-                            <label class="form-label">Decision</label>
-                            <select class="form-select" name="result">
-                                @foreach (var decision in Enum.GetValues<VettingDecision>())
-                                {
-                                    <option value="@decision" selected="@(Model.VettingResult == decision)">
-                                        @decision
-                                    </option>
-                                }
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-check2-circle me-2"></i>Verify
-                        </button>
-                    </form>
-                </div>
-            </div>
 
             <div class="card shadow-sm">
                 <div class="card-body">

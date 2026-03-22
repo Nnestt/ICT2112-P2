@@ -252,19 +252,41 @@ public partial class AppDbContext
                   .HasColumnName("eventtype").HasColumnType("access_event_type");
         });
 
-        modelBuilder.Entity<Supplier>(entity =>
-        {
-            entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("category").HasColumnType("supplier_category_enum");
+            //   modelBuilder.Entity<Supplier>(entity =>
+            //   {
+            //       entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("category").HasColumnType("supplier_category_enum");
 
-            entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            //       entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            //   });
+      
+      modelBuilder.Entity<Supplier>(entity =>
+        {
+            entity.Property<SupplierCategory?>("Suppliercategory")
+                  .HasColumnName("suppliercategory")
+                  .HasColumnType("supplier_category_enum");
+ 
+            entity.Property<VettingResult?>("Vettingresult")
+                  .HasColumnName("vettingresult")
+                  .HasColumnType("vetting_result_enum");
         });
 
-        modelBuilder.Entity<Suppliercategorychangelog>(entity =>
+            //   modelBuilder.Entity<Suppliercategorychangelog>(entity =>
+            //   {
+            //       entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("category").HasColumnType("supplier_category_enum");
+            //   });
+      
+      modelBuilder.Entity<Suppliercategorychangelog>(entity =>
         {
-            entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("category").HasColumnType("supplier_category_enum");
+            entity.Property<SupplierCategory?>("Previouscategory")
+                  .HasColumnName("previouscategory")
+                  .HasColumnType("supplier_category_enum");
+ 
+            entity.Property<SupplierCategory?>("Newcategory")
+                  .HasColumnName("newcategory")
+                  .HasColumnType("supplier_category_enum");
         });
 
         modelBuilder.Entity<Transaction>(entity =>

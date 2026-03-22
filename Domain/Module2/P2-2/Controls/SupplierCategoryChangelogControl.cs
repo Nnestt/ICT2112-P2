@@ -8,7 +8,7 @@ using ProRental.Domain.Module2.P2_2.Factories;
 
 namespace ProRental.Domain.Module2.P2_2.Controls;
 
-class SupplierCategoryChangeLogControl
+public class SupplierCategoryChangeLogControl
 {
     private readonly ICategoryChangeLogMapper _logMapper;
     private readonly SupplierRegistryFactory _factory;

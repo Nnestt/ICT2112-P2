@@ -4,7 +4,7 @@ using ProRental.Interfaces.Module2;
 
 namespace ProRental.Domain.Module2.P2_2.Factories;
 
-class SupplierRegistryFactory
+public class SupplierRegistryFactory
 {
     public ISupplierRegistryEntity createSupplierRegistryEntity(string type)
     {

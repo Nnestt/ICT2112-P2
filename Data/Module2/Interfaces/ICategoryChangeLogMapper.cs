@@ -3,7 +3,7 @@ using ProRental.Domain.Module2.P2_2.Entities;
 
 namespace ProRental.Data.Module2.Interfaces;
 
-interface ICategoryChangeLogMapper
+public interface ICategoryChangeLogMapper
 {
     void insertCategoryChangeLog(SupplierCategoryChangeLog log);
     void updateCategoryChangeLog(SupplierCategoryChangeLog log);

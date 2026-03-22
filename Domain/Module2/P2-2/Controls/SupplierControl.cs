@@ -8,7 +8,7 @@ using ProRental.Interfaces.Module2;
 
 namespace ProRental.Domain.Module2.P2_2.Controls;
 
-class SupplierControl : ISupplier, IVerifiedSupplierRegistry, ISupplierVettingGateway
+public class SupplierControl : ISupplier, IVerifiedSupplierRegistry, ISupplierVettingGateway
 {
     private readonly ISupplierMapper _supplierMapper;
     private readonly ICategoryChangeLogMapper _categoryChangeLogMapper;
