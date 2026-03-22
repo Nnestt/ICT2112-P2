@@ -142,6 +142,9 @@ builder.Services.AddScoped<TrainMapper>();
 builder.Services.AddScoped<IPricingRuleGateway, PricingRuleGateway>();
 
 // Domain
+builder.Services.AddScoped<IShippingOptionService, ShippingOptionService>();
+builder.Services.AddScoped<IHubCarbonService, HubCarbonService>();
+builder.Services.AddScoped<IRouteDistanceCalculator, RouteDistanceCalculator>();
 builder.Services.AddScoped<ITransportService, TransportationManager>();
 builder.Services.AddScoped<ITransportCarbonService, TransportCarbonManager>();
 builder.Services.AddScoped<TransportationFactory>();

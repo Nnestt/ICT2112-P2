@@ -1,8 +1,8 @@
-using ProRental.Domain.Enums;
+using ProRental.Domain.Module3.P2_1.Models;
 
 namespace ProRental.Interfaces.Module3.P2_1;
 
 public interface IShippingOptionService
 {
-    (IEnumerable<TransportMode> TransportModes, IEnumerable<double> DistancesKm) GetRouteCarbonInputs(int shippingOptionId);
+    ShippingOptionCarbonInput GetRouteCarbonInput(int shippingOptionId);
 }

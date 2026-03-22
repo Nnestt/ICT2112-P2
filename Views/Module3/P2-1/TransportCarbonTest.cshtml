@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Transport Carbon Test";
+}
+
+<div class="container py-4">
+    <h2 class="mb-3">Transport Carbon Test Harness</h2>
+    <p class="text-muted">Use test shipping option IDs <code>1</code>, <code>2</code>, or <code>3</code>.</p>
+
+    <form method="get" action="/module3/p2-1/transport-carbon/test" class="row g-3">
+        <div class="col-md-4">
+            <label for="shippingOptionId" class="form-label">Shipping Option ID</label>
+            <input id="shippingOptionId" name="shippingOptionId" type="number" class="form-control" value="1" min="1" required />
+        </div>
+        <div class="col-md-4">
+            <label for="weightKg" class="form-label">Weight (kg)</label>
+            <input id="weightKg" name="weightKg" type="number" step="0.01" class="form-control" value="2" min="0" required />
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Calculate</button>
+        </div>
+    </form>
+
+    <div class="mt-4">
+        <p class="mb-1"><strong>Expected sample outputs</strong></p>
+        <ul>
+            <li><code>shippingOptionId=1</code>, <code>weightKg=2</code> should return <code>35</code> if pricing rules are 0.5, 0.1, 0.5.</li>
+            <li><code>shippingOptionId=2</code>, <code>weightKg=1</code> should return based on the plane pricing rule for <code>30 km</code>.</li>
+            <li><code>shippingOptionId=3</code>, <code>weightKg=4</code> should return based on train and truck pricing rules for <code>20 km</code> and <code>8 km</code>.</li>
+        </ul>
+    </div>
+</div>
