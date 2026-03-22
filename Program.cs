@@ -163,38 +163,27 @@ builder.Services.AddScoped<ILoanItemMapper, LoanItemMapper>();
 builder.Services.AddScoped<ILoanListMapper, LoanListMapper>();
 
 // Domain - Control Classes
+// Inventory
 builder.Services.AddScoped<InventoryManagementControl>();
-
-builder.Services.AddScoped<iInventoryCRUDControl>(sp =>
-    sp.GetRequiredService<InventoryManagementControl>());
-
-builder.Services.AddScoped<iInventoryQueryControl>(sp =>
-    sp.GetRequiredService<InventoryManagementControl>());
-
-builder.Services.AddScoped<iInventoryStatusControl>(sp =>
-    sp.GetRequiredService<InventoryManagementControl>());
-
-builder.Services.AddScoped<iStockSubject>(sp =>
-    sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iInventoryCRUDControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iInventoryQueryControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iInventoryStatusControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iStockSubject>(sp => sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iAlertControl, LowStockAlertControl>();
 
+//Product
 builder.Services.AddScoped<ProductCatalogControl>();
 builder.Services.AddScoped<IProductCRUD>(sp => sp.GetRequiredService<ProductCatalogControl>());
 builder.Services.AddScoped<IProductQuery>(sp => sp.GetRequiredService<ProductCatalogControl>());
 builder.Services.AddScoped<IProductBulkCommand>(sp => sp.GetRequiredService<ProductCatalogControl>());
-// Domain
-// builder.Services.AddScoped<InventoryManagementControl>();
-// builder.Services.AddScoped<iInventoryCRUDControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
-// builder.Services.AddScoped<iInventoryStatusControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
-// builder.Services.AddScoped<iInventoryQueryControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
-builder.Services.AddScoped<ProductCatalogControl>();
-builder.Services.AddScoped<IProductQuery>(sp => sp.GetRequiredService<ProductCatalogControl>());
-builder.Services.AddScoped<IProductCRUD>(sp => sp.GetRequiredService<ProductCatalogControl>());
-builder.Services.AddScoped<IProductBulkCommand>(sp => sp.GetRequiredService<ProductCatalogControl>());
-builder.Services.AddScoped<iClearanceBatchControl, ClearanceBatchControl>();
-builder.Services.AddScoped<iClearanceBatchQuery, ClearanceBatchControl>();
-builder.Services.AddScoped<iClearanceItemControl, ClearanceItemControl>();
-builder.Services.AddScoped<iClearanceItemQuery, ClearanceItemControl>();
+
+// Clearance
+builder.Services.AddScoped<ClearanceBatchControl>();
+builder.Services.AddScoped<iClearanceBatchControl>(sp => sp.GetRequiredService<ClearanceBatchControl>());
+builder.Services.AddScoped<iClearanceBatchQuery>(sp => sp.GetRequiredService<ClearanceBatchControl>());
+builder.Services.AddScoped<ClearanceItemControl>();
+builder.Services.AddScoped<iClearanceItemControl>(sp => sp.GetRequiredService<ClearanceItemControl>());
+builder.Services.AddScoped<iClearanceItemQuery>(sp => sp.GetRequiredService<ClearanceItemControl>());
 
 // Presentation/Controllers
 
