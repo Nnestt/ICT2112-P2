@@ -1,22 +1,22 @@
 @*
     =========================================================================
-    ProRental — Shared Layout  (_Layout.cshtml)
+    ProRental - Shared Layout (_Layout.cshtml)
     =========================================================================
 
     STRUCTURE OVERVIEW
     ------------------
-    <head>          CSS (Bootstrap → Bootstrap Icons → site.css), viewport meta
-    <header>        Top navbar — add new nav-item links here for new sections
-    <div.container> Main content area — @RenderBody() injects each view here
-    <footer>        Sticky footer — markup stays simple, styled via site.css
-    Scripts block   jQuery → Bootstrap JS → site.js → @section Scripts{}
+    <head>          CSS (Bootstrap -> Bootstrap Icons -> site.css), viewport meta
+    <header>        Top navbar - add new nav-item links here for new sections
+    <div.container> Main content area - RenderBody injects each view here
+    <footer>        Sticky footer - markup stays simple, styled via site.css
+    Scripts block   jQuery -> Bootstrap JS -> site.js -> @section Scripts{}
 
     DESIGN RULES FOR DEVELOPERS
     ---------------------------
-    1. Bootstrap 5.3 utility classes ONLY inside views — no inline styles.
+    1. Bootstrap 5.3 utility classes ONLY inside views - no inline styles.
     2. Brand colour and CSS variable overrides live in wwwroot/css/site.css.
        Do NOT hardcode colour values (#hex / rgb) in views or here.
-    3. Icons: use Bootstrap Icons — class="bi bi-<name>".
+    3. Icons: use Bootstrap Icons - class="bi bi-<name>".
        Full icon reference: https://icons.getbootstrap.com/
     4. The .container wrapper here provides the page's outer padding/max-width.
        Do NOT add another .container inside individual view files.
@@ -31,18 +31,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ProRental</title>
 
-    <!-- CSS load order: Bootstrap base → Bootstrap Icons → project overrides -->
-    <!-- 1. Bootstrap 5.3.3 — grid, components, utilities (local via libman) -->
+    <!-- CSS load order: Bootstrap base -> Bootstrap Icons -> project overrides -->
+    <!-- 1. Bootstrap 5.3.3 - grid, components, utilities (local via libman) -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- 2. Bootstrap Icons 1.11.3 — use class="bi bi-<name>" in any view -->
+    <!-- 2. Bootstrap Icons 1.11.3 - use class="bi bi-<name>" in any view -->
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" asp-append-version="true" />
-    <!-- 3. site.css — brand theme (eco-green) + project-specific overrides -->
+    <!-- 3. site.css - brand theme (eco-green) + project-specific overrides -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
 
     <!-- ================================================================
-         NAVBAR — Top navigation bar
+         NAVBAR - Top navigation bar
          Add new <li class="nav-item"> entries here to extend the nav menu.
          See Bootstrap Navbar docs: https://getbootstrap.com/docs/5.3/components/navbar/
          ================================================================ -->
@@ -69,8 +69,9 @@
     </header>
 
     <!-- ================================================================
-         MAIN CONTENT — Individual view output is injected here via @RenderBody().
-         Do NOT add additional containers or wrappers inside view files.
+         MAIN CONTENT - Individual view output is injected into the
+         main element below. Do NOT add additional containers or wrappers
+         inside view files.
          ================================================================ -->
     <div class="container">
         <main role="main" class="pb-3">
@@ -79,7 +80,7 @@
     </div>
 
     <!-- ================================================================
-         FOOTER — Sticky footer (pinned to bottom via site.css .footer rules)
+         FOOTER - Sticky footer (pinned to bottom via site.css .footer rules)
          ================================================================ -->
     <footer class="border-top footer text-muted">
         <div class="container">
@@ -88,7 +89,7 @@
     </footer>
 
     <!-- ================================================================
-         SCRIPTS — Load order matters; do not rearrange these.
+         SCRIPTS - Load order matters; do not rearrange these.
          jQuery must come before Bootstrap JS.
          Add view-specific scripts via @@section Scripts { } in the view file.
          ================================================================ -->

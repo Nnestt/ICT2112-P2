@@ -6,5 +6,6 @@ public partial class CustomerChoice
 {
     private PreferenceType? _preferenceType;
     private PreferenceType? PreferenceType { get => _preferenceType; set => _preferenceType = value; }
+    public PreferenceType? GetPreferenceType() => _preferenceType;
     public void UpdatePreferenceType(PreferenceType newValue) => _preferenceType = newValue;
 }

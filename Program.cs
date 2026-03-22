@@ -2,8 +2,10 @@ using ProRental.Data.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
+using ProRental.Configuration.Module3.P2_1;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Entities;
+using ProRental.Testing;
 
 // uncomment when ready to code
 // using ProRental.Data;
@@ -14,6 +16,12 @@ using ProRental.Domain.Entities;
 // using ProRental.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (args.Length > 0 && string.Equals(args[0], "--phase-tests", StringComparison.OrdinalIgnoreCase))
+{
+    Environment.ExitCode = await PhaseTestRunner.RunAsync(args.Skip(1).ToArray());
+    return;
+}
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -130,6 +138,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Services builder(add your mappers/gateways, controllers, control and interface classes here)
 //Team P2-1
 // Data source
+builder.Services.AddFeature1Services();
 
 // Domain
 

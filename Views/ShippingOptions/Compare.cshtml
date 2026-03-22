@@ -1,0 +1,40 @@
+@model IReadOnlyList<ProRental.Models.Module3.P2_1.ShippingOptionSummary>
+@{
+    ViewData["Title"] = "Compare Shipping Options";
+}
+
+<section class="py-4">
+    <div class="mb-4">
+        <p class="text-uppercase text-muted small mb-1">Checkout</p>
+        <h1 class="h3 mb-1">Compare shipping options</h1>
+        <p class="text-muted mb-0">The same three choices are ranked across time, cost, and carbon.</p>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Preference</th>
+                    <th>Display Name</th>
+                    <th class="text-end">Cost</th>
+                    <th class="text-end">Delivery Days</th>
+                    <th class="text-end">Carbon (kg CO2)</th>
+                    <th>Transport</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var option in Model)
+                {
+                    <tr>
+                        <td>@option.PreferenceType</td>
+                        <td>@option.DisplayName</td>
+                        <td class="text-end">@option.Cost.ToString("C")</td>
+                        <td class="text-end">@option.DeliveryDays</td>
+                        <td class="text-end">@option.CarbonFootprintKg.ToString("0.##")</td>
+                        <td>@option.TransportModeLabel</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
