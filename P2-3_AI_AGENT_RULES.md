@@ -34,9 +34,17 @@ Place new files exactly in these directories.
 * **Views:** `Views/Home/` AND `Views/Module2/`
 * **Program Registration:** `Program.cs` (Root directory)
 
-## 5. CODE REVIEW CHECKLIST FOR AI AGENTS
+## 6. DATETIME & TIMESTAMPTZ HANDLING (STRICT POSTGRESQL RULES)
+PostgreSQL strictly enforces time zones. You MUST follow these rules to prevent Npgsql conversion crashes:
+* **The Rule of UTC:** NEVER use `DateTime.Now`. All internal system times must be generated using `DateTime.UtcNow`.
+* **User Input (Forms/Views):** Any `DateTime` received from an HTTP request or form submission MUST be explicitly forced to UTC before sending it to a Mapper or Domain Control. You must use `DateTime.SpecifyKind(dateVariable, DateTimeKind.Utc)` or `.ToUniversalTime()`.
+* **Calculations:** Perform all date math (duration, expiry, overdue checks) strictly in UTC.
+* **Displaying to Users:** Only convert UTC dates to local time at the very last step in the Presentation Layer (inside the Razor View or Controller) using `.ToLocalTime()` or standard formatting strings.
+
+## 6. CODE REVIEW CHECKLIST FOR AI AGENTS
 Before generating or finalizing code, verify:
 1. Did I bypass the Domain layer by putting DbContext in a Controller? (If yes, rewrite).
 2. Did I use `entity.Name` instead of `entity.GetName()` or `_name`? (If yes, rewrite).
 3. Did I put a new interface in the `ProRental.Data` namespace instead of `ProRental.Interfaces.Data`? (If yes, fix the namespace).
 4. Did I modify a scaffolded entity instead of the partial class in `P2-3`? (If yes, move the code).
+5. Did I use `DateTime.Now` or pass an unspecified DateTime to the database instead of enforcing `DateTime.UtcNow` or `DateTimeKind.Utc`? (If yes, rewrite).
