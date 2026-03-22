@@ -7,6 +7,9 @@
     var productTrendJson = JsonSerializer.Serialize(Model?.ProductTrendline ?? [], jsonOptions);
     var productBarJson = JsonSerializer.Serialize(Model?.ProductBarChart ?? [], jsonOptions);
     var productPieJson = JsonSerializer.Serialize(Model?.ProductPieChart ?? [], jsonOptions);
+    var staffTrendJson = JsonSerializer.Serialize(Model?.StaffTrendline ?? [], jsonOptions);
+    var staffBarJson = JsonSerializer.Serialize(Model?.StaffBarChart ?? [], jsonOptions);
+    var staffPieJson = JsonSerializer.Serialize(Model?.StaffPieChart ?? [], jsonOptions);
     var trendJson = JsonSerializer.Serialize(Model?.BuildingTrendline ?? [], jsonOptions);
     var barJson = JsonSerializer.Serialize(Model?.BuildingBarChart ?? [], jsonOptions);
     var pieJson = JsonSerializer.Serialize(Model?.BuildingPieChart ?? [], jsonOptions);
@@ -167,6 +170,12 @@
                             <strong>Product bars:</strong> @(Model?.ProductBarChart.Count ?? 0)
                         </div>
                         <div class="col-md-3">
+                            <strong>Staff trend:</strong> @(Model?.StaffTrendline.Count ?? 0)
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Staff bars:</strong> @(Model?.StaffBarChart.Count ?? 0)
+                        </div>
+                        <div class="col-md-3">
                             <strong>Trend points:</strong> @(Model?.BuildingTrendline.Count ?? 0)
                         </div>
                         <div class="col-md-3">
@@ -239,27 +248,21 @@
             <div class="card chart-card mb-4">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-1">Staff Carbon Charts</h2>
-                    <p class="text-muted mb-4">Staff trendline, staff bar chart, and staff pie chart placeholders.</p>
+                    <p class="text-muted mb-4">Live charts from `StaffFootprint.time` and `totalStaffCo2`.</p>
                     <div class="row g-4">
                         <div class="col-lg-12">
-                            <div class="chart-shell">
-                                <i class="bi bi-graph-up"></i>
-                                <div>Staff Carbon Trendline</div>
-                                <small class="text-muted">Use `StaffFootprint.time` with `SUM(totalStaffCo2)` over time.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-lg">
+                                <canvas id="staffTrendlineChart"></canvas>
                             </div>
                         </div>
                         <div class="col-lg-7">
-                            <div class="chart-shell">
-                                <i class="bi bi-bar-chart-line"></i>
-                                <div>Staff Bar Chart</div>
-                                <small class="text-muted">Compare emissions by staff member, team, or shift.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-md">
+                                <canvas id="staffBarChart"></canvas>
                             </div>
                         </div>
                         <div class="col-lg-5">
-                            <div class="chart-shell">
-                                <i class="bi bi-pie-chart"></i>
-                                <div>Staff Pie Chart</div>
-                                <small class="text-muted">Show proportional staff contribution to total footprint.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-md">
+                                <canvas id="staffPieChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -269,7 +272,7 @@
             <div class="card chart-card">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-1">Carbon Hotspot Chart</h2>
-                    <p class="text-muted mb-4">Top building emission hotspots ranked by average room CO2.</p>
+                    <p class="text-muted mb-4">Summary of total carbon footprint across product, building, and staff.</p>
                     <div class="chart-canvas-wrap chart-canvas-wrap-hotspot">
                         <canvas id="hotspotChart"></canvas>
                     </div>
@@ -349,6 +352,9 @@
         const productTrendData = @Html.Raw(productTrendJson);
         const productBarData = @Html.Raw(productBarJson);
         const productPieData = @Html.Raw(productPieJson);
+        const staffTrendData = @Html.Raw(staffTrendJson);
+        const staffBarData = @Html.Raw(staffBarJson);
+        const staffPieData = @Html.Raw(staffPieJson);
         const trendData = @Html.Raw(trendJson);
         const barData = @Html.Raw(barJson);
         const pieData = @Html.Raw(pieJson);
@@ -358,6 +364,9 @@
             productTrendData,
             productBarData,
             productPieData,
+            staffTrendData,
+            staffBarData,
+            staffPieData,
             trendData,
             barData,
             pieData,
@@ -609,12 +618,111 @@
             }
         });
 
+        new Chart(document.getElementById('staffTrendlineChart'), {
+            type: 'line',
+            data: {
+                labels: staffTrendData.map(item => item.label),
+                datasets: [{
+                    data: staffTrendData.map(item => item.value),
+                    borderColor: '#5b8e7d',
+                    backgroundColor: 'rgba(91, 142, 125, 0.18)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('staffBarChart'), {
+            type: 'bar',
+            data: {
+                labels: staffBarData.map(item => item.label),
+                datasets: [{
+                    data: staffBarData.map(item => item.value),
+                    backgroundColor: palette,
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Staff', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { display: false }
+                    },
+                    y: {
+                        title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('staffPieChart'), {
+            type: 'doughnut',
+            plugins: [piePercentagePlugin],
+            data: {
+                labels: staffPieData.map(item => item.label),
+                datasets: [{
+                    data: staffPieData.map(item => item.value),
+                    backgroundColor: palette,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label(context) {
+                                const value = Number(context.raw ?? 0);
+                                const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0);
+                                const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return `${context.label}: ${value} CO2 (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
         new Chart(document.getElementById('hotspotChart'), {
             type: 'bar',
             data: {
                 labels: hotspotData.map(item => item.label),
                 datasets: [{
-                    label: 'Average Room CO2',
                     data: hotspotData.map(item => item.value),
                     backgroundColor: ['#ff9f1c', '#ffbf69', '#2ec4b6', '#5b8e7d', '#1a936f'],
                     borderRadius: 10
@@ -629,13 +737,13 @@
                 },
                 scales: {
                     x: {
-                        title: { display: true, text: 'Average CO2', color: chartTextColor, font: axisTitleFont },
+                        title: { display: true, text: 'Total CO2', color: chartTextColor, font: axisTitleFont },
                         ticks: { color: chartTextColor, font: tickFont },
                         grid: { color: gridColor },
                         beginAtZero: true
                     },
                     y: {
-                        title: { display: true, text: 'Room', color: chartTextColor, font: axisTitleFont },
+                        title: { display: true, text: 'Segment', color: chartTextColor, font: axisTitleFont },
                         ticks: { color: chartTextColor, font: tickFont },
                         grid: { display: false }
                     }

@@ -8,13 +8,16 @@ public sealed class CarbonChartControl : ICarbonChartService
 {
     private readonly IBuildingFootprintGateway _buildingFootprintGateway;
     private readonly IProductFootprintGateway _productFootprintGateway;
+    private readonly IStaffFootprintGateway _staffFootprintGateway;
 
     public CarbonChartControl(
         IBuildingFootprintGateway buildingFootprintGateway,
-        IProductFootprintGateway productFootprintGateway)
+        IProductFootprintGateway productFootprintGateway,
+        IStaffFootprintGateway staffFootprintGateway)
     {
         _buildingFootprintGateway = buildingFootprintGateway;
         _productFootprintGateway = productFootprintGateway;
+        _staffFootprintGateway = staffFootprintGateway;
     }
 
     public List<ChartData> Hotspots { get; private set; } = [];
@@ -41,10 +44,15 @@ public sealed class CarbonChartControl : ICarbonChartService
 
     public CarbonDashboardViewModel BuildDashboardViewModel()
     {
-        IdentifyHotspots("room");
-
         var productGraphData = _productFootprintGateway.GetProductGraphData();
         var buildingGraphData = CreateGraphs();
+        var staffGraphData = _staffFootprintGateway.GetStaffGraphData();
+        Hotspots =
+        [
+            new ChartData("Product", Math.Round(productGraphData.Sum(item => item.Value), 2)),
+            new ChartData("Building", Math.Round(buildingGraphData.Sum(item => item.Value), 2)),
+            new ChartData("Staff", Math.Round(staffGraphData.Sum(item => item.Value), 2))
+        ];
 
         return new CarbonDashboardViewModel
         {
@@ -54,6 +62,9 @@ public sealed class CarbonChartControl : ICarbonChartService
             BuildingTrendline = CreateCharts(),
             BuildingBarChart = buildingGraphData,
             BuildingPieChart = buildingGraphData,
+            StaffTrendline = _staffFootprintGateway.GetHourlyChartData(),
+            StaffBarChart = staffGraphData,
+            StaffPieChart = staffGraphData,
             Hotspots = GetHotspots()
         };
     }

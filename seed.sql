@@ -3,6 +3,7 @@ TRUNCATE
     Category, "User", TransactionLog, Supplier, PurchaseOrder, 
     transportation_hub, transport, pricing_rule, carbon_result, 
     product_return, Analytics, PackagingMaterial, BuildingFootprint, EcoBadge, ProductFootprint,
+    StaffAccessLog, StaffFootprint,
     "transaction", "Order", Checkout, Cart, CartItem,
     Session, Payment, Deposit, replenishmentrequest, LoanList, ReturnRequest, ClearanceBatch 
 RESTART IDENTITY CASCADE;
@@ -579,6 +580,17 @@ INSERT INTO ProductFootprint (productID, badgeId, productToxicPercentage, totalC
 (2, 2, 4.9, 172.8, '2026-03-21 08:00:00+08'),
 (3, 1, 2.6, 118.3, '2026-03-22 08:00:00+08');
 
+--StaffAccessLog--
+INSERT INTO StaffAccessLog (staffId, eventTime, eventType) VALUES
+(1, '2026-03-20 08:30:00+08', 'IN'),
+(2, '2026-03-21 08:45:00+08', 'IN'),
+(3, '2026-03-22 09:00:00+08', 'IN');
+
+--StaffFootprint--
+INSERT INTO StaffFootprint (staffId, time, hoursWorked, totalStaffCo2) VALUES
+(1, '2026-03-20 12:00:00+08', 4.0, 14.2),
+(2, '2026-03-21 12:00:00+08', 3.5, 12.8),
+(3, '2026-03-22 12:00:00+08', 5.0, 16.9);
 
 --Packaging Material--
 INSERT INTO PackagingMaterial (name, type, recyclable, reusable)

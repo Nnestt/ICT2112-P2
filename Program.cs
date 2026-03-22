@@ -165,6 +165,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Data source
 builder.Services.AddScoped<IBuildingFootprintGateway, BuildingFootprintGateway>();
 builder.Services.AddScoped<IProductFootprintGateway, ProductFootprintGateway>();
+builder.Services.AddScoped<IStaffFootprintGateway, StaffFootprintGateway>();
 
 // Domain
 builder.Services.AddScoped<ICarbonChartService, CarbonChartControl>();
