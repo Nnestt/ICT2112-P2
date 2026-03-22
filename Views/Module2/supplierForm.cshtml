@@ -1,0 +1,154 @@
+@using ProRental.Domain.Enums
+@model ProRental.Domain.Module2.P2_2.Entities.Supplier
+
+@{
+    var isCreateMode = Model.SupplierID == 0;
+    ViewData["Title"] = isCreateMode ? "Create Supplier" : $"Edit Supplier #{Model.SupplierID}";
+}
+
+<div class="mb-3">
+    <h2 class="mb-1">@ViewData["Title"]</h2>
+    <div class="text-muted">
+        <a asp-controller="SupplierRegistryPage" asp-action="Index">Back to suppliers</a>
+    </div>
+</div>
+
+@if (isCreateMode)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form asp-controller="SupplierRegistryPage" asp-action="Create" method="post">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Name</label>
+                        <input class="form-control" name="name" type="text" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">CreditPeriod</label>
+                        <input class="form-control" name="creditPeriod" type="number" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Details</label>
+                        <input class="form-control" name="details" type="text" maxlength="500" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">AvgTurnaroundTime</label>
+                        <input class="form-control" name="avgTurnaroundTime" type="number" step="0.01" required />
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-circle me-2"></i>Create
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <form asp-controller="SupplierRegistryPage" asp-action="Edit" asp-route-id="@Model.SupplierID" method="post">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Details</label>
+                                <input class="form-control" name="newDetails" type="text" maxlength="500" value="@Model.Details" required />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">SupplierID</label>
+                                <input class="form-control" type="text" value="@Model.SupplierID" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Name</label>
+                                <input class="form-control" type="text" value="@Model.Name" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">CreditPeriod</label>
+                                <input class="form-control" type="text" value="@Model.CreditPeriod" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">AvgTurnaroundTime</label>
+                                <input class="form-control" type="text" value="@Model.AvgTurnaroundTime" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                <input class="form-control" type="text" value="@Model.SupplierCategory" disabled />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">IsVerified</label>
+                                <input class="form-control" type="text" value="@(Model.IsVerified ? "Verified" : "Unverified")" disabled />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">VettingResult</label>
+                                <input class="form-control" type="text" value="@Model.VettingResult" disabled />
+                            </div>
+
+                            <div class="col-12 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-2"></i>Save Details
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="mb-3">Vetting Decision</h5>
+
+                    <form asp-controller="SupplierRegistryPage" asp-action="Verify" asp-route-id="@Model.SupplierID" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Decision</label>
+                            <select class="form-select" name="result">
+                                @foreach (var decision in Enum.GetValues<VettingDecision>())
+                                {
+                                    <option value="@decision" selected="@(Model.VettingResult == decision)">
+                                        @decision
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check2-circle me-2"></i>Verify
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">Re-categorise</h5>
+
+                    <form asp-controller="SupplierRegistryPage" asp-action="Categorize" asp-route-id="@Model.SupplierID" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">New Category</label>
+                            <select class="form-select" name="newCategory">
+                                @foreach (var category in Enum.GetValues<SupplierCategory>())
+                                {
+                                    <option value="@category" selected="@(Model.SupplierCategory == category)">
+                                        @category
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <textarea class="form-control" name="reason" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-arrow-repeat me-2"></i>Categorize
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
