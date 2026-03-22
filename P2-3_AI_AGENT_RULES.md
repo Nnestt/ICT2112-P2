@@ -11,7 +11,7 @@
 * **SCAFFOLDED ENTITIES:** Files inside `Domain/Entities/` are auto-generated. **DO NOT EDIT THEM.**
 * **MANUAL PARTIALS:** All custom entity logic MUST go into `Domain/P2-3/Entities/`.
 * **ENCAPSULATION RULE:** Entity properties with capitalized names (e.g., `Name`, `Status`) are strictly for EF Core mapping. Business logic and controllers MUST use the private backing fields (e.g., `_name`) or the custom getter/setter methods defined in the manual partial classes (e.g., `.GetName()`, `.UpdateStatus()`).
-* **DB CONTEXT:** `Data/UnitOfWork/AppDbContext.cs` is auto-generated. **DO NOT EDIT IT.** * **CUSTOM DB CONTEXT:** All enums and custom model building MUST be placed in `Data/UnitOfWork/AppDbContext.custom.cs`. Best if there is no need to touch both these files at all, especially since they are both comprehensive enough to cover the whole dtabase, columns and enums.
+* **DB CONTEXT:** `Data/UnitOfWork/AppDbContext.cs` is auto-generated. **DO NOT EDIT IT.** * **CUSTOM DB CONTEXT:** All enums and custom model building MUST be placed in `Data/UnitOfWork/AppDbContext.custom.cs`. Best if there is no need to touch both these files at all, especially since they are both comprehensive enough to cover the whole database, columns and enums.
 
 ## 3. STRICT NAMESPACE MAPPING
 You must use the exact namespaces below based on the class type. Do not invent new namespaces.
