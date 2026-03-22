@@ -25,6 +25,4 @@ public partial class Clearancebatch
 
     public ClearanceBatchStatus GetStatus() => _status;
     public void UpdateStatus(ClearanceBatchStatus newValue) => _status = newValue;
-
-    public int GetClearanceBatchId() => _clearancebatchid;
 }
