@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Entities;
+using ProRental.Domain.Control;
+using ProRental.Data.Gateways;
+using ProRental.Interfaces;
 
 // uncomment when ready to code
 // using ProRental.Data;
@@ -136,10 +139,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 //Team P2-2
 // Data source
+builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
+builder.Services.AddScoped<IAnalyticsMapper, AnalysisRecordMapper>();
+builder.Services.AddScoped<IReportExportMapper, ReportMapper>();
 
 // Domain
-
-// Presentation/Controllers
+builder.Services.AddScoped<AnalyticsControl>();
+builder.Services.AddScoped<ReportExportControl>();
+builder.Services.AddScoped<AnalyticsFactory>();
 
 //Team P2-3
 // Data source
