@@ -3,6 +3,9 @@
     ViewData["Title"] = "Batch: " + Model.GetBatchName();
     var items = ViewBag.ClearanceItems as List<ProRental.Domain.Entities.Clearanceitem>
                 ?? new List<ProRental.Domain.Entities.Clearanceitem>();
+    
+    var itemDetails = ViewBag.ItemDetails as Dictionary<int, (string ProductName, string SerialNumber)>
+                      ?? new Dictionary<int, (string ProductName, string SerialNumber)>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -119,8 +122,10 @@ else
             <thead class="table-light">
                 <tr>
                     <th>Item ID</th>
+                    <th>Product</th>
                     <th>Inventory ID</th>
-                    <th>Recommended Price</th>
+                    <th>Serial No.</th>
+                    <th>Rec. Price</th>
                     <th>Final Price</th>
                     <th>Sale Date</th>
                     <th>Status</th>
@@ -132,10 +137,15 @@ else
                 {
                     var itemStatusClass = item.GetStatus() == ProRental.Domain.Enums.ClearanceStatus.SOLD
                         ? "bg-info" : "bg-primary";
+                        
+                    var itemId = item.GetClearanceItemId();
+                    var details = itemDetails.ContainsKey(itemId) ? itemDetails[itemId] : ("Unknown", "Unknown");
 
                     <tr>
-                        <td>@item.GetClearanceItemId()</td>
+                        <td>@itemId</td>
+                        <td class="fw-bold">@details.Item1</td>
                         <td>@item.GetInventoryItemId()</td>
+                        <td><small class="text-muted">@details.Item2</small></td>
                         <td>@(item.GetRecommendedPrice()?.ToString("C") ?? "—")</td>
                         <td>@(item.GetFinalPrice()?.ToString("C") ?? "—")</td>
                         <td>@(item.GetSaleDate()?.ToString("dd MMM yyyy") ?? "—")</td>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
+using ProRental.Interfaces.Domain;
 using ProRental.Interfaces.Module2;
 
 namespace ProRental.Controllers;
@@ -11,17 +12,23 @@ public class ClearanceController : Controller
     private readonly iClearanceBatchQuery _batchQuery;
     private readonly iClearanceItemControl _itemControl;
     private readonly iClearanceItemQuery _itemQuery;
+    private readonly iInventoryCRUDControl _inventoryCRUD;
+    private readonly IProductQuery _productQuery;
 
     public ClearanceController(
         iClearanceBatchControl batchControl,
         iClearanceBatchQuery batchQuery,
         iClearanceItemControl itemControl,
-        iClearanceItemQuery itemQuery)
+        iClearanceItemQuery itemQuery,
+        iInventoryCRUDControl inventoryCRUD,
+        IProductQuery productQuery)
     {
         _batchControl = batchControl;
         _batchQuery = batchQuery;
         _itemControl = itemControl;
         _itemQuery = itemQuery;
+        _inventoryCRUD = inventoryCRUD;
+        _productQuery = productQuery;
     }
 
     // ── Batch List (Dashboard) ─────────────────────────────────────────────────
@@ -70,6 +77,27 @@ public class ClearanceController : Controller
 
         var items = _itemQuery.GetClearanceItemsByBatch(id);
         ViewBag.ClearanceItems = items;
+
+        // Map inventory details for the view
+        var itemDetails = new Dictionary<int, (string ProductName, string SerialNumber)>();
+        if (items != null)
+        {
+            foreach (var item in items)
+            {
+                var invItem = _inventoryCRUD.GetInventoryItemById(item.GetInventoryItemId());
+                if (invItem != null)
+                {
+                    var product = _productQuery.GetProductById(invItem.GetProductId());
+                    string productName = product?.Productdetail?.GetName() ?? "Unknown Product";
+                    itemDetails[item.GetClearanceItemId()] = (productName, invItem.GetSerialNumber());
+                }
+                else
+                {
+                    itemDetails[item.GetClearanceItemId()] = ("Unknown", "Unknown");
+                }
+            }
+        }
+        ViewBag.ItemDetails = itemDetails;
 
         return View(batch);
     }
@@ -178,5 +206,31 @@ public class ClearanceController : Controller
     {
         decimal price = _itemControl.CalculateClearancePrice(clearanceItemId);
         return Json(new { recommendedPrice = price });
+    }
+
+    // ── Inventory Details Lookup (AJAX) ────────────────────────────────────────
+
+    [HttpGet]
+    public IActionResult GetInventoryDetails(int id)
+    {
+        var invItem = _inventoryCRUD.GetInventoryItemById(id);
+        if (invItem == null)
+        {
+            return Json(new { isValid = false, error = "Item not found." });
+        }
+
+        // Only allow CLEARANCE items if asking for status, but AddItems only allows AVAILABLE with inactivity
+        // The frontend just wants basic info, so let's check basic eligibility to warn early
+        var product = _productQuery.GetProductById(invItem.GetProductId());
+        string productName = product?.Productdetail?.GetName() ?? "Unknown Product";
+        
+        bool isAvailable = invItem.GetStatus() == InventoryStatus.AVAILABLE;
+        
+        return Json(new { 
+            isValid = true, 
+            productName = productName, 
+            serialNumber = invItem.GetSerialNumber(),
+            isAvailable = isAvailable
+        });
     }
 }
