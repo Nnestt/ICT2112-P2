@@ -1,6 +1,13 @@
+@using System.Text.Json
+@model ProRental.Domain.Module3.P2_5.Entities.CarbonDashboardViewModel
 @{
     ViewData["Title"] = "Carbon Dashboard";
     Layout = null;
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var trendJson = JsonSerializer.Serialize(Model?.BuildingTrendline ?? [], jsonOptions);
+    var barJson = JsonSerializer.Serialize(Model?.BuildingBarChart ?? [], jsonOptions);
+    var pieJson = JsonSerializer.Serialize(Model?.BuildingPieChart ?? [], jsonOptions);
+    var hotspotJson = JsonSerializer.Serialize(Model?.Hotspots ?? [], jsonOptions);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -72,6 +79,31 @@
         .chart-shell-hotspot {
             min-height: 320px;
         }
+
+        .chart-canvas-wrap {
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 1px solid #d8ebe0;
+            border-radius: 1rem;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .chart-canvas-wrap canvas {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .chart-canvas-wrap-lg {
+            min-height: 320px;
+        }
+
+        .chart-canvas-wrap-md {
+            min-height: 260px;
+        }
+
+        .chart-canvas-wrap-hotspot {
+            min-height: 320px;
+        }
     </style>
 </head>
 <body>
@@ -123,6 +155,32 @@
 
             <div class="card chart-card mb-4">
                 <div class="card-body p-4">
+                    <h2 class="h6 mb-3">Debug Summary</h2>
+                    <div class="row g-3 text-muted small">
+                        <div class="col-md-3">
+                            <strong>Trend points:</strong> @(Model?.BuildingTrendline.Count ?? 0)
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Bar points:</strong> @(Model?.BuildingBarChart.Count ?? 0)
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Pie points:</strong> @(Model?.BuildingPieChart.Count ?? 0)
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Hotspots:</strong> @(Model?.Hotspots.Count ?? 0)
+                        </div>
+                    </div>
+                    @if ((Model?.BuildingTrendline.Count ?? 0) == 0)
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            No building chart data reached the view. Check the `buildingfootprint` table contents and the database connection in `appsettings.json`.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
                     <h2 class="h4 mb-1">Product Carbon Charts</h2>
                     <p class="text-muted mb-4">Product trendline, product bar chart, and product pie chart placeholders.</p>
                     <div class="row g-4">
@@ -154,27 +212,21 @@
             <div class="card chart-card mb-4">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-1">Building Carbon Charts</h2>
-                    <p class="text-muted mb-4">Building trendline, building bar chart, and building pie chart placeholders.</p>
+                    <p class="text-muted mb-4">Live charts from `BuildingFootprint.timeHourly` and `totalRoomCo2`.</p>
                     <div class="row g-4">
                         <div class="col-lg-12">
-                            <div class="chart-shell">
-                                <i class="bi bi-graph-up"></i>
-                                <div>Building Carbon Trendline</div>
-                                <small class="text-muted">Use `BuildingFootprint.timeHourly` with `SUM(totalRoomCo2)` by hour or day.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-lg">
+                                <canvas id="buildingTrendlineChart"></canvas>
                             </div>
                         </div>
                         <div class="col-lg-7">
-                            <div class="chart-shell">
-                                <i class="bi bi-bar-chart-line"></i>
-                                <div>Building Bar Chart</div>
-                                <small class="text-muted">Compare emissions by block, floor, zone, or room.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-md">
+                                <canvas id="buildingBarChart"></canvas>
                             </div>
                         </div>
                         <div class="col-lg-5">
-                            <div class="chart-shell">
-                                <i class="bi bi-pie-chart"></i>
-                                <div>Building Pie Chart</div>
-                                <small class="text-muted">Show footprint distribution across facilities.</small>
+                            <div class="chart-canvas-wrap chart-canvas-wrap-md">
+                                <canvas id="buildingPieChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -214,11 +266,9 @@
             <div class="card chart-card">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-1">Carbon Hotspot Chart</h2>
-                    <p class="text-muted mb-4">Placeholder for a hotspot chart highlighting the highest carbon contributors.</p>
-                    <div class="chart-shell chart-shell-hotspot">
-                        <i class="bi bi-fire"></i>
-                        <div>Carbon Hotspot Chart</div>
-                        <small class="text-muted">Use ranked top emitters from product, building, or staff datasets to highlight hotspots.</small>
+                    <p class="text-muted mb-4">Top building emission hotspots ranked by average room CO2.</p>
+                    <div class="chart-canvas-wrap chart-canvas-wrap-hotspot">
+                        <canvas id="hotspotChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -291,5 +341,198 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/chart.js/dist/chart.umd.js"></script>
+    <script>
+        const trendData = @Html.Raw(trendJson);
+        const barData = @Html.Raw(barJson);
+        const pieData = @Html.Raw(pieJson);
+        const hotspotData = @Html.Raw(hotspotJson);
+
+        console.log('Carbon dashboard data', {
+            trendData,
+            barData,
+            pieData,
+            hotspotData
+        });
+
+        const palette = ['#1a936f', '#2ec4b6', '#ff9f1c', '#5b8e7d', '#0f4c3a', '#7bc8a4'];
+
+        const chartTextColor = '#35584a';
+        const gridColor = 'rgba(53, 88, 74, 0.12)';
+        const axisTitleFont = { size: 16, weight: '700' };
+        const tickFont = { size: 13, weight: '600' };
+        const piePercentagePlugin = {
+            id: 'piePercentagePlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.config.type !== 'doughnut') {
+                    return;
+                }
+
+                const { ctx } = chart;
+                const dataset = chart.data.datasets[0];
+                const meta = chart.getDatasetMeta(0);
+                const total = dataset.data.reduce((sum, value) => sum + value, 0);
+
+                if (!total) {
+                    return;
+                }
+
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                meta.data.forEach((slice, index) => {
+                    const value = Number(dataset.data[index] ?? 0);
+                    if (!value) {
+                        return;
+                    }
+
+                    const percentage = ((value / total) * 100).toFixed(1) + '%';
+                    const { x, y } = slice.tooltipPosition();
+                    ctx.fillText(percentage, x, y);
+                });
+
+                ctx.restore();
+            }
+        };
+
+        new Chart(document.getElementById('buildingTrendlineChart'), {
+            type: 'line',
+            data: {
+                labels: trendData.map(item => item.label),
+                datasets: [{
+                    label: 'Building CO2',
+                    data: trendData.map(item => item.value),
+                    borderColor: '#1a936f',
+                    backgroundColor: 'rgba(26, 147, 111, 0.18)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('buildingBarChart'), {
+            type: 'bar',
+            data: {
+                labels: barData.map(item => item.label),
+                datasets: [{
+                    label: 'CO2 by Zone',
+                    data: barData.map(item => item.value),
+                    backgroundColor: palette,
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Zone', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { display: false }
+                    },
+                    y: {
+                        title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('buildingPieChart'), {
+            type: 'doughnut',
+            plugins: [piePercentagePlugin],
+            data: {
+                labels: pieData.map(item => item.label),
+                datasets: [{
+                    data: pieData.map(item => item.value),
+                    backgroundColor: palette,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label(context) {
+                                const value = Number(context.raw ?? 0);
+                                const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0);
+                                const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return `${context.label}: ${value} CO2 (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('hotspotChart'), {
+            type: 'bar',
+            data: {
+                labels: hotspotData.map(item => item.label),
+                datasets: [{
+                    label: 'Average Room CO2',
+                    data: hotspotData.map(item => item.value),
+                    backgroundColor: ['#ff9f1c', '#ffbf69', '#2ec4b6', '#5b8e7d', '#1a936f'],
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Average CO2', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { color: gridColor },
+                        beginAtZero: true
+                    },
+                    y: {
+                        title: { display: true, text: 'Room', color: chartTextColor, font: axisTitleFont },
+                        ticks: { color: chartTextColor, font: tickFont },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>

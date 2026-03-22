@@ -42,6 +42,13 @@
         "font/fonts/bootstrap-icons.woff2",
         "font/fonts/bootstrap-icons.woff"
       ]
+    },
+    {
+      "library": "chart.js@4.4.3",
+      "destination": "wwwroot/lib/chart.js/",
+      "files": [
+        "dist/chart.umd.js"
+      ]
     }
   ]
 }

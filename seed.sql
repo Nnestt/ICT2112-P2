@@ -2,7 +2,7 @@
 TRUNCATE 
     Category, "User", TransactionLog, Supplier, PurchaseOrder, 
     transportation_hub, transport, pricing_rule, carbon_result, 
-    product_return, Analytics, PackagingMaterial,
+    product_return, Analytics, PackagingMaterial, BuildingFootprint,
     "transaction", "Order", Checkout, Cart, CartItem,
     Session, Payment, Deposit, replenishmentrequest, LoanList, ReturnRequest, ClearanceBatch 
 RESTART IDENTITY CASCADE;
@@ -522,8 +522,50 @@ INSERT INTO Deposit (depositId, orderId, transactionId, originalAmount, heldAmou
 ('DEP-ORD-015', 15, 15, 84.50, 84.50, 84.50,  0.00, NOW() - INTERVAL '8 days');
 -- (R5 45 + Canon 70-200 27.50 + DJI RS3 12 = 84.50)
 
--- Team 5 seed--
+-- Team 5 seed Data--
 
+-- BUILDING FOOTPRINT
+INSERT INTO BuildingFootprint (timeHourly, zone, block, floor, room, totalRoomCo2) VALUES
+('2026-03-20 08:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 12.4),
+('2026-03-20 08:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 15.1),
+('2026-03-20 08:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 10.8),
+('2026-03-20 08:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 18.6),
+('2026-03-20 10:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 13.2),
+('2026-03-20 10:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 16.4),
+('2026-03-20 10:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 11.7),
+('2026-03-20 10:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 20.1),
+('2026-03-20 12:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 14.8),
+('2026-03-20 12:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 17.9),
+('2026-03-20 12:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 12.9),
+('2026-03-20 12:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 22.3),
+('2026-03-20 14:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 15.6),
+('2026-03-20 14:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 18.7),
+('2026-03-20 14:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 13.6),
+('2026-03-20 14:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 23.8),
+('2026-03-20 16:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 14.1),
+('2026-03-20 16:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 17.2),
+('2026-03-20 16:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 12.8),
+('2026-03-20 16:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 21.5),
+('2026-03-21 08:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 11.9),
+('2026-03-21 08:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 14.6),
+('2026-03-21 08:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 10.3),
+('2026-03-21 08:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 17.4),
+('2026-03-21 10:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 12.8),
+('2026-03-21 10:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 15.7),
+('2026-03-21 10:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 11.1),
+('2026-03-21 10:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 19.2),
+('2026-03-21 12:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 14.0),
+('2026-03-21 12:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 17.1),
+('2026-03-21 12:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 12.5),
+('2026-03-21 12:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 21.0),
+('2026-03-21 14:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 15.2),
+('2026-03-21 14:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 18.3),
+('2026-03-21 14:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 13.1),
+('2026-03-21 14:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 22.6),
+('2026-03-21 16:00:00+08', 'North', 'Block A', 'Level 1', 'A101', 13.7),
+('2026-03-21 16:00:00+08', 'North', 'Block A', 'Level 2', 'A201', 16.5),
+('2026-03-21 16:00:00+08', 'South', 'Block B', 'Level 1', 'B103', 12.2),
+('2026-03-21 16:00:00+08', 'South', 'Block B', 'Level 3', 'B301', 20.4);
 --Packaging Material--
 INSERT INTO PackagingMaterial (name, type, recyclable, reusable)
 VALUES
