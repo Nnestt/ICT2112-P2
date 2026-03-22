@@ -188,8 +188,16 @@ public partial class AppDbContext
         // ==========================================
         modelBuilder.Entity<Reliabilityrating>(entity =>
         {
-            entity.Property("rating").HasField("_rating").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("rating").HasColumnType("rating_band_enum");
+            entity.Property<RatingBand?>("Ratingband")
+                  .HasColumnName("rating")
+                  .HasColumnType("rating_band_enum");
+
+            entity.Ignore("ratingid");
+            entity.Ignore("supplierid");
+            entity.Ignore("score");
+            entity.Ignore("rationale");
+            entity.Ignore("calculatedbyuserid");
+            entity.Ignore("calculatedat");
         });
 
         modelBuilder.Entity<Replenishmentrequest>(entity =>
@@ -254,11 +262,21 @@ public partial class AppDbContext
 
         modelBuilder.Entity<Supplier>(entity =>
         {
-            entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("category").HasColumnType("supplier_category_enum");
+            entity.Property<SupplierCategory?>("Suppliercategory")
+                  .HasColumnName("suppliercategory")
+                  .HasColumnType("supplier_category_enum");
 
-            entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            entity.Property<VettingResult?>("Vettingresult")
+                  .HasColumnName("vettingresult")
+                  .HasColumnType("vetting_result_enum");
+
+            entity.Ignore("supplierid");
+            entity.Ignore("name");
+            entity.Ignore("details");
+            entity.Ignore("isverified");
+            entity.Ignore("creditperiod");
+            entity.Ignore("avgturnaroundtime");
+            entity.Ignore("suppliercategory");
         });
 
         modelBuilder.Entity<Suppliercategorychangelog>(entity =>
@@ -299,8 +317,16 @@ public partial class AppDbContext
 
         modelBuilder.Entity<Vettingrecord>(entity =>
         {
-            entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            entity.Property<VettingDecision?>("Vettingdecision")
+                  .HasColumnName("decision")
+                  .HasColumnType("vetting_decision_enum");
+
+            entity.Ignore("vettingid");
+            entity.Ignore("supplierid");
+            entity.Ignore("vettedbyuserid");
+            entity.Ignore("vettedat");
+            entity.Ignore("notes");
+            entity.Ignore("decision_public");
         });
     }
 }

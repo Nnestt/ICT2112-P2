@@ -138,8 +138,23 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 //Team P2-2
 // Data source
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IVettingRecordMapper, 
+                           ProRental.Data.Module2.Gateways.VettingRecordMapper>();
+ 
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReliabilityRatingMapper, 
+                           ProRental.Data.Module2.Gateways.ReliabilityRatingMapper>();
+
+builder.Services.AddScoped<ProRental.Interfaces.Module2.ISupplierVettingGateway,
+                           ProRental.Data.Module2.Gateways.SupplierVettingGateway>();
+
+// TODO: Register IAnalyticsData when AnalyticsDataGateway is ready
+// builder.Services.AddScoped<ProRental.Interfaces.Module2.IAnalyticsData,
+//                            ProRental.Data.Module2.Gateways.AnalyticsDataGateway>();
 
 // Domain
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.VettingControl>();
+ 
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierScoringControl>();
 
 // Presentation/Controllers
 

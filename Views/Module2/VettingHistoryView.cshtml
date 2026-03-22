@@ -1,0 +1,48 @@
+@model List<ProRental.Domain.Entities.Vettingrecord>
+
+@{
+    ViewData["Title"] = "Vetting History";
+}
+
+<div class="container mt-4">
+    <h2>Vetting History</h2>
+
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Vetting ID</th>
+                    <th>Supplier ID</th>
+                    <th>Decision</th>
+                    <th>Vetted By</th>
+                    <th>Vetted At</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var record in Model)
+                {
+                    <tr>
+                        <td>@record.vettingid</td>
+                        <td>@record.supplierid</td>
+                        <td>
+                            <span class="badge @(record.decision_public == ProRental.Domain.Enums.VettingDecision.APPROVED ? "bg-success" : "bg-danger")">
+                                @record.decision_public
+                            </span>
+                        </td>
+                        <td>@record.vettedbyuserid</td>
+                        <td>@record.vettedat</td>
+                        <td>@record.notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No vetting history found.
+        </div>
+    }
+</div>
