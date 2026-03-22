@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs the related entities, they must use those respective mappers.
  * 3. NO AUTO-UPDATEDAT: This specific entity relies on Loandate, Duedate, and Returndate. 
  * It DOES NOT have an Updatedat field. Do not hallucinate a DateTime.UtcNow override in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -80,15 +82,24 @@ public class LoanListMapper : ILoanListMapper
 
     public void Update(Loanlist list)
     {
-        // Returndate, Remarks, and Status are updated via domain logic methods 
-        // before calling this mapper Update.
-        _context.Loanlists.Update(list);
+        var existing = _context.Loanlists
+            .FirstOrDefault(l => EF.Property<int>(l, "Loanlistid") == list.GetLoanListId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(list);
         _context.SaveChanges();
     }
 
     public void Delete(Loanlist list)
     {
-        _context.Loanlists.Remove(list);
-        _context.SaveChanges();
+        var existing = _context.Loanlists
+            .FirstOrDefault(l => EF.Property<int>(l, "Loanlistid") == list.GetLoanListId());
+            
+        if (existing != null)
+        {
+            _context.Loanlists.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

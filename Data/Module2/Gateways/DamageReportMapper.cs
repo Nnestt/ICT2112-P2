@@ -15,6 +15,8 @@ namespace ProRental.Data;
  * If a developer needs the return item details, they must use the IReturnItemMapper.
  * 3. NO AUTO-UPDATEDAT: This specific entity relies on Reportdate which is set 
  * upon creation. It DOES NOT have an Updatedat field. Do not hallucinate one in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -55,14 +57,24 @@ public class DamageReportMapper : IDamageReportMapper
 
     public void Update(Damagereport damageReport)
     {
-        // No auto-timestamping here as the table only tracks the initial Reportdate
-        _context.Damagereports.Update(damageReport);
+        var existing = _context.Damagereports
+            .FirstOrDefault(d => EF.Property<int>(d, "Damagereportid") == damageReport.GetDamageReportId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(damageReport);
         _context.SaveChanges();
     }
 
     public void Delete(Damagereport damageReport)
     {
-        _context.Damagereports.Remove(damageReport);
-        _context.SaveChanges();
+        var existing = _context.Damagereports
+            .FirstOrDefault(d => EF.Property<int>(d, "Damagereportid") == damageReport.GetDamageReportId());
+            
+        if (existing != null)
+        {
+            _context.Damagereports.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

@@ -29,4 +29,6 @@ public partial class Clearanceitem
 
     public ClearanceStatus GetStatus() => _status;
     public void UpdateStatus(ClearanceStatus newValue) => _status = newValue;
+
+    public int GetClearanceItemId() => _clearanceitemid;
 }

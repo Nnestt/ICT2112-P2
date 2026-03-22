@@ -1,22 +1,31 @@
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Data;
-using ProRental.Interfaces.Module2.P2_3;
+using ProRental.Interfaces.Domain;
 
-namespace ProRental.Domain.Module2.P2_3.Controls;
+namespace ProRental.Domain.Controls;
 
 public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQueryControl, iInventoryStatusControl, iStockSubject
 {
-    private readonly ProRental.Interfaces.Data.IInventoryItemMapper _inventoryItemMapper;
+    private readonly IInventoryItemMapper _inventoryItemMapper;
     private readonly List<iStockObserver> _observers = new();
 
-    public InventoryManagementControl(ProRental.Interfaces.Data.IInventoryItemMapper inventoryItemMapper)
+    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers)
     {
         _inventoryItemMapper = inventoryItemMapper ?? throw new ArgumentNullException(nameof(inventoryItemMapper));
+        _observers = observers.ToList();
     }
 
-    public bool CreateInventoryItem(Inventoryitem inventoryItem)
+    public bool CreateInventoryItem(int productId, string serialNumber, InventoryStatus status, DateTime? expiryDate)
     {
+        var inventoryItem = new Inventoryitem();
+        inventoryItem.SetProductId(productId);
+        inventoryItem.SetSerialNumber(serialNumber);
+        inventoryItem.SetStatus(status);
+        inventoryItem.SetCreatedDate(DateTime.UtcNow);
+        inventoryItem.SetUpdatedDate(DateTime.UtcNow);
+        inventoryItem.SetExpiryDate(expiryDate);
+
         if (!ValidateInventoryItem(inventoryItem) || !CheckInventoryConflicts(inventoryItem))
         {
             return false;
@@ -39,25 +48,29 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return _inventoryItemMapper.FindById(inventoryItemId);
     }
 
-    public bool UpdateInventoryItem(Inventoryitem inventoryItem)
+    public bool UpdateInventoryItem(int inventoryItemId, int productId, string serialNumber, InventoryStatus status, DateTime? expiryDate)
     {
-        if (!ValidateInventoryItem(inventoryItem))
+        var existingItem = _inventoryItemMapper.FindById(inventoryItemId);
+        if (existingItem is null)
         {
             return false;
         }
 
-        var existingItem = _inventoryItemMapper.FindById(inventoryItem.GetInventoryItemId());
-        if (existingItem is null || !CheckInventoryConflicts(inventoryItem))
+        existingItem.SetProductId(productId);
+        existingItem.SetSerialNumber(serialNumber);
+        existingItem.SetStatus(status);
+        existingItem.SetExpiryDate(expiryDate);
+        existingItem.SetUpdatedDate(DateTime.UtcNow);
+
+        if (!ValidateInventoryItem(existingItem) || !CheckInventoryConflicts(existingItem))
         {
             return false;
         }
-
-        inventoryItem.SetUpdatedDate(DateTime.UtcNow);
 
         try
         {
-            _inventoryItemMapper.Update(inventoryItem);
-            NotifyObservers(inventoryItem.GetProductId());
+            _inventoryItemMapper.Update(existingItem);
+            NotifyObservers(existingItem.GetProductId());
             return true;
         }
         catch
@@ -103,7 +116,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return _inventoryItemMapper.FindByProductId(productId)?.Count() ?? 0;
     }
 
-    public bool ValidateInventoryItem(Inventoryitem inventoryItem)
+    private bool ValidateInventoryItem(Inventoryitem inventoryItem)
     {
         if (inventoryItem is null)
         {
@@ -149,7 +162,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return true;
     }
 
-    public bool CheckInventoryConflicts(Inventoryitem inventoryItem)
+    private bool CheckInventoryConflicts(Inventoryitem inventoryItem)
     {
         if (inventoryItem is null || string.IsNullOrWhiteSpace(inventoryItem.GetSerialNumber()))
         {
@@ -179,6 +192,33 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
 
         return items.Count(item => item.GetStatus() == status);
     }
+
+    public List<Inventoryitem> GetAllInventoryItems()
+    {
+        return _inventoryItemMapper.FindAll()?.ToList() ?? new List<Inventoryitem>();
+    }
+
+    public List<Inventoryitem> SearchInventoryItems(string query)
+    {
+        var allItems = _inventoryItemMapper.FindAll();
+        if (allItems is null || string.IsNullOrWhiteSpace(query))
+        {
+            return allItems?.ToList() ?? new List<Inventoryitem>();
+        }
+
+        var normalized = query.Trim().ToLower();
+        var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
+
+        var results = allItems.Where(item =>
+            item.GetSerialNumber().ToLower().Contains(normalized) ||
+            (hasNumericQuery && item.GetProductId() == numericQuery) ||
+            (hasNumericQuery && item.GetInventoryItemId() == numericQuery))
+        .ToList();
+
+        return results;
+    }
+
+
 
     public bool UpdateInventoryStatus(int inventoryItemId, InventoryStatus status)
     {

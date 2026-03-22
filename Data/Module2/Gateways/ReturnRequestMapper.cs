@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs those related records, they must use their respective mappers.
  * 3. NO AUTO-UPDATEDAT: This specific entity uses Requestdate and Completiondate. 
  * It DOES NOT have an Updatedat field. Do not hallucinate a DateTime.UtcNow override in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -71,15 +73,24 @@ public class ReturnRequestMapper : IReturnRequestMapper
 
     public void Update(Returnrequest request)
     {
-        // Note: Completiondate and Status are updated via domain logic methods 
-        // (e.g., request.CompleteRequest()) before calling this mapper Update.
-        _context.Returnrequests.Update(request);
+        var existing = _context.Returnrequests
+            .FirstOrDefault(r => EF.Property<int>(r, "Returnrequestid") == request.GetReturnRequestId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(request);
         _context.SaveChanges();
     }
 
     public void Delete(Returnrequest request)
     {
-        _context.Returnrequests.Remove(request);
-        _context.SaveChanges();
+        var existing = _context.Returnrequests
+            .FirstOrDefault(r => EF.Property<int>(r, "Returnrequestid") == request.GetReturnRequestId());
+            
+        if (existing != null)
+        {
+            _context.Returnrequests.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

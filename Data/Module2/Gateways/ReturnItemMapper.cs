@@ -15,6 +15,8 @@ namespace ProRental.Data;
  * 2. NO CROSS-AGGREGATE INCLUDES: Do NOT use .Include() for Inventoryitem, Returnrequest, or Damagereports. 
  * If a developer needs those, they must use their respective mappers.
  * 3. NO AUTO-UPDATEDAT: This specific entity does not have an Updatedat field. Do not hallucinate one.
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -64,15 +66,24 @@ public class ReturnItemMapper : IReturnItemMapper
 
     public void Update(Returnitem item)
     {
-        // Note: Completiondate should be set via a domain method (e.g., item.MarkAsCompleted())
-        // prior to calling this Update method when the item finishes its inspection/repair pipeline.
-        _context.Returnitems.Update(item);
+        var existing = _context.Returnitems
+            .FirstOrDefault(r => EF.Property<int>(r, "Returnitemid") == item.GetReturnItemId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(item);
         _context.SaveChanges();
     }
 
     public void Delete(Returnitem item)
     {
-        _context.Returnitems.Remove(item);
-        _context.SaveChanges();
+        var existing = _context.Returnitems
+            .FirstOrDefault(r => EF.Property<int>(r, "Returnitemid") == item.GetReturnItemId());
+            
+        if (existing != null)
+        {
+            _context.Returnitems.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * Productdetail is a strict composite of Product. Do NOT include other aggregates (Alerts, Inventoryitems).
  * 3. UTC TIMESTAMPS: Always override the "Updatedat" to DateTime.UtcNow 
  * using _context.Entry() during updates to maintain the TIMESTAMPTZ standard.
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -30,8 +32,6 @@ public class ProductMapper : IProductMapper
 
     public Product? FindById(int productId)
     {
-        // Using EF.Property to query against the private 'Productid'
-        // .Include() ensures the composite Productdetail is fetched simultaneously
         return _context.Products
             .Include(p => p.Productdetail)
             .FirstOrDefault(p => EF.Property<int>(p, "Productid") == productId);
@@ -54,7 +54,6 @@ public class ProductMapper : IProductMapper
 
     public ICollection<Product>? FindByStatus(ProductStatus status)
     {
-        // Using EF.Property to query against the private 'Status' from your manual partial class
         return _context.Products
             .Include(p => p.Productdetail)
             .Where(p => EF.Property<ProductStatus>(p, "Status") == status)
@@ -63,29 +62,55 @@ public class ProductMapper : IProductMapper
 
     public void Insert(Product product)
     {
-        // Because Productdetail is a navigation property, EF Core will automatically 
-        // insert the Productdetail record if it is attached to this Product.
         _context.Products.Add(product);
         _context.SaveChanges();
     }
 
     public void Update(Product product)
     {
-        // Automatically enforce the TIMESTAMPTZ standard for updates
-        // We use Entry() to update the private Updatedat property safely
-        _context.Entry(product).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+        // 1. Fetch the existing entity to avoid Tracking Exceptions
+        var existing = _context.Products
+            .Include(p => p.Productdetail)
+            .FirstOrDefault(p => EF.Property<int>(p, "Productid") == product.GetProductId());
 
-        _context.Products.Update(product);
+        if (existing == null)
+            return;
+
+        // 2. Elegantly update all root scalar properties using EF Core native mapping
+        _context.Entry(existing).CurrentValues.SetValues(product);
+
+        // 3. Handle the composite Productdetail
+        var incomingDetail = product.GetProductdetail();
+        
+        if (incomingDetail != null)
+        {
+            if (existing.GetProductdetail() == null)
+            {
+                existing.SetProductdetail(incomingDetail);
+            }
+            else
+            {
+                // Elegantly update all detail scalar properties natively
+                _context.Entry(existing.GetProductdetail()!).CurrentValues.SetValues(incomingDetail);
+            }
+        }
+
+        // 4. Force the UTC timestamp override safely
+        _context.Entry(existing).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+
         _context.SaveChanges();
     }
 
     public void Delete(Product product)
     {
-        // Because of the strong composite relationship, if Cascade delete is set up,
-        // this will also remove the Productdetail. If Restrict is set, it will throw an error
-        // unless Productdetail is deleted first. Update(product) is generally preferred 
-        // to change the Status to 'RETIRED' rather than hard deleting.
-        _context.Products.Remove(product);
-        _context.SaveChanges();
+        // Fetch existing first to ensure we aren't deleting an untracked instance
+        var existing = _context.Products
+            .FirstOrDefault(p => EF.Property<int>(p, "Productid") == product.GetProductId());
+
+        if (existing != null)
+        {
+            _context.Products.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs the items inside a batch, they must use the IClearanceItemMapper.
  * 3. NO AUTO-UPDATEDAT: This specific entity relies on Createddate and Clearancedate. 
  * It DOES NOT have an Updateddate field. Do not hallucinate a DateTime.UtcNow override in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -56,15 +58,24 @@ public class ClearanceBatchMapper : IClearanceBatchMapper
 
     public void Update(Clearancebatch batch)
     {
-        // Note: Clearancedate and Status are updated via domain logic methods 
-        // before calling this mapper Update. No automatic timestamping is applied here.
-        _context.Clearancebatches.Update(batch);
-        _context.SaveChanges();
+        var existing = _context.Clearancebatches
+            .FirstOrDefault(c => EF.Property<int>(c, "Clearancebatchid") == batch.GetClearanceBatchId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(batch);
+        _context.SaveChanges(); // No timestamp override needed
     }
 
     public void Delete(Clearancebatch batch)
     {
-        _context.Clearancebatches.Remove(batch);
-        _context.SaveChanges();
+        var existing = _context.Clearancebatches
+            .FirstOrDefault(c => EF.Property<int>(c, "Clearancebatchid") == batch.GetClearanceBatchId());
+            
+        if (existing != null)
+        {
+            _context.Clearancebatches.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

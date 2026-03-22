@@ -16,6 +16,8 @@ namespace ProRental.Data;
  * If a developer needs the Product data, they must use the IProductMapper.
  * 3. UTC TIMESTAMPS: Always override the "Updatedat" to DateTime.UtcNow 
  * using _context.Entry() during updates to maintain the TIMESTAMPTZ standard.
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -58,17 +60,27 @@ public class AlertMapper : IAlertMapper
 
     public void Update(Alert alert)
     {
-        // Automatically enforce the TIMESTAMPTZ standard for updates
-        // We use Entry() to update the private Updatedat property safely
-        _context.Entry(alert).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+        var existing = _context.Alerts
+            .FirstOrDefault(a => EF.Property<int>(a, "Alertid") == alert.GetAlertId());
 
-        _context.Alerts.Update(alert);
+        if (existing == null) return;
+
+        // Automatically map all scalar properties from incoming to existing
+        _context.Entry(existing).CurrentValues.SetValues(alert);
+        _context.Entry(existing).Property("Updatedat").CurrentValue = DateTime.UtcNow;
+
         _context.SaveChanges();
     }
 
     public void Delete(Alert alert)
     {
-        _context.Alerts.Remove(alert);
-        _context.SaveChanges();
+        var existing = _context.Alerts
+            .FirstOrDefault(a => EF.Property<int>(a, "Alertid") == alert.GetAlertId());
+            
+        if (existing != null)
+        {
+            _context.Alerts.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }

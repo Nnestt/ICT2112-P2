@@ -15,6 +15,8 @@ namespace ProRental.Data;
  * If a developer needs the associated inventory or parent list, they must use those respective mappers.
  * 3. NO AUTO-UPDATEDAT: This specific entity has NO timestamp fields. 
  * Do not hallucinate an Updatedat override in Update().
+ * 4. DISCONNECTED UPDATES: Always use CurrentValues.SetValues() to update entities 
+ * to avoid tracking conflicts without writing manual property-by-property mapping.
  * =========================================================================
  */
 
@@ -55,14 +57,24 @@ public class LoanItemMapper : ILoanItemMapper
 
     public void Update(Loanitem item)
     {
-        // No auto-timestamping here as the table doesn't track dates directly.
-        _context.Loanitems.Update(item);
+        var existing = _context.Loanitems
+            .FirstOrDefault(l => EF.Property<int>(l, "Loanitemid") == item.GetLoanItemId());
+
+        if (existing == null) return;
+
+        _context.Entry(existing).CurrentValues.SetValues(item);
         _context.SaveChanges();
     }
 
     public void Delete(Loanitem item)
     {
-        _context.Loanitems.Remove(item);
-        _context.SaveChanges();
+        var existing = _context.Loanitems
+            .FirstOrDefault(l => EF.Property<int>(l, "Loanitemid") == item.GetLoanItemId());
+            
+        if (existing != null)
+        {
+            _context.Loanitems.Remove(existing);
+            _context.SaveChanges();
+        }
     }
 }
