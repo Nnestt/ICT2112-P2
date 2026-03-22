@@ -11,4 +11,8 @@ public partial class ShippingOption
     private TransportMode? _transportMode;
     private TransportMode? TransportMode { get => _transportMode; set => _transportMode = value; }
     public void UpdateTransportMode(TransportMode newValue) => _transportMode = newValue;
+
+    // Add these:
+    public decimal GetCost() => _cost ?? 0;
+    public void SetCost(decimal? cost) => _cost = cost;
 }
