@@ -9,11 +9,13 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
 {
     private readonly IAlertMapper _alertMapper;
     private readonly iInventoryQueryControl _inventoryQueryControl;
+    private readonly IProductQuery _productQuery;
 
-    public LowStockAlertControl(IAlertMapper alertMapper, iInventoryQueryControl inventoryQueryControl)
+    public LowStockAlertControl(IAlertMapper alertMapper, iInventoryQueryControl inventoryQueryControl, IProductQuery productQuery)
     {
         _alertMapper = alertMapper ?? throw new ArgumentNullException(nameof(alertMapper));
         _inventoryQueryControl = inventoryQueryControl ?? throw new ArgumentNullException(nameof(inventoryQueryControl));
+        _productQuery = productQuery ?? throw new ArgumentNullException(nameof(productQuery));
     }
 
     public bool CreateAlert(int productId, int minThreshold, int staffId = 0)
@@ -189,7 +191,8 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
 
     public void Update(int productId)
     {
-        const int defaultThreshold = 5;
-        _ = CheckLowStock(productId, defaultThreshold);
+        // Get the product's configured threshold value
+        decimal threshold = _productQuery.GetThresholdForProduct(productId);
+        _ = CheckLowStock(productId, (int)threshold);
     }
 }

@@ -8,13 +8,15 @@ namespace ProRental.Domain.Controls;
 public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQueryControl, iInventoryStatusControl, iStockSubject
 {
     private readonly IInventoryItemMapper _inventoryItemMapper;
-    private readonly IProductMapper _productMapper;
+    private readonly IProductQuery _productQuery;
+    private readonly IProductCRUD _productCRUD;
     private readonly List<iStockObserver> _observers = new();
 
-    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers, IProductMapper productMapper)
+    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers, IProductQuery productQuery, IProductCRUD productCRUD)
     {
         _inventoryItemMapper = inventoryItemMapper ?? throw new ArgumentNullException(nameof(inventoryItemMapper));
-        _productMapper = productMapper ?? throw new ArgumentNullException(nameof(productMapper));
+        _productQuery = productQuery ?? throw new ArgumentNullException(nameof(productQuery));
+        _productCRUD = productCRUD ?? throw new ArgumentNullException(nameof(productCRUD));
         _observers = observers.ToList();
     }
 
@@ -252,7 +254,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
             int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
             
             // Sync product status based on availability
-            var product = _productMapper.FindById(productId);
+            var product = _productQuery.GetProductById(productId);
             if (product is not null)
             {
                 ProductStatus newProductStatus = availableCount == 0 
@@ -263,7 +265,10 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
                 if (product.GetStatus() != newProductStatus)
                 {
                     product.UpdateStatus(newProductStatus);
-                    _productMapper.Update(product);
+                    if (product.Productdetail is not null)
+                    {
+                        _productCRUD.UpdateProduct(product, product.Productdetail);
+                    }
                 }
             }
 
