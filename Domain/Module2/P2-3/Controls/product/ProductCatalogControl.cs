@@ -5,7 +5,7 @@ using ProRental.Interfaces.Domain;
 
 namespace ProRental.Domain.Controls;
 
-public class ProductCatalogControl : IProductCRUD, IProductQuery, IProductBulkCommand
+public class ProductCatalogControl : IProductCRUD, IProductQuery, IProductBulkCommand, IProductStatusControl
 {
     private readonly IProductMapper _productMapper;
     private readonly ICategoryQuery _categoryQuery;
@@ -135,7 +135,10 @@ public class ProductCatalogControl : IProductCRUD, IProductQuery, IProductBulkCo
                 .Where(p => p.GetSku().Contains(value, StringComparison.OrdinalIgnoreCase))
                 .ToList(),
 
-            "category" => new List<Product>(),
+            "category" => allProducts
+                .Where(p => (p.GetCategoryEntity()?.GetName() ?? string.Empty)
+                .Contains(value, StringComparison.OrdinalIgnoreCase))
+                .ToList(),
 
             "status" => Enum.TryParse<ProductStatus>(value, true, out var parsedStatus)
                 ? allProducts.Where(p => p.GetStatus() == parsedStatus).ToList()
@@ -246,4 +249,15 @@ public class ProductCatalogControl : IProductCRUD, IProductQuery, IProductBulkCo
 
     return true;
 }
+
+public bool UpdateProductStatus(int productId, ProductStatus productStatus)
+{
+    var product = _productMapper.FindById(productId);
+    if (product == null) return false;
+
+    product.UpdateStatus(productStatus);
+    _productMapper.Update(product);
+    return true;
+}
+
 }

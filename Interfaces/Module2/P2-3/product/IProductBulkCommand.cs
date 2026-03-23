@@ -1,5 +1,4 @@
 using ProRental.Domain.Entities;
-using ProRental.Domain.Enums;
 
 namespace ProRental.Interfaces.Domain;
 
