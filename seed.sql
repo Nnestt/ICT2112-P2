@@ -639,7 +639,7 @@ INSERT INTO AnalyticsList (AnalyticsID, TransactionLogID) VALUES
 (1, 4);
 
 
-// Test account for authentication/authorization testing
+-- Test account for authentication/authorization testing
 BEGIN;
 
 WITH inserted_users AS (
@@ -685,13 +685,13 @@ LEFT JOIN inserted_staff     s ON s.userid = u.userid;
 
 COMMIT;
 
-// Customer query test
+-- Customer query test
 SELECT c.customerid, u.email, u.name
 FROM customer c
 JOIN "User" u ON u.userid = c.userid
 WHERE u.email = 'alice@test.com';
 
-// Staff query test
+-- Staff query test
 SELECT u.userid, u.email, u.userrole, s.staffid, s.department
 FROM "User" u
 JOIN staff s ON s.userid = u.userid
