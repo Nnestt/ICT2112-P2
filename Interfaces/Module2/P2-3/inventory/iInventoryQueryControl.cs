@@ -5,6 +5,7 @@ namespace ProRental.Interfaces.Domain;
 
 public interface iInventoryQueryControl
 {
+    Inventoryitem? GetInventoryItemById(int inventoryItemId);
     List<Inventoryitem> GetInventoryByProduct(int productId);
     List<Inventoryitem> GetInventoryByStatus(InventoryStatus status);
     int CheckProductQuantityByStatus(int productId, InventoryStatus status);

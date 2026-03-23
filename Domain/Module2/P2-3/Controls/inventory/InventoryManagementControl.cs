@@ -207,13 +207,10 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
             return items.OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED).ToList();
         }
 
-        var normalized = query.Trim().ToLower();
-        var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
+        var normalized = query.Trim().ToUpper();
 
         var results = allItems.Where(item =>
-            item.GetSerialNumber().ToLower().Contains(normalized) ||
-            (hasNumericQuery && item.GetProductId() == numericQuery) ||
-            (hasNumericQuery && item.GetInventoryItemId() == numericQuery))
+            item.GetSerialNumber().ToUpper().Contains(normalized))
         .OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED)
         .ToList();
 
