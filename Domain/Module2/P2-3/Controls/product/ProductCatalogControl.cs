@@ -260,4 +260,20 @@ public bool UpdateProductStatus(int productId, ProductStatus productStatus)
     return true;
 }
 
+public int GetThresholdQuantityForProduct(int productId)
+{
+    var product = _productMapper.FindById(productId);
+    if (product == null)
+        throw new InvalidOperationException($"Product {productId} not found.");
+
+    var detail = product.GetProductdetail();
+    if (detail == null)
+        throw new InvalidOperationException($"Product detail for product {productId} not found.");
+
+    var totalQuantity = detail.GetTotalQuantity();
+    var thresholdPercentage = product.GetThreshold();
+
+    return (int)Math.Ceiling(totalQuantity * thresholdPercentage);
+}
+
 }
