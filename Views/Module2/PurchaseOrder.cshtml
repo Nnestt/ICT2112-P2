@@ -20,26 +20,15 @@
         <div class="card-header bg-white pb-0">
             <ul class="nav nav-tabs card-header-tabs" id="poTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active"
-                            id="replenishment-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#replenishment-tab-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="replenishment-tab-pane"
-                            aria-selected="true">
+                    <button class="nav-link active" id="replenishment-tab" data-bs-toggle="tab"
+                            data-bs-target="#replenishment-tab-pane" type="button" role="tab"
+                            aria-controls="replenishment-tab-pane" aria-selected="true">
                         <i class="bi bi-box-seam me-2"></i>Replenishment Orders
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link"
-                            id="purchase-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#purchase-tab-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="purchase-tab-pane"
-                            aria-selected="false">
+                    <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase-tab-pane"
+                            type="button" role="tab" aria-controls="purchase-tab-pane" aria-selected="false">
                         <i class="bi bi-receipt me-2"></i>Purchase Orders
                     </button>
                 </li>
@@ -50,11 +39,8 @@
             <div class="tab-content" id="poTabsContent">
 
                 <!-- Replenishment Orders Tab -->
-                <div class="tab-pane fade show active"
-                     id="replenishment-tab-pane"
-                     role="tabpanel"
-                     aria-labelledby="replenishment-tab"
-                     tabindex="0">
+                <div class="tab-pane fade show active" id="replenishment-tab-pane" role="tabpanel"
+                     aria-labelledby="replenishment-tab" tabindex="0">
 
                     <h5 class="mb-3">
                         <i class="bi bi-table me-2"></i>Replenishment Requests
@@ -86,7 +72,7 @@
                                                 {
                                                     <span class="badge bg-success">@request.Status</span>
                                                 }
-                                                else if (request.Status == "REJECTED" || request.Status == "Rejected")
+                                                else if (request.Status == "REJECTED" || request.Status == "Rejected" || request.Status == "CANCELLED" || request.Status == "Cancelled")
                                                 {
                                                     <span class="badge bg-danger">@request.Status</span>
                                                 }
@@ -101,13 +87,52 @@
                                             </td>
                                             <td>@(string.IsNullOrWhiteSpace(request.Remarks) ? "-" : request.Remarks)</td>
                                             <td class="text-center">
-                                                <a asp-controller="PurchaseOrderPage"
-                                                   asp-action="PurchaseOrderView"
-                                                   asp-route-reqId="@request.RequestId"
-                                                   class="btn btn-success btn-sm">
-                                                    <i class="bi bi-eye me-1"></i>View
-                                                </a>
+                                                @{
+    var isDraftRequest = request.Status == "DRAFT" || request.Status == "Draft";
+    var isCancelled = request.Status == "CANCELLED" || request.Status == "Cancelled";
+    var isCompleted = request.Status == "COMPLETED" || request.Status == "Completed";
+}
+
+@if (isDraftRequest)
+{
+    <div class="d-flex justify-content-center gap-2">
+        <!-- View Button -->
+        <a asp-controller="PurchaseOrderPage"
+           asp-action="PurchaseOrderView"
+           asp-route-reqId="@request.RequestId"
+           class="btn btn-success btn-sm">
+            <i class="bi bi-eye me-1"></i>View
+        </a>
+
+        <!-- 🔥 NEW Cancel Button -->
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelRequest" method="post">
+            <input type="hidden" name="reqId" value="@request.RequestId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+else if (isCancelled)
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Cancelled
+    </button>
+}
+else if (isCompleted)
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Completed
+    </button>
+}
+else
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Locked
+    </button>
+}
                                             </td>
+                                            
                                         </tr>
                                     }
                                 </tbody>
@@ -123,10 +148,7 @@
                 </div>
 
                 <!-- Purchase Orders Tab -->
-                <div class="tab-pane fade"
-                     id="purchase-tab-pane"
-                     role="tabpanel"
-                     aria-labelledby="purchase-tab"
+                <div class="tab-pane fade" id="purchase-tab-pane" role="tabpanel" aria-labelledby="purchase-tab"
                      tabindex="0">
 
                     <h5 class="mb-3">
@@ -153,7 +175,7 @@
                                     {
                                         <tr>
                                             <td class="fw-semibold">@po.PoId</td>
-                                            <td>@po.SupplierID</td>
+                                            <td>@po.SupplierId</td>
                                             <td>@(po.PoDate?.ToString("dd MMM yyyy") ?? "-")</td>
                                             <td>@(po.ExpectedDeliveryDate?.ToString("dd MMM yyyy") ?? "-")</td>
                                             <td>
@@ -161,7 +183,8 @@
                                                 {
                                                     <span class="badge bg-success">@po.Status</span>
                                                 }
-                                                else if (po.Status == "REJECTED" || po.Status == "Rejected" || po.Status == "CANCELLED")
+                                                else if (po.Status == "REJECTED" || po.Status == "Rejected" || po.Status ==
+                                                           "CANCELLED")
                                                 {
                                                     <span class="badge bg-danger">@po.Status</span>
                                                 }
@@ -180,12 +203,62 @@
                                             </td>
                                             <td>@(po.TotalAmount?.ToString("0.00") ?? "0.00")</td>
                                             <td class="text-center">
-                                                <a asp-controller="PurchaseOrderPage"
-                                                   asp-action="Details"
-                                                   asp-route-poId="@po.PoId"
-                                                   class="btn btn-primary btn-sm">
-                                                    <i class="bi bi-eye me-1"></i>View
-                                                </a>
+                                                
+                                                @if (po.Status == "CONFIRMED")
+{
+    <div class="d-flex justify-content-center gap-2">
+        <form asp-controller="PurchaseOrderPage" asp-action="ApprovePO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-check-circle me-1"></i>Approve
+            </button>
+        </form>
+
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelPO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+else if (po.Status == "APPROVED")
+{
+    <div class="d-flex justify-content-center gap-2">
+        <form asp-controller="PurchaseOrderPage" asp-action="CompletePO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-flag me-1"></i>Complete
+            </button>
+        </form>
+
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelPO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+else if (po.Status == "CANCELLED")
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Cancelled
+    </button>
+}
+else if (po.Status == "COMPLETED")
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Completed
+    </button>
+}
+else
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Locked
+    </button>
+}
+                                                
                                             </td>
                                         </tr>
                                     }

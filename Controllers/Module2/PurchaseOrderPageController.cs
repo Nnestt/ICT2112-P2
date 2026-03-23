@@ -78,13 +78,29 @@ namespace ProRental.Controllers
                 int poId = _purchaseOrderService.ConfirmPurchaseOrder(reqId, supplierId, expectedDeliveryDate);
                 TempData["Success"] = $"Purchase Order #{poId} created successfully.";
 
-                return RedirectToAction(nameof(Index), new { reqId, poId });
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] = $"Failed to create purchase order: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { reqId });
             }
+        }
+
+        [HttpPost]
+        public IActionResult CancelPO(int poId)
+        {
+            _purchaseOrderService.CancelPurchaseOrder(poId);
+            TempData["Success"] = "Purchase Order cancelled.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public IActionResult CancelRequest(int reqId)
+        {
+            _purchaseOrderService.CancelReplenishmentRequest(reqId);
+            TempData["Success"] = "Replenishment Request cancelled.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

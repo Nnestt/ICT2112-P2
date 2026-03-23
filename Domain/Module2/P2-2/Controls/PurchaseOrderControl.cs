@@ -169,10 +169,11 @@ namespace ProRental.Domain.Control
             {
                 int poId;
 
+                // 1. Create PO first with temporary total 0
                 using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO purchaseorder (supplierid, podate, status, expecteddeliverydate, totalamount)
-                    VALUES (@supplierId, CURRENT_DATE, 'CONFIRMED'::po_status_enum, @expectedDeliveryDate, 0)
-                    RETURNING poid;", conn, tx))
+            INSERT INTO purchaseorder (supplierid, podate, status, expecteddeliverydate, totalamount)
+            VALUES (@supplierId, CURRENT_DATE, 'CONFIRMED'::po_status_enum, @expectedDeliveryDate, 0)
+            RETURNING poid;", conn, tx))
                 {
                     cmd.Parameters.AddWithValue("@supplierId", supplierId);
                     cmd.Parameters.AddWithValue(
@@ -184,13 +185,52 @@ namespace ProRental.Domain.Control
                     poId = Convert.ToInt32(cmd.ExecuteScalar());
                 }
 
+                // 2. Insert PO line items using ProductDetails.Price
                 using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO polineitem (poid, productid, qty, unitprice, linetotal)
-                    SELECT @poId, productid, quantityrequest, 0, 0
-                    FROM lineitem
-                    WHERE requestid = @reqId;", conn, tx))
+            INSERT INTO polineitem (poid, productid, qty, unitprice, linetotal)
+            SELECT
+                @poId,
+                li.productid,
+                li.quantityrequest,
+                COALESCE(pd.price, 0),
+                li.quantityrequest * COALESCE(pd.price, 0)
+            FROM lineitem li
+            LEFT JOIN productdetails pd
+                ON pd.productid = li.productid
+            WHERE li.requestid = @reqId;", conn, tx))
                 {
                     cmd.Parameters.AddWithValue("@poId", poId);
+                    cmd.Parameters.AddWithValue("@reqId", reqId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 3. Sum all PO line totals
+                decimal totalAmount = 0;
+                using (var cmd = new NpgsqlCommand(@"
+            SELECT COALESCE(SUM(linetotal), 0)
+            FROM polineitem
+            WHERE poid = @poId;", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@poId", poId);
+                    totalAmount = Convert.ToDecimal(cmd.ExecuteScalar());
+                }
+
+                // 4. Update PO total amount
+                using (var cmd = new NpgsqlCommand(@"
+            UPDATE purchaseorder
+            SET totalamount = @totalAmount
+            WHERE poid = @poId;", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@totalAmount", totalAmount);
+                    cmd.Parameters.AddWithValue("@poId", poId);
+                    cmd.ExecuteNonQuery();
+                }
+                // 5. Update replenishment request status → SUBMITTED
+                using (var cmd = new NpgsqlCommand(@"
+    UPDATE replenishmentrequest
+    SET status = 'SUBMITTED'::replenishment_status_enum
+    WHERE requestid = @reqId;", conn, tx))
+                {
                     cmd.Parameters.AddWithValue("@reqId", reqId);
                     cmd.ExecuteNonQuery();
                 }
@@ -203,6 +243,101 @@ namespace ProRental.Domain.Control
                 tx.Rollback();
                 throw;
             }
+
+        }
+        public void ApprovePurchaseOrder(int poId)
+        {
+            var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using var cmd = new NpgsqlCommand(@"
+        UPDATE purchaseorder
+        SET status = 'APPROVED'::po_status_enum
+        WHERE poid = @poId
+        AND status = 'CONFIRMED'::po_status_enum;", conn);
+
+            cmd.Parameters.AddWithValue("@poId", poId);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void CompletePurchaseOrder(int poId)
+        {
+            var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using var tx = conn.BeginTransaction();
+
+            try
+            {
+                // 1. Update PO → COMPLETED
+                using (var cmd = new NpgsqlCommand(@"
+            UPDATE purchaseorder
+            SET status = 'COMPLETED'::po_status_enum
+            WHERE poid = @poId
+            AND status = 'APPROVED'::po_status_enum;", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@poId", poId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 2. ALSO mark related replenishment request as COMPLETED
+                using (var cmd = new NpgsqlCommand(@"
+            UPDATE replenishmentrequest
+            SET status = 'COMPLETED'::replenishment_status_enum,
+                completedat = CURRENT_TIMESTAMP,
+                completedby = 'system'
+            WHERE requestid IN (
+                SELECT li.requestid
+                FROM polineitem pli
+                JOIN lineitem li ON li.productid = pli.productid
+                WHERE pli.poid = @poId
+            );", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@poId", poId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
+        }
+        
+        public void CancelPurchaseOrder(int poId)
+        {
+            var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using var cmd = new NpgsqlCommand(@"
+        UPDATE purchaseorder
+        SET status = 'CANCELLED'::po_status_enum
+        WHERE poid = @poId
+          AND status IN ('CONFIRMED'::po_status_enum, 'APPROVED'::po_status_enum);", conn);
+
+            cmd.Parameters.AddWithValue("@poId", poId);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void CancelReplenishmentRequest(int reqId)
+        {
+            var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using var cmd = new NpgsqlCommand(@"
+        UPDATE replenishmentrequest
+        SET status = 'CANCELLED'::replenishment_status_enum
+        WHERE requestid = @reqId
+          AND status = 'DRAFT'::replenishment_status_enum;", conn);
+
+            cmd.Parameters.AddWithValue("@reqId", reqId);
+            cmd.ExecuteNonQuery();
         }
     }
 }
