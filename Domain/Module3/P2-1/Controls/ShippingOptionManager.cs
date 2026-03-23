@@ -218,13 +218,17 @@ public sealed class ShippingOptionManager : IShippingOptionService
         var quantity = Math.Max(context.Quantity, 1);
         var weightKg = Math.Max(context.WeightKg, 1d);
         var baseRate = pricingRule?.ReadBaseRatePerKm() ?? 0m;
-        var surchargeRate = (double)(pricingRule?.ReadCarbonSurcharge() ?? 0m);
-
         // Feature 1 composes a checkout snapshot from the shared Feature 2 carbon calculator
         // plus the pricing rules owned by the transport-carbon implementation.
         var legCarbonBase = _transportCarbonService.CalculateLegCarbon(quantity, weightKg, distanceKm, storageCo2: 0d);
         var routeCarbonKg = _transportCarbonService.CalculateRouteCarbon([(double)baseRate * legCarbonBase]);
-        var carbonSurchargeKg = _transportCarbonService.CalculateCarbonSurcharge(routeCarbonKg, surchargeRate);
+        var legCarbonSurcharge = _transportCarbonService.CalculateLegCarbonSurcharge(
+            quantity,
+            weightKg,
+            distanceKm,
+            0d,
+            profile.TransportMode);
+        var carbonSurchargeKg = _transportCarbonService.CalculateTotalCarbonSurcharge([legCarbonSurcharge]);
         var totalCarbonKg = Math.Round(routeCarbonKg + carbonSurchargeKg, 2, MidpointRounding.AwayFromZero);
 
         var cost = decimal.Round(

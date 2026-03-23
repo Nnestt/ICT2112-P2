@@ -27,6 +27,7 @@ internal static class PhaseTestRunner
 
         var tests = phase switch
         {
+            "transportcarbon" => TransportCarbonManagerTests.All,
             "phase0" => Phase0Tests.All,
             "phase1" => Phase1Tests.All,
             "phase2" => Phase2Tests.All,
@@ -278,7 +279,8 @@ internal static class Phase1Tests
         AssertMethod(routingService, "CreateRouteAsync", typeof(Task<DeliveryRoute>), typeof(RoutingRequest), typeof(CancellationToken));
         AssertMethod(transportCarbonService, "CalculateLegCarbon", typeof(double), typeof(int), typeof(double), typeof(double), typeof(double));
         AssertMethod(transportCarbonService, "CalculateRouteCarbon", typeof(double), typeof(IReadOnlyList<double>));
-        AssertMethod(transportCarbonService, "CalculateCarbonSurcharge", typeof(double), typeof(double), typeof(double));
+        AssertMethod(transportCarbonService, "CalculateLegCarbonSurcharge", typeof(double), typeof(int), typeof(double), typeof(double), typeof(double), typeof(TransportMode));
+        AssertMethod(transportCarbonService, "CalculateTotalCarbonSurcharge", typeof(double), typeof(IReadOnlyList<double>));
     }
 
     private static void AssertMethod(Type type, string name, Type returnType, params Type[] parameterTypes)
@@ -569,11 +571,41 @@ internal static class Phase4Tests
 {
     public static IReadOnlyList<PhaseTest> All { get; } =
     [
+        new("TransportCarbonManager calculates leg surcharge by transport type", TransportCarbonManagerCalculatesLegSurchargeByTransportType),
+        new("TransportCarbonManager sums leg surcharges into route total", TransportCarbonManagerSumsLegSurcharges),
         new("ShippingOptionManager builds and persists one option per preference", ShippingOptionManagerBuildsAndPersistsOptions),
         new("ShippingOptionManager reuses persisted options before rebuilding", ShippingOptionManagerReusesExistingOptions),
         new("ShippingOptionManager selection writes through checkout.option_id only", ShippingOptionManagerAppliesSelectionThroughRepository),
         new("ShippingOptionManager rejects mismatched order selections", ShippingOptionManagerRejectsMismatchedSelection)
     ];
+
+    private static void TransportCarbonManagerCalculatesLegSurchargeByTransportType()
+    {
+        var manager = new ProRental.Domain.Module3.P2_1.Controls.TransportCarbonManager(new StubPricingRuleGateway());
+
+        var truckSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.TRUCK);
+        var shipSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.SHIP);
+        var planeSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.PLANE);
+        var trainSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.TRAIN);
+
+        TestAssertions.AssertEqual(5.15d, truckSurcharge);
+        TestAssertions.AssertEqual(3.09d, shipSurcharge);
+        TestAssertions.AssertEqual(12.36d, planeSurcharge);
+        TestAssertions.AssertEqual(4.12d, trainSurcharge);
+    }
+
+    private static void TransportCarbonManagerSumsLegSurcharges()
+    {
+        var manager = new ProRental.Domain.Module3.P2_1.Controls.TransportCarbonManager(new StubPricingRuleGateway());
+
+        var truckSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.TRUCK);
+        var shipSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.SHIP);
+        var planeSurcharge = manager.CalculateLegCarbonSurcharge(2, 5.0, 10.0, 3.0, TransportMode.PLANE);
+
+        var total = manager.CalculateTotalCarbonSurcharge([truckSurcharge, shipSurcharge, planeSurcharge]);
+
+        TestAssertions.AssertEqual(20.6d, total);
+    }
 
     private static void ShippingOptionManagerBuildsAndPersistsOptions()
     {
@@ -594,7 +626,8 @@ internal static class Phase4Tests
         TestAssertions.AssertEqual(3, routingService.Requests.Count);
         TestAssertions.AssertEqual(3, transportCarbonService.LegRequests.Count);
         TestAssertions.AssertEqual(3, transportCarbonService.RouteRequests.Count);
-        TestAssertions.AssertEqual(3, transportCarbonService.SurchargeRequests.Count);
+        TestAssertions.AssertEqual(3, transportCarbonService.LegSurchargeRequests.Count);
+        TestAssertions.AssertEqual(3, transportCarbonService.TotalSurchargeRequests.Count);
         TestAssertions.AssertEqual(3, pricingRuleGateway.Requests.Count);
     }
 
@@ -617,7 +650,8 @@ internal static class Phase4Tests
         TestAssertions.AssertEqual(0, routingService.Requests.Count);
         TestAssertions.AssertEqual(0, transportCarbonService.LegRequests.Count);
         TestAssertions.AssertEqual(0, transportCarbonService.RouteRequests.Count);
-        TestAssertions.AssertEqual(0, transportCarbonService.SurchargeRequests.Count);
+        TestAssertions.AssertEqual(0, transportCarbonService.LegSurchargeRequests.Count);
+        TestAssertions.AssertEqual(0, transportCarbonService.TotalSurchargeRequests.Count);
         TestAssertions.AssertEqual(0, pricingRuleGateway.Requests.Count);
     }
 
@@ -807,7 +841,8 @@ internal static class Phase4Tests
     {
         public List<(int Quantity, double WeightKg, double DistanceKm, double StorageCo2)> LegRequests { get; } = [];
         public List<IReadOnlyList<double>> RouteRequests { get; } = [];
-        public List<(double TotalCarbonFootprint, double SurchargeRate)> SurchargeRequests { get; } = [];
+        public List<(int Quantity, double WeightKg, double DistanceKm, double StorageCo2, TransportMode TransportMode)> LegSurchargeRequests { get; } = [];
+        public List<IReadOnlyList<double>> TotalSurchargeRequests { get; } = [];
 
         public double CalculateLegCarbon(int quantity, double weightKg, double distanceKm, double storageCo2)
         {
@@ -821,10 +856,26 @@ internal static class Phase4Tests
             return legCarbonValues.Sum();
         }
 
-        public double CalculateCarbonSurcharge(double totalCarbonFootprint, double surchargeRate)
+        public double CalculateLegCarbonSurcharge(int quantity, double weightKg, double distanceKm, double storageCo2, TransportMode transportMode)
         {
-            SurchargeRequests.Add((totalCarbonFootprint, surchargeRate));
-            return totalCarbonFootprint * surchargeRate;
+            LegSurchargeRequests.Add((quantity, weightKg, distanceKm, storageCo2, transportMode));
+
+            var legCarbon = (quantity * weightKg * distanceKm) + storageCo2;
+            var surchargeRate = transportMode switch
+            {
+                TransportMode.PLANE => 0.12d,
+                TransportMode.SHIP => 0.03d,
+                TransportMode.TRAIN => 0.04d,
+                _ => 0.05d
+            };
+
+            return legCarbon * surchargeRate;
+        }
+
+        public double CalculateTotalCarbonSurcharge(IReadOnlyList<double> legSurcharges)
+        {
+            TotalSurchargeRequests.Add(legSurcharges.ToArray());
+            return legSurcharges.Sum();
         }
     }
 
@@ -1132,7 +1183,7 @@ internal static class Phase7Tests
             new ShippingOptionMapper(context),
             new ShippingOrderContextService(context),
             new ShippingRoutingService(context),
-            new ProRental.Domain.Module3.P2_1.Controls.TransportCarbonManager(),
+            new ProRental.Domain.Module3.P2_1.Controls.TransportCarbonManager(new PricingRuleGateway(context)),
             new PricingRuleGateway(context));
     }
 }

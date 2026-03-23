@@ -46,14 +46,18 @@ public class TransportCarbonController : Controller
                 var rule = _pricingRuleGateway.FindByTransportMode(routeLeg.Mode)
                     .FirstOrDefault(r => r.ReadIsActive());
                 var baseRate = (double)(rule?.ReadBaseRatePerKm() ?? 0m);
-                var surchargeRate = (double)(rule?.ReadCarbonSurcharge() ?? 0m);
                 var legCarbonBase = _transportCarbonService.CalculateLegCarbon(
                     carbonInput.Quantity,
                     weightKg,
                     distanceKm,
                     storageCo2);
                 var legCarbonValue = legCarbonBase * baseRate;
-                var legCarbonSurcharge = _transportCarbonService.CalculateCarbonSurcharge(legCarbonValue, surchargeRate);
+                var legCarbonSurcharge = _transportCarbonService.CalculateLegCarbonSurcharge(
+                    carbonInput.Quantity,
+                    weightKg,
+                    distanceKm,
+                    storageCo2,
+                    routeLeg.Mode);
 
                 return new
                 {
@@ -62,7 +66,7 @@ public class TransportCarbonController : Controller
                     routeLeg.EndPoint,
                     distanceKm,
                     baseRate,
-                    surchargeRate,
+                    surchargeRate = (double)(rule?.ReadCarbonSurcharge() ?? 0m),
                     legCarbonBase,
                     legCarbonValue,
                     legCarbonSurcharge
@@ -71,7 +75,8 @@ public class TransportCarbonController : Controller
 
             var legCarbonValues = legCalculations.Select(leg => (double)leg.legCarbonValue).ToList();
             var routeCarbonKg = _transportCarbonService.CalculateRouteCarbon(legCarbonValues);
-            var carbonSurchargeKg = legCalculations.Sum(leg => (double)leg.legCarbonSurcharge);
+            var legCarbonSurcharges = legCalculations.Select(leg => (double)leg.legCarbonSurcharge).ToList();
+            var carbonSurchargeKg = _transportCarbonService.CalculateTotalCarbonSurcharge(legCarbonSurcharges);
 
             return Json(new
             {

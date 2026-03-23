@@ -1,3 +1,5 @@
+using ProRental.Domain.Enums;
+
 namespace ProRental.Interfaces.Module3.P2_1;
 
 /// <summary>
@@ -9,5 +11,6 @@ public interface ITransportCarbonService
 {
     double CalculateLegCarbon(int quantity, double weightKg, double distanceKm, double storageCo2);
     double CalculateRouteCarbon(IReadOnlyList<double> legCarbonValues);
-    double CalculateCarbonSurcharge(double totalCarbonFootprint, double surchargeRate);
+    double CalculateLegCarbonSurcharge(int quantity, double weightKg, double distanceKm, double storageCo2, TransportMode transportMode);
+    double CalculateTotalCarbonSurcharge(IReadOnlyList<double> legSurcharges);
 }
