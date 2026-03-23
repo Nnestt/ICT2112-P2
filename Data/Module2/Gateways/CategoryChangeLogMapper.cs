@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using ProRental.Data.Module2.Interfaces;
 using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Enums;
@@ -22,11 +23,11 @@ public class CategoryChangeLogMapper : ICategoryChangeLogMapper
     {
         var dbEntity = Activator.CreateInstance(typeof(ProRental.Domain.Entities.Suppliercategorychangelog))!;
         var entry = _context.Entry(dbEntity);
-        entry.Property("Supplierid").CurrentValue    = log.SupplierID;
+        entry.Property("Supplierid").CurrentValue       = log.SupplierID;
         entry.Property("Previouscategory").CurrentValue = log.PreviousCategory;
-        entry.Property("Newcategory").CurrentValue   = log.NewCategory;
-        entry.Property("Changereason").CurrentValue  = log.ChangedReason;
-        entry.Property("Changedat").CurrentValue     = log.ChangedAt;
+        entry.Property("Newcategory").CurrentValue      = log.NewCategory;
+        entry.Property("Changereason").CurrentValue     = log.ChangedReason;
+        entry.Property("Changedat").CurrentValue        = log.ChangedAt;
 
         _context.Add(dbEntity);
         _context.SaveChanges();
@@ -39,11 +40,7 @@ public class CategoryChangeLogMapper : ICategoryChangeLogMapper
         var dbEntity = _context.Suppliercategorychangelogs
             .SingleOrDefault(l => EF.Property<int>(l, "Logid") == log.LogID);
 
-        if (dbEntity is null)
-        {
-            insertCategoryChangeLog(log);
-            return;
-        }
+        if (dbEntity is null) { insertCategoryChangeLog(log); return; }
 
         var entry = _context.Entry(dbEntity);
         entry.Property("Supplierid").CurrentValue       = log.SupplierID;
@@ -51,7 +48,6 @@ public class CategoryChangeLogMapper : ICategoryChangeLogMapper
         entry.Property("Newcategory").CurrentValue      = log.NewCategory;
         entry.Property("Changereason").CurrentValue     = log.ChangedReason;
         entry.Property("Changedat").CurrentValue        = log.ChangedAt;
-
         _context.SaveChanges();
     }
 
@@ -60,9 +56,7 @@ public class CategoryChangeLogMapper : ICategoryChangeLogMapper
         var dbEntity = _context.Suppliercategorychangelogs
             .SingleOrDefault(l => EF.Property<int>(l, "Logid") == logID);
 
-        if (dbEntity is null)
-            return false;
-
+        if (dbEntity is null) return false;
         _context.Suppliercategorychangelogs.Remove(dbEntity);
         _context.SaveChanges();
         return true;
@@ -71,33 +65,39 @@ public class CategoryChangeLogMapper : ICategoryChangeLogMapper
     public SupplierCategoryChangeLog findCategoryChangeLogById(int logID)
     {
         var dbEntity = _context.Suppliercategorychangelogs
-            .AsNoTracking()
             .SingleOrDefault(l => EF.Property<int>(l, "Logid") == logID);
 
-        if (dbEntity is null)
-            return null!;
-
-        return MapFromDb(_context.Entry(dbEntity));
+        if (dbEntity is null) return null!;
+        var result = MapFromEntry(_context.Entry(dbEntity));
+        _context.Entry(dbEntity).State = EntityState.Detached;
+        return result;
     }
 
     public List<SupplierCategoryChangeLog> findLogsBySupplier(int supplierID)
     {
         var dbEntities = _context.Suppliercategorychangelogs
-            .AsNoTracking()
             .Where(l => EF.Property<int?>(l, "Supplierid") == supplierID)
             .ToList();
 
-        return dbEntities.Select(e => MapFromDb(_context.Entry(e))).ToList();
+        var results = dbEntities.Select(e => MapFromEntry(_context.Entry(e))).ToList();
+
+        foreach (var e in dbEntities)
+            _context.Entry(e).State = EntityState.Detached;
+
+        return results;
     }
 
-    private static SupplierCategoryChangeLog MapFromDb(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    private static SupplierCategoryChangeLog MapFromEntry(EntityEntry entry)
     {
+        var prevRaw = entry.Property("Previouscategory").CurrentValue;
+        var newRaw  = entry.Property("Newcategory").CurrentValue;
+
         return new SupplierCategoryChangeLog
         {
             LogID            = (int)(entry.Property("Logid").CurrentValue ?? 0),
             SupplierID       = (int)(entry.Property("Supplierid").CurrentValue ?? 0),
-            PreviousCategory = (SupplierCategory)(entry.Property("Previouscategory").CurrentValue ?? SupplierCategory.NEWUNTESTED),
-            NewCategory      = (SupplierCategory)(entry.Property("Newcategory").CurrentValue ?? SupplierCategory.NEWUNTESTED),
+            PreviousCategory = prevRaw is null ? SupplierCategory.NEWUNTESTED : (SupplierCategory)prevRaw,
+            NewCategory      = newRaw  is null ? SupplierCategory.NEWUNTESTED : (SupplierCategory)newRaw,
             ChangedReason    = (string)(entry.Property("Changereason").CurrentValue ?? string.Empty),
             ChangedAt        = (DateTime)(entry.Property("Changedat").CurrentValue ?? DateTime.UtcNow),
         };

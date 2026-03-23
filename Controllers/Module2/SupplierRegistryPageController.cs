@@ -9,7 +9,7 @@ using ProRental.Interfaces.Module2;
 
 namespace ProRental.Controllers.Module2;
 
-public class SupplierRegistryPageController : Controller  // <-- public added
+public class SupplierRegistryPageController : Controller
 {
     private readonly ISupplier _supplier;
     private readonly ISupplierVettingGateway _supplierVettingGateway;
@@ -40,7 +40,6 @@ public class SupplierRegistryPageController : Controller  // <-- public added
         _currentPage = _requestParams.TryGetValue("page", out var page) ? page : string.Empty;
     }
 
-    // Full view path so MVC finds the view regardless of controller folder
     public IActionResult renderView(string viewName, object model)
     {
         return View($"~/Views/Module2/{viewName}.cshtml", model);
@@ -91,6 +90,8 @@ public class SupplierRegistryPageController : Controller  // <-- public added
     public IActionResult Edit(int id)
     {
         var supplier = supplierControl.getSupplierById(id);
+        // Load changelogs and pass to view via ViewData
+        ViewData["ChangeLogs"] = _categoryChangeLogControl.getLogsBySupplier(id);
         return renderView("supplierForm", supplier);
     }
 
@@ -100,7 +101,7 @@ public class SupplierRegistryPageController : Controller  // <-- public added
     {
         supplierControl.editSupplier(id, newDetails);
         TempData["Success"] = "Supplier updated.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Edit), new { id });
     }
 
     [HttpPost]
@@ -110,15 +111,6 @@ public class SupplierRegistryPageController : Controller  // <-- public added
         supplierControl.deleteSupplier(id);
         TempData["Success"] = "Supplier deleted.";
         return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Verify(int id, VettingDecision result)
-    {
-        supplierControl.updateSupplierStatus(id, result);
-        TempData["Success"] = "Vetting status updated.";
-        return RedirectToAction(nameof(Edit), new { id });
     }
 
     [HttpPost]

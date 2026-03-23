@@ -38,7 +38,7 @@ public class SupplierMapper : ISupplierMapper
 
     public void updateSupplier(Supplier supplier)
     {
-        // Detach any already-tracked instance with this key to avoid conflicts
+        // Detach any already-tracked instance to avoid conflicts
         var tracked = _context.ChangeTracker.Entries()
             .FirstOrDefault(e =>
                 e.Metadata.ClrType == typeof(ProRental.Domain.Entities.Supplier) &&
@@ -47,6 +47,7 @@ public class SupplierMapper : ISupplierMapper
         if (tracked != null)
             tracked.State = EntityState.Detached;
 
+        // Load fresh from DB (tracked, not AsNoTracking)
         var dbEntity = _context.Suppliers
             .SingleOrDefault(s => EF.Property<int>(s, "Supplierid") == supplier.SupplierID);
 
@@ -67,7 +68,6 @@ public class SupplierMapper : ISupplierMapper
             .SingleOrDefault(s => EF.Property<int>(s, "Supplierid") == supplierID);
 
         if (dbEntity is null) return false;
-
         _context.Suppliers.Remove(dbEntity);
         _context.SaveChanges();
         return true;
@@ -75,24 +75,32 @@ public class SupplierMapper : ISupplierMapper
 
     public Supplier findSupplierById(int supplierID)
     {
+        // Use tracked (not AsNoTracking) so CurrentValue works in MapFromEntry
         var dbEntity = _context.Suppliers
-            .AsNoTracking()
             .SingleOrDefault(s => EF.Property<int>(s, "Supplierid") == supplierID);
 
         if (dbEntity is null) return null!;
-        return MapFromDb(_context.Entry(dbEntity));
+
+        var result = MapFromEntry(_context.Entry(dbEntity));
+
+        // Detach after reading so it doesn't interfere with later updates
+        _context.Entry(dbEntity).State = EntityState.Detached;
+
+        return result;
     }
 
     public List<Supplier> findAll()
     {
-        return _context.Suppliers
-            .AsNoTracking()
-            .ToList()
-            .Select(e => MapFromDb(_context.Entry(e)))
-            .ToList();
-    }
+        // Use tracked so CurrentValue works, then detach all after mapping
+        var dbEntities = _context.Suppliers.ToList();
+        var results = dbEntities.Select(e => MapFromEntry(_context.Entry(e))).ToList();
 
-    // ── helpers ────────────────────────────────────────────────────────────
+        // Detach all to keep context clean
+        foreach (var e in dbEntities)
+            _context.Entry(e).State = EntityState.Detached;
+
+        return results;
+    }
 
     private static void SetProperties(EntityEntry entry, Supplier supplier)
     {
@@ -107,12 +115,12 @@ public class SupplierMapper : ISupplierMapper
         entry.Property("Vettingresult").CurrentValue     = Enum.Parse<VettingResult>(supplier.VettingResult.ToString());
     }
 
-    private static Supplier MapFromDb(EntityEntry entry)
+    private static Supplier MapFromEntry(EntityEntry entry)
     {
-        var vettingResultRaw = entry.Property("Vettingresult").CurrentValue;
-        var vettingDecision = vettingResultRaw is null
+        var vettingRaw = entry.Property("Vettingresult").CurrentValue;
+        var vettingDecision = vettingRaw is null
             ? VettingDecision.PENDING
-            : Enum.Parse<VettingDecision>(vettingResultRaw.ToString()!);
+            : Enum.Parse<VettingDecision>(vettingRaw.ToString()!);
 
         var categoryRaw = entry.Property("Suppliercategory").CurrentValue;
         var category = categoryRaw is null
