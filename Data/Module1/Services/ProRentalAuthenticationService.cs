@@ -24,47 +24,62 @@ public class ProRentalAuthenticationService : IAuthenticationService
 
     public AuthResult Authenticate(string email, string password)
     {
-        var user = _db.Users
-            .AsEnumerable()
-            .FirstOrDefault(u =>
-            {
-                var userEmail = GetPrivateProperty<string>(u, "Email");
-                return string.Equals(userEmail, email, StringComparison.OrdinalIgnoreCase);
-            });
+        // ── Step 1: Fetch the user row including the role via raw SQL ────
+        //
+        // ROOT CAUSE OF THE BUG:
+        // The auto-generated AppDbContext maps the User entity but deliberately
+        // omits the `userrole` column — there is no .Property("Userrole") call
+        // in the scaffolded OnModelCreating. EF Core therefore never SELECTs
+        // that column, so the backing private field is always null / default.
+        // Reflection on that backing field returns the default UserRole value,
+        // which happens to be CUSTOMER (index 0) regardless of what is stored
+        // in the database.
+        //
+        // FIX: query the role directly via raw SQL so EF's entity mapping is
+        // bypassed entirely, identical in approach to CustomerValidationService.
 
-        if (user == null)
+        var rows = _db.Database
+            .SqlQueryRaw<UserAuthRow>(
+                @"SELECT userid, name, passwordhash, userrole::text AS userrole
+                  FROM public.""User""
+                  WHERE LOWER(email) = LOWER({0})",
+                email)
+            .ToList();
+
+        if (rows.Count == 0)
             return AuthResult.Failure("Invalid email or password.");
 
-        var passwordHash = GetPrivateProperty<string>(user, "Passwordhash");
+        var row = rows[0];
 
-        if (passwordHash == null)
+        if (row.Passwordhash == null)
             return AuthResult.Failure("User account data is incomplete.");
 
-        if (password != passwordHash)
+        // Plain-text comparison kept to match existing behaviour.
+        // Replace with BCrypt.Verify() when hashing is introduced.
+        if (password != row.Passwordhash)
             return AuthResult.Failure("Invalid email or password.");
 
-        // Read role directly as UserRole enum instead of object
-        var role = GetPrivateProperty<UserRole>(user, "Userrole");
-        var name = GetPrivateProperty<string>(user, "Name") ?? email; // Fallback to email if name is not available
+        // ── Step 2: Parse the DB role string into the enum ───────────────
+        // DB stores e.g. "STAFF", "CUSTOMER", "ADMIN" as the enum label.
+        if (!Enum.TryParse<UserRole>(row.Userrole, ignoreCase: true, out var role))
+            return AuthResult.Failure($"Unrecognised user role '{row.Userrole}' on this account.");
 
-        var roleRaw = GetPrivateProperty<object>(user, "Userrole");
+        var name = row.Name ?? email;
 
-        // TEMP DEBUG
-        Console.WriteLine($"[DEBUG] role as UserRole: '{role}'");
-        Console.WriteLine($"[DEBUG] role as object: '{roleRaw}'");
-        Console.WriteLine($"[DEBUG] role raw type: '{roleRaw?.GetType()}'");
-
-        var userId = GetPrivateProperty<int>(user, "Userid");
-        var session = _sessionService.CreateSession(userId, role);
+        // ── Step 3: Create session with the correct role ─────────────────
+        var session = _sessionService.CreateSession(row.Userid, role);
         return AuthResult.Success(session, name);
     }
 
-    private static T? GetPrivateProperty<T>(object obj, string propertyName)
+    /// <summary>
+    /// Projection type for the raw SQL query.
+    /// SqlQueryRaw maps columns to properties by name (case-insensitive).
+    /// </summary>
+    private class UserAuthRow
     {
-        var prop = obj.GetType().GetProperty(
-            propertyName,
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Instance);
-        return prop == null ? default : (T?)prop.GetValue(obj);
+        public int Userid { get; set; }
+        public string? Name { get; set; }
+        public string? Passwordhash { get; set; }
+        public string Userrole { get; set; } = string.Empty;
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Domain.Controls;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Controllers.Module1;
 
@@ -45,7 +46,8 @@ public class Module1Controller : Controller
         HttpContext.Session.SetString("UserName", result.UserName ?? email);
         HttpContext.Session.SetString("UserRole", result.Session.RoleString);
 
-        return RedirectToAction("Index", "Home");
+        // Redirect to customer success page; action guard handles fallback to Home.
+        return RedirectToAction("CustomerLoginSuccess");
     }
 
     // POST /Module1/Logout
@@ -87,6 +89,29 @@ public class Module1Controller : Controller
         return RedirectToAction("Index", "Cart");
     }
 
+    // ── Customer Login Success ───────────────────────────────────────────
+
+    // GET /Module1/CustomerLoginSuccess
+    public IActionResult CustomerLoginSuccess()
+    {
+        // Guard: only accessible if a valid customer session exists.
+        var role = HttpContext.Session.GetString("UserRole");
+        if (string.IsNullOrEmpty(role) ||
+            !role.Equals("CUSTOMER", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Login");
+        }
+
+        // Attempt to serve the dedicated success view; fall back to Home/Index
+        // if the view file has not been created yet.
+        var viewPath = "P2-6/CustomerLoginSuccess";
+        var viewExists = ViewExists(viewPath);
+
+        return viewExists
+            ? View(viewPath)
+            : RedirectToAction("Index", "Home");
+    }
+
     // ── Staff Login ──────────────────────────────────────────────────────
 
     // GET /Module1/StaffLogin
@@ -108,10 +133,37 @@ public class Module1Controller : Controller
             return View("P2-6/StaffLogin");
         }
 
-        HttpContext.Session.SetInt32("SessionId", result.Session!.SessionId);
+        // Reject non-staff accounts that attempt to use the staff portal.
+        var roleString = result.Session!.RoleString;
+        if (!Enum.TryParse<UserRole>(roleString, ignoreCase: true, out var role) ||
+            (role != UserRole.STAFF && role != UserRole.ADMIN))
+        {
+            ModelState.AddModelError(string.Empty,
+                "Access denied. This portal is for staff and administrators only.");
+            return View("P2-6/StaffLogin");
+        }
+
+        HttpContext.Session.SetInt32("SessionId", result.Session.SessionId);
         HttpContext.Session.SetString("UserName", result.UserName ?? StaffEmail);
-        HttpContext.Session.SetString("UserRole", result.Session.RoleString);
-        return RedirectToAction("Index", "Home");
+        HttpContext.Session.SetString("UserRole", roleString);
+
+        // Redirect staff to the staff success / dashboard page.
+        return RedirectToAction("StaffLoginSuccess");
+    }
+
+    // GET /Module1/StaffLoginSuccess
+    public IActionResult StaffLoginSuccess()
+    {
+        // Guard: only accessible if a valid staff session exists.
+        var role = HttpContext.Session.GetString("UserRole");
+        if (string.IsNullOrEmpty(role) ||
+            (!role.Equals("STAFF", StringComparison.OrdinalIgnoreCase) &&
+             !role.Equals("ADMIN", StringComparison.OrdinalIgnoreCase)))
+        {
+            return RedirectToAction("StaffLogin");
+        }
+
+        return View("P2-6/StaffLoginSuccess");
     }
 
     // ── Signup ───────────────────────────────────────────────────────────
@@ -156,5 +208,20 @@ public class Module1Controller : Controller
     public IActionResult SignupSuccess()
     {
         return View("P2-6/SignupSuccess");
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true if the Razor view at the given path can be located by the view engine.
+    /// Used to enable graceful fallback when an optional view has not yet been created.
+    /// </summary>
+    private bool ViewExists(string viewPath)
+    {
+        var result = HttpContext.RequestServices
+            .GetRequiredService<Microsoft.AspNetCore.Mvc.ViewEngines.ICompositeViewEngine>()
+            .FindView(ControllerContext, viewPath, isMainPage: false);
+
+        return result.Success;
     }
 }
