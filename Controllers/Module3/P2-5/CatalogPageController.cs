@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ProRental.Domain.Module3.P2_5;
+using ProRental.Domain.Module3.P2_5.Controls;
 using ProRental.Domain.Module3.P2_5.Entities;
 using ProRental.Interfaces.Data.Module3.P2_5;
 
@@ -10,9 +10,9 @@ namespace ProRental.Controllers.Module3.P2_5
     {
         private readonly CatalogControl _control;
 
-        public CatalogPageController(ICatalogQuery catalogQuery)
+        public CatalogPageController(ICatalogGateway catalogGateway)
         {
-            _control = new CatalogControl(catalogQuery);
+            _control = new CatalogControl(catalogGateway);
         }
 
         [HttpGet("eco")]

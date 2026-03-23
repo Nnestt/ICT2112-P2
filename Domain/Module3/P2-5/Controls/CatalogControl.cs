@@ -3,21 +3,21 @@ using ProRental.Interfaces.Data.Module3.P2_5;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ProRental.Domain.Module3.P2_5
+namespace ProRental.Domain.Module3.P2_5.Controls
 {
     public class CatalogControl
     {
-        private readonly ICatalogQuery _catalogQuery;
+        private readonly ICatalogGateway _catalogGateway;
 
-        public CatalogControl(ICatalogQuery catalogQuery)
+        public CatalogControl(ICatalogGateway catalogGateway)
         {
-            _catalogQuery = catalogQuery;
+            _catalogGateway = catalogGateway;
         }
 
-        // 🔥 FEATURE 5: Eco Product Discovery
+        // FEATURE 5: Eco Product Discovery
         public List<Catalog> GetEcoProducts()
         {
-            var products = _catalogQuery.GetAll();
+            var products = _catalogGateway.GetAll();
 
             return products
                 .Where(p => !string.IsNullOrEmpty(p.EcoBadge))
@@ -32,12 +32,12 @@ namespace ProRental.Domain.Module3.P2_5
                 return new List<Catalog>();
             }
 
-            return _catalogQuery.GetByEcoBadge(badge.Trim());
+            return _catalogGateway.GetByEcoBadge(badge.Trim());
         }
 
         public List<Catalog> GetSortedByCarbon()
         {
-            return _catalogQuery.GetSortedByCarbonScore();
+            return _catalogGateway.GetSortedByCarbonScore();
         }
     }
 }

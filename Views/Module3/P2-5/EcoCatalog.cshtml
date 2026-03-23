@@ -190,7 +190,42 @@
                     <div class="card-body p-4 p-lg-5">
                         <div class="mb-4">
                             <h3 class="fw-bold mb-1">Sustainable Product Listing</h3>
-                            <p class="text-muted mb-0">Module 2 style browse page with carbon-aware discovery.</p>
+                            <p class="text-muted mb-3">Module 2 style browse page with carbon-aware discovery.</p>
+                        </div>
+
+                        <div class="row g-3 mb-5">
+                            <div class="col-md-6 col-lg-3">
+                                <div class="border-start border-success ps-3">
+                                    <span class="badge badge-tier-gold mb-2 d-inline-block">
+                                        <i class="bi bi-star-fill me-1"></i>Gold Eco
+                                    </span>
+                                    <p class="small text-muted mb-0"><strong>≤ 120g CO₂</strong><br/>Low carbon product footprint that meets premium sustainability targets.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="border-start border-info ps-3">
+                                    <span class="badge badge-tier-silver mb-2 d-inline-block">
+                                        <i class="bi bi-star me-1"></i>Silver Eco
+                                    </span>
+                                    <p class="small text-muted mb-0"><strong>≤ 180g CO₂</strong><br/>Moderate carbon footprint within acceptable operating limits.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="border-start border-warning ps-3">
+                                    <span class="badge badge-tier-bronze mb-2 d-inline-block">
+                                        <i class="bi bi-star-half me-1"></i>Bronze Eco
+                                    </span>
+                                    <p class="small text-muted mb-0"><strong>≤ 250g CO₂</strong><br/>Higher carbon but meets minimum green baseline.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="border-start border-secondary ps-3">
+                                    <span class="badge badge-tier-standard mb-2 d-inline-block">
+                                        <i class="bi bi-dash-circle me-1"></i>Standard
+                                    </span>
+                                    <p class="small text-muted mb-0"><strong>&gt; 250g CO₂</strong><br/>Does not meet eco criteria.</p>
+                                </div>
+                            </div>
                         </div>
 
                         @if (Model.Products.Count == 0)

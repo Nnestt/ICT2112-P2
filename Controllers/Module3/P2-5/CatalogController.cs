@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using ProRental.Domain.Module3.P2_5;
+using ProRental.Domain.Module3.P2_5.Controls;
 using ProRental.Interfaces.Data.Module3.P2_5;
 
 namespace ProRental.Controllers.Module3.P2_5
@@ -10,12 +10,12 @@ namespace ProRental.Controllers.Module3.P2_5
     {
         private readonly CatalogControl _control;
 
-        public CatalogController(ICatalogQuery catalogQuery)
+        public CatalogController(ICatalogGateway catalogGateway)
         {
-            _control = new CatalogControl(catalogQuery);
+            _control = new CatalogControl(catalogGateway);
         }
 
-        // 🔥 Feature 5: Eco products
+        //Feature 5: Eco products
         [HttpGet("eco")]
         public IActionResult GetEcoProducts()
         {

@@ -167,7 +167,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Team P2-5
 // Data source
 builder.Services.AddScoped<IBuildingFootprintGateway, BuildingFootprintGateway>();
-builder.Services.AddScoped<ICatalogQuery, CatalogQuery>();
+builder.Services.AddScoped<ICatalogGateway, CatalogGateway>();
 builder.Services.AddScoped<IProductFootprintGateway, ProductFootprintGateway>();
 builder.Services.AddScoped<IStaffFootprintGateway, StaffFootprintGateway>();
 

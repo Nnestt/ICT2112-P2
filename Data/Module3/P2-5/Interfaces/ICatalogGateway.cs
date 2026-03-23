@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ProRental.Interfaces.Data.Module3.P2_5
 {
-    public interface ICatalogQuery
+    public interface ICatalogGateway
     {
         List<Catalog> GetAll();
         List<Catalog> GetByEcoBadge(string badge);

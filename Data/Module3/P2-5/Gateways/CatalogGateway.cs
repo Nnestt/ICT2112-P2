@@ -5,11 +5,11 @@ using System.Reflection;
 
 namespace ProRental.Data.Module3.P2_5.Gateways
 {
-    public class CatalogQuery : ICatalogQuery
+    public class CatalogGateway : ICatalogGateway
     {
         private readonly AppDbContext _dbContext;
 
-        public CatalogQuery(AppDbContext dbContext)
+        public CatalogGateway(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
@@ -64,10 +64,10 @@ namespace ProRental.Data.Module3.P2_5.Gateways
                     continue;
                 }
 
-                if (!badgesById.TryGetValue(badgeId, out var badge))
-                {
-                    continue;
-                }
+                var carbonScore = Convert.ToDecimal(GetTotalCo2(footprint));
+                var ecoBadge = badgeId.HasValue && badgesById.TryGetValue(badgeId.Value, out var badge)
+                    ? ReadMember<string>(badge, "Badgename", "_badgename")
+                    : "Standard";
 
                 yield return new Catalog
                 {
@@ -75,8 +75,8 @@ namespace ProRental.Data.Module3.P2_5.Gateways
                     Name = ReadMember<string>(detail, "Name", "_name"),
                     Description = ReadNullableMember<string>(detail, "Description", "_description") ?? string.Empty,
                     Price = ReadMember<decimal>(detail, "Price", "_price"),
-                    EcoBadge = ReadMember<string>(badge, "Badgename", "_badgename"),
-                    CarbonScore = Convert.ToDecimal(GetTotalCo2(footprint))
+                    EcoBadge = ecoBadge,
+                    CarbonScore = carbonScore
                 };
             }
         }
@@ -91,9 +91,9 @@ namespace ProRental.Data.Module3.P2_5.Gateways
             return ReadMember<int>(detail, "Productid", "_productid");
         }
 
-        private static int GetBadgeId(Productfootprint footprint)
+        private static int? GetBadgeId(Productfootprint footprint)
         {
-            return ReadMember<int>(footprint, "Badgeid", "_badgeid");
+            return ReadNullableMember<int>(footprint, "Badgeid", "_badgeid");
         }
 
         private static int GetBadgeId(Ecobadge badge)
