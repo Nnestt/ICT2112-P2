@@ -182,8 +182,10 @@ builder.Services.AddScoped<iInventoryCRUDControl>(sp => sp.GetRequiredService<In
 builder.Services.AddScoped<iInventoryQueryControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iInventoryStatusControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iStockSubject>(sp => sp.GetRequiredService<InventoryManagementControl>());
-builder.Services.AddScoped<iAlertControl, LowStockAlertControl>();
-builder.Services.AddScoped<iStockObserver, LowStockAlertControl>();
+
+builder.Services.AddScoped<LowStockAlertControl>();
+builder.Services.AddScoped<iAlertControl>(sp => sp.GetRequiredService<LowStockAlertControl>());
+builder.Services.AddScoped<iStockObserver>(sp => sp.GetRequiredService<LowStockAlertControl>());
 
 //product
 builder.Services.AddScoped<ProductCatalogControl>();

@@ -48,10 +48,10 @@ public class InventoryAlertsController : Controller
     [HttpGet("DisplayAlerts")]
     public IActionResult DisplayAlerts()
     {
-        // Without a method to get all alerts, show instructions
+        var alerts = _alertControl.GetAllAlerts();
         ViewData["Filter"] = "Select a filter below:";
         ViewData["Message"] = "Use DisplayAlertsByProduct or DisplayAlertsByStaff with appropriate IDs";
-        return View("~/Views/Module2/Alerts.cshtml", new List<Alert>());
+        return View("~/Views/Module2/Alerts.cshtml", alerts);
     }
 
     [HttpGet("DisplayAlertsByProduct/{productId:int}")]

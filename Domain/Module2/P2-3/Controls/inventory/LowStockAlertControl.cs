@@ -34,6 +34,11 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         }
     }
 
+    public List<Alert> GetAllAlerts()
+    {
+        return _alertMapper.FindAll()?.ToList() ?? new List<Alert>();
+    }
+
     public List<Alert> GetAlertsByStaff(int staffId)
     {
         return _alertMapper.FindAll()?
@@ -132,6 +137,12 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
             return false;
         }
 
+        // spam prevention step, prevent multiple alerts for the same product
+        var existingAlerts = GetAlertsByProduct(productId);
+
+        if (existingAlerts.Any(a => a.GetAlertStatus() == AlertStatus.OPEN))
+            return false;
+
         // Build and create the alert
         var alert = new Alert();
         alert.SetProductId(productId);
@@ -139,6 +150,8 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         alert.SetMinThreshold(minThreshold);
         alert.SetAlertStatus(AlertStatus.OPEN);
         alert.SetCreatedAt(DateTime.UtcNow);
+        alert.SetCurrentStock(availableCount);
+        alert.SetMessage($"Automatic Alert: Stock has fallen to {availableCount}, which is below the minimum threshold of {minThreshold}.");
 
         return CreateAlert(alert);
     }
