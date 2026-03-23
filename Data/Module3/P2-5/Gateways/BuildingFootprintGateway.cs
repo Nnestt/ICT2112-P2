@@ -56,6 +56,13 @@ public sealed class BuildingFootprintGateway : IBuildingFootprintGateway
             .ToList();
     }
 
+    public async Task<Buildingfootprint> CreateBuildingFootprintAsync(Buildingfootprint footprint)
+    {
+        _dbContext.Buildingfootprints.Add(footprint);
+        await _dbContext.SaveChangesAsync();
+        return footprint;
+    }
+
     private static string NormalizeGroupBy(string groupBy)
     {
         return groupBy.Trim().ToLowerInvariant() switch
