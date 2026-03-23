@@ -24,7 +24,12 @@ public class Supplier : ISupplierRegistryEntity
 
     public void assignInitialCategory()
     {
-        SupplierCategory = SupplierCategory.NEWUNTESTED;
+        if (CreditPeriod > 30)
+            SupplierCategory = SupplierCategory.LONGCREDITPERIOD;
+        else if (AvgTurnaroundTime < 5)
+            SupplierCategory = SupplierCategory.QUICKTURNAROUNDTIME;
+        else
+            SupplierCategory = SupplierCategory.NEWUNTESTED;
     }
 
     public void updateCategory(SupplierCategory newCategory)
@@ -37,6 +42,14 @@ public class Supplier : ISupplierRegistryEntity
         VettingResult = result;
         IsVerified = (result == VettingDecision.APPROVED);
     }
+
+
+    public void resetVerificationOnRecategorise()
+    {
+    VettingResult = VettingDecision.PENDING;
+    IsVerified = false;
+    }
+
 
     public SupplierCategory getCategory() => SupplierCategory;
 

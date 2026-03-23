@@ -50,6 +50,7 @@ public class SupplierControl : ISupplier, IVerifiedSupplierRegistry, ISupplierVe
             return;
 
         supplier.updateCategory(newCategory);
+        supplier.resetVerificationOnRecategorise();
         _supplierMapper.updateSupplier(supplier);
     }
 
