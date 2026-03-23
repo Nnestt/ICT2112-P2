@@ -68,8 +68,14 @@ public sealed class ProductFootprintGateway : IProductFootprintGateway
             throw new InvalidOperationException("Unable to save product footprint because no EcoBadge records exist.");
         }
 
-        var productFootprint = new Productfootprint();
-        _dbContext.Productfootprints.Add(productFootprint);
+        var productFootprint = _dbContext.Productfootprints
+            .FirstOrDefault(footprint => EF.Property<int>(footprint, "Productid") == productId);
+
+        if (productFootprint is null)
+        {
+            productFootprint = new Productfootprint();
+            _dbContext.Productfootprints.Add(productFootprint);
+        }
 
         var entry = _dbContext.Entry(productFootprint);
         entry.Property("Productid").CurrentValue = productId;

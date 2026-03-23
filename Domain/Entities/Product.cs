@@ -37,5 +37,5 @@ public partial class Product
 
     public virtual Productdetail? Productdetail { get; private set; }
 
-    public virtual ICollection<Productfootprint> Productfootprints { get; private set; } = new List<Productfootprint>();
+    public virtual Productfootprint? Productfootprint { get; private set; }
 }
