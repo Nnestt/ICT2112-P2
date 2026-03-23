@@ -15,13 +15,13 @@
     ---------------------------
     1. Bootstrap 5.3 utility classes ONLY inside views — no inline styles.
     2. Brand colour and CSS variable overrides live in wwwroot/css/site.css.
-       Do NOT hardcode colour values (#hex / rgb) in views or here.
+    Do NOT hardcode colour values (#hex / rgb) in views or here.
     3. Icons: use Bootstrap Icons — class="bi bi-<name>".
-       Full icon reference: https://icons.getbootstrap.com/
+    Full icon reference: https://icons.getbootstrap.com/
     4. The .container wrapper here provides the page's outer padding/max-width.
-       Do NOT add another .container inside individual view files.
+    Do NOT add another .container inside individual view files.
     5. If a view needs page-specific CSS or JS, use the "Scripts" section:
-           @section Scripts { <script src="..."></script> }
+        @section Scripts { <script src="..."></script> }
     =========================================================================
 *@
 <!DOCTYPE html>
@@ -42,10 +42,10 @@
 <body>
 
     <!-- ================================================================
-         NAVBAR — Top navigation bar
-         Add new <li class="nav-item"> entries here to extend the nav menu.
-         See Bootstrap Navbar docs: https://getbootstrap.com/docs/5.3/components/navbar/
-         ================================================================ -->
+        NAVBAR — Top navigation bar
+        Add new <li class="nav-item"> entries here to extend the nav menu.
+        See Bootstrap Navbar docs: https://getbootstrap.com/docs/5.3/components/navbar/
+        ================================================================ -->
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -69,9 +69,9 @@
     </header>
 
     <!-- ================================================================
-         MAIN CONTENT — Individual view output is injected here via @@RenderBody().
-         Do NOT add additional containers or wrappers inside view files.
-         ================================================================ -->
+        MAIN CONTENT — Individual view output is injected here via RenderBody().
+        Do NOT add additional containers or wrappers inside view files.
+        ================================================================ -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -79,8 +79,8 @@
     </div>
 
     <!-- ================================================================
-         FOOTER — Sticky footer (pinned to bottom via site.css .footer rules)
-         ================================================================ -->
+        FOOTER — Sticky footer (pinned to bottom via site.css .footer rules)
+        ================================================================ -->
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; @DateTime.Now.Year - ProRental
@@ -88,10 +88,10 @@
     </footer>
 
     <!-- ================================================================
-         SCRIPTS — Load order matters; do not rearrange these.
-         jQuery must come before Bootstrap JS.
-         Add view-specific scripts via @@section Scripts { } in the view file.
-         ================================================================ -->
+        SCRIPTS — Load order matters; do not rearrange these.
+        jQuery must come before Bootstrap JS.
+        Add view-specific scripts via @@section Scripts { } in the view file.
+        ================================================================ -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

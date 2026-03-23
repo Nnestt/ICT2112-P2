@@ -153,8 +153,20 @@ builder.Services.AddScoped<ProRental.Interfaces.Module2.ISupplierVettingGateway,
 
 // Domain
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.VettingControl>();
- 
+
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierScoringControl>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ISupplierMapper, ProRental.Data.Module2.Gateways.SupplierMapper>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ICategoryChangeLogMapper, ProRental.Data.Module2.Gateways.CategoryChangeLogMapper>();
+
+// Domain
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierControl>();
+builder.Services.AddScoped<ProRental.Interfaces.Module2.ISupplier>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.SupplierControl>());
+builder.Services.AddScoped<ProRental.Interfaces.Module2.IVerifiedSupplierRegistry>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.SupplierControl>());
+builder.Services.AddScoped<ProRental.Interfaces.Module2.ISupplierVettingGateway>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.SupplierControl>());
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierCategoryChangeLogControl>();
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Factories.SupplierRegistryFactory>();
+
+
 
 // Presentation/Controllers
 

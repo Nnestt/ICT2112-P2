@@ -17,19 +17,17 @@ public class VettingControl : IVerifiedSupplierRegistry
     }
 
     public Vettingrecord RecordVetting(
-        int supplierID, 
-        int vettedByUserID, 
-        VettingDecision decision, 
-        string notes, 
+        int supplierID,
+        int vettedByUserID,
+        VettingDecision decision,
+        string notes,
         DateTime vettedAt)
     {
-        // Validate input
         if (!ValidateVettingInput(supplierID, vettedByUserID, decision))
         {
             throw new ArgumentException("Invalid vetting input");
         }
 
-        // Create vetting record
         var record = new Vettingrecord
         {
             supplierid = supplierID,
@@ -39,7 +37,6 @@ public class VettingControl : IVerifiedSupplierRegistry
             vettedat = vettedAt
         };
 
-        // Persist using mapper
         return vettingRecordMapper.Insert(record);
     }
 
@@ -55,6 +52,13 @@ public class VettingControl : IVerifiedSupplierRegistry
     public List<Vettingrecord> GetVettingHistory(int supplierID)
     {
         return vettingRecordMapper.FindBySupplierID(supplierID);
+    }
+
+    // Implements IVerifiedSupplierRegistry.getVettedSuppliers()
+    public List<ProRental.Domain.Module2.P2_2.Entities.Supplier> getVettedSuppliers()
+    {
+        // Returns an empty list for now — to be implemented when supplier data layer is connected
+        return new List<ProRental.Domain.Module2.P2_2.Entities.Supplier>();
     }
 
     public List<string> GetVerifiedSuppliers()
@@ -77,8 +81,8 @@ public class VettingControl : IVerifiedSupplierRegistry
     {
         if (supplierID <= 0) return false;
         if (userID <= 0) return false;
-        if (decision != VettingDecision.APPROVED && 
-            decision != VettingDecision.REJECTED && 
+        if (decision != VettingDecision.APPROVED &&
+            decision != VettingDecision.REJECTED &&
             decision != VettingDecision.PENDING)
         {
             return false;

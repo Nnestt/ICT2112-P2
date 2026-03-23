@@ -3,40 +3,65 @@
 }
 
 <div class="container mt-4">
-    <h2>Vetting Result</h2>
 
     @if (ViewBag.Error != null)
     {
+        <h2>Vetting Error</h2>
         <div class="alert alert-danger">
             <strong>Error:</strong> @ViewBag.Error
         </div>
+        <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-secondary">Back to Dashboard</a>
     }
-    else if (ViewBag.VettingRecord != null && ViewBag.ReliabilityRating != null)
+    else if (ViewBag.VettingRecord != null)
     {
         var record = ViewBag.VettingRecord;
-        var rating = ViewBag.ReliabilityRating;
 
+        <h2>Vetting Result</h2>
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Vetting Complete</h5>
-                
                 <p><strong>Supplier ID:</strong> @record.supplierid</p>
-                <p><strong>Decision:</strong> 
-                    <span class="badge @(record.decision == ProRental.Domain.Enums.VettingDecision.APPROVED ? "bg-success" : "bg-danger")">
-                        @record.decision
+                <p><strong>Decision:</strong>
+                    <span class="badge @(record.decision_public == ProRental.Domain.Enums.VettingDecision.APPROVED ? "bg-success" : record.decision_public == ProRental.Domain.Enums.VettingDecision.REJECTED ? "bg-danger" : "bg-warning")">
+                        @record.decision_public
                     </span>
                 </p>
-                <p><strong>Reliability Score:</strong> @rating.score.ToString("F2")</p>
-                <p><strong>Rating Band:</strong> @rating.GetBand()</p>
                 <p><strong>Notes:</strong> @record.notes</p>
                 <p><strong>Vetted At:</strong> @record.vettedat</p>
             </div>
         </div>
-
         <div class="mt-3">
-            <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-primary">
-                Back to Dashboard
-            </a>
+            <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-primary">Back to Dashboard</a>
         </div>
+    }
+    else
+    {
+        <h2>Vet Supplier</h2>
+        <form method="post" action="@Url.Action("SubmitVetting", "VettingPage")">
+            <input type="hidden" name="supplierID" value="@ViewBag.SupplierID" />
+
+            <div class="mb-3">
+                <label for="userID" class="form-label">Staff User ID</label>
+                <input type="number" class="form-control" id="userID" name="userID" required />
+            </div>
+
+            <div class="mb-3">
+                <label for="decision" class="form-label">Decision</label>
+                <select class="form-select" id="decision" name="decision" required>
+                    <option value="">-- Select Decision --</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                    <option value="PENDING">Pending</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="notes" class="form-label">Vetting Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="4" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-success">Submit Vetting</button>
+            <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
     }
 </div>

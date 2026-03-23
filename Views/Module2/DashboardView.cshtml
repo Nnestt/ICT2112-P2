@@ -1,4 +1,4 @@
-@model List<ProRental.Domain.Entities.Supplier>
+@model List<ProRental.Domain.Module2.P2_2.Entities.Supplier>
 
 @{
     ViewData["Title"] = "Supplier Vetting Dashboard";
@@ -23,11 +23,11 @@
                 @foreach (var supplier in Model)
                 {
                     <tr>
-                        <td>@supplier.supplierid</td>
-                        <td>@supplier.name</td>
-                        <td>@supplier.suppliercategory</td>
+                        <td>@supplier.SupplierID</td>
+                        <td>@supplier.Name</td>
+                        <td>@supplier.SupplierCategory</td>
                         <td>
-                            @if (supplier.isverified == true)
+                            @if (supplier.IsVerified == true)
                             {
                                 <span class="badge bg-success">Verified</span>
                             }
@@ -37,7 +37,7 @@
                             }
                         </td>
                         <td>
-                            <a href="@Url.Action("SubmitVetting", "VettingPage", new { supplierID = supplier.supplierid })" 
+                            <a href="@Url.Action("VetSupplier", "VettingPage", new { supplierID = supplier.SupplierID })"
                                class="btn btn-primary btn-sm">
                                 Vet Supplier
                             </a>

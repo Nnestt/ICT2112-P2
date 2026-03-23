@@ -1,27 +1,24 @@
 namespace ProRental.Data.Module2.Gateways;
 
-using ProRental.Domain.Entities;
+using ProRental.Domain.Module2.P2_2.Entities;
 using ProRental.Interfaces.Module2;
-using ProRental.Data.UnitOfWork;
+using ProRental.Data.Module2.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
 public class SupplierVettingGateway : ISupplierVettingGateway
 {
-    private readonly AppDbContext context;
+    private readonly ISupplierMapper supplierMapper;
 
-    public SupplierVettingGateway(AppDbContext context)
+    public SupplierVettingGateway(ISupplierMapper supplierMapper)
     {
-        this.context = context;
+        this.supplierMapper = supplierMapper;
     }
 
-    public List<Supplier> GetUnverifiedSuppliers()
+    public List<Supplier> getUnverifiedSuppliers()
     {
-        // AsEnumerable() brings records into memory so the public property accessor can be used,
-        // since EF uses field-access mode and cannot translate the property in a SQL WHERE clause.
-        return context.Suppliers
-            .AsEnumerable()
-            .Where(s => s.isverified != true)
+        return supplierMapper.findAll()
+            .Where(s => !s.IsVerified)
             .ToList();
     }
 }

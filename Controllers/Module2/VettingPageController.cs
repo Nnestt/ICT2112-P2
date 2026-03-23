@@ -5,6 +5,7 @@ using ProRental.Domain.Module2.P2_2.Controls;
 using ProRental.Interfaces.Module2;
 using ProRental.Domain.Module2.P2_2.Strategies;
 using ProRental.Domain.Enums;
+using ProRental.Data.Module2.Interfaces;
 using System;
 
 public class VettingPageController : Controller
@@ -12,46 +13,56 @@ public class VettingPageController : Controller
     private readonly VettingControl vettingControl;
     private readonly SupplierScoringControl scoringControl;
     private readonly ISupplierVettingGateway supplierGateway;
+    private readonly ISupplierMapper supplierMapper;
 
     public VettingPageController(
         VettingControl vettingControl,
         SupplierScoringControl scoringControl,
-        ISupplierVettingGateway supplierGateway)
+        ISupplierVettingGateway supplierGateway,
+        ISupplierMapper supplierMapper)
     {
         this.vettingControl = vettingControl;
         this.scoringControl = scoringControl;
         this.supplierGateway = supplierGateway;
+        this.supplierMapper = supplierMapper;
     }
 
     [HttpGet]
     public IActionResult Dashboard()
     {
-        var suppliers = supplierGateway.GetUnverifiedSuppliers();
+        var suppliers = supplierGateway.getUnverifiedSuppliers();
         return View("~/Views/Module2/DashboardView.cshtml", suppliers);
     }
 
+    [HttpGet]
+    public IActionResult VetSupplier(int supplierID)
+    {
+        ViewBag.SupplierID = supplierID;
+        return View("~/Views/Module2/VettingFormView.cshtml");
+    }
+
     [HttpPost]
-    public IActionResult SubmitVetting(int supplierID, string notes, int userID)
+    public IActionResult SubmitVetting(int supplierID, string notes, int userID, string decision)
     {
         try
         {
-            // Select appropriate scoring strategy based on supplier characteristics
-            var strategy = SelectStrategyForSupplier(supplierID);
-            scoringControl.SetScoringStrategy(strategy);
-
-            // Calculate reliability score
-            var rating = scoringControl.CalculateReliabilityScore(supplierID, userID);
-
-            // Determine vetting decision based on rating
-            var decision = rating.IsAcceptableRating() ? 
-                VettingDecision.APPROVED : VettingDecision.REJECTED;
+            // Parse decision from form
+            var vettingDecision = Enum.Parse<VettingDecision>(decision, ignoreCase: true);
 
             // Record vetting decision
             var record = vettingControl.RecordVetting(
-                supplierID, userID, decision, notes, DateTime.UtcNow);
+                supplierID, userID, vettingDecision, notes, DateTime.UtcNow);
+
+            // Update supplier verified status based on decision
+            var supplier = supplierMapper.findSupplierById(supplierID);
+            if (supplier != null)
+            {
+                supplier.verify(vettingDecision);
+                supplierMapper.updateSupplier(supplier);
+            }
 
             ViewBag.VettingRecord = record;
-            ViewBag.ReliabilityRating = rating;
+            ViewBag.ReliabilityRating = null;
 
             return View("~/Views/Module2/VettingFormView.cshtml");
         }
@@ -73,18 +84,15 @@ public class VettingPageController : Controller
     public IActionResult EditVettingNotes(int vettingID, string notes, int userID)
     {
         var success = vettingControl.UpdateVettingNotes(vettingID, notes);
-        
+
         ViewBag.Success = success;
         ViewBag.VettingID = vettingID;
 
         return View("~/Views/Module2/VettingNotesView.cshtml");
     }
 
-    // Private helper method
     private IScoringStrategy SelectStrategyForSupplier(int supplierID)
     {
-        // TODO: Implement business logic to determine strategy
-        // For now, default to weighted strategy
         return new WeightedScoringStrategy();
     }
 }

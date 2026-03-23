@@ -1,8 +1,9 @@
-namespace ProRental.Interfaces.Module2;
-
 using System.Collections.Generic;
+using ProRental.Domain.Module2.P2_2.Entities;
+
+namespace ProRental.Interfaces.Module2;
 
 public interface IVerifiedSupplierRegistry
 {
-    List<string> GetVerifiedSuppliers();
+    List<Supplier> getVettedSuppliers();
 }

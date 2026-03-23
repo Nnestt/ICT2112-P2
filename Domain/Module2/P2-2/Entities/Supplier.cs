@@ -1,60 +1,46 @@
-namespace ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
+using ProRental.Interfaces.Module2;
 
-public partial class Supplier
+namespace ProRental.Domain.Module2.P2_2.Entities;
+
+public class Supplier : ISupplierRegistryEntity
 {
-    // Enum backing fields — EF maps these directly via AppDbContext.Custom.cs
-    private SupplierCategory _category;
-    private SupplierCategory category { get => _category; set => _category = value; }
-    public void UpdateCategory(SupplierCategory newValue) => _category = newValue;
+    public int SupplierID { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Details { get; set; } = string.Empty;
+    public int CreditPeriod { get; set; }
+    public float AvgTurnaroundTime { get; set; }
+    public SupplierCategory SupplierCategory { get; set; }
+    public bool IsVerified { get; set; }
+    public VettingDecision VettingResult { get; set; }
 
-    private VettingDecision _decision;
-    private VettingDecision decision { get => _decision; set => _decision = value; }
-    public void UpdateDecision(VettingDecision newValue) => _decision = newValue;
-
-    // Public accessors delegate to scaffolded Pascal-case private properties,
-    // NOT directly to backing fields — avoids EF field conflict validation errors.
-    public int supplierid
+    public Supplier()
     {
-        get => Supplierid;
-        set => Supplierid = value;
+        SupplierID = 0;
+        SupplierCategory = SupplierCategory.NEWUNTESTED;
+        VettingResult = VettingDecision.PENDING;
+        IsVerified = false;
     }
 
-    public string? name
+    public void assignInitialCategory()
     {
-        get => Name;
-        set => Name = value;
+        SupplierCategory = SupplierCategory.NEWUNTESTED;
     }
 
-    public string? details
+    public void updateCategory(SupplierCategory newCategory)
     {
-        get => Details;
-        set => Details = value;
+        SupplierCategory = newCategory;
     }
 
-    public bool? isverified
+    public void verify(VettingDecision result)
     {
-        get => Isverified;
-        set => Isverified = value;
+        VettingResult = result;
+        IsVerified = (result == VettingDecision.APPROVED);
     }
 
-    public int? creditperiod
-    {
-        get => Creditperiod;
-        set => Creditperiod = value;
-    }
+    public SupplierCategory getCategory() => SupplierCategory;
 
-    public double? avgturnaroundtime
-    {
-        get => Avgturnaroundtime;
-        set => Avgturnaroundtime = value;
-    }
+    public string getDetails() => Details;
 
-    // suppliercategory wraps the EF-owned _category field directly
-    // (no Pascal wrapper exists in the scaffold for this enum column)
-    public SupplierCategory suppliercategory
-    {
-        get => _category;
-        set => _category = value;
-    }
+    string ISupplierRegistryEntity.GetType() => "Supplier";
 }

@@ -1,14 +1,16 @@
-namespace ProRental.Interfaces.Module2;
-
 using ProRental.Domain.Entities;
-using System;
-using System.Collections.Generic;
 
+namespace ProRental.Interfaces;
+
+/// <summary>
+/// Interface for reading analytics records.
+/// Consumers depending on core analytics queries use this interface only.
+/// </summary>
 public interface IAnalyticsData
 {
-    Analytic GetAnalytics(int targetID);
-    List<Analytic> GetAnalyticsByDate(DateTime day);
-    List<Analytic> GetAnalyticsByDate(DateTime start, DateTime end);
-    List<Analytic> GetAnalyticsBySupplier(string supplier);
-    List<Analytic> GetAnalyticsByProduct(string product);
+    Task<Analytic?> GetAnalyticsAsync(int targetID);
+    Task<IEnumerable<Analytic>> GetAnalyticsByDateAsync(DateTime day);
+    Task<IEnumerable<Analytic>> GetAnalyticsByDateRangeAsync(DateTime start, DateTime end);
+    Task<IEnumerable<Analytic>> GetAnalyticsBySupplierAsync(string supplier);
+    Task<IEnumerable<Analytic>> GetAnalyticsByProductAsync(string product);
 }
