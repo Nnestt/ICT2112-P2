@@ -9,28 +9,21 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
 {
     private readonly IAlertMapper _alertMapper;
     private readonly iInventoryQueryControl _inventoryQueryControl;
-    private readonly IProductQuery _productQuery;
+    private readonly IProductStatusControl _productStatusControl;
 
-    public LowStockAlertControl(IAlertMapper alertMapper, iInventoryQueryControl inventoryQueryControl, IProductQuery productQuery)
+    public LowStockAlertControl(IAlertMapper alertMapper, iInventoryQueryControl inventoryQueryControl, IProductStatusControl productStatusControl)
     {
         _alertMapper = alertMapper ?? throw new ArgumentNullException(nameof(alertMapper));
         _inventoryQueryControl = inventoryQueryControl ?? throw new ArgumentNullException(nameof(inventoryQueryControl));
-        _productQuery = productQuery ?? throw new ArgumentNullException(nameof(productQuery));
+        _productStatusControl = productStatusControl ?? throw new ArgumentNullException(nameof(productStatusControl));
     }
 
-    public bool CreateAlert(int productId, int minThreshold, int staffId = 0)
+    public bool CreateAlert(Alert alert)
     {
-        if (productId <= 0 || minThreshold < 0)
+        if (alert is null)
         {
             return false;
         }
-
-        var alert = new Alert();
-        alert.SetProductId(productId);
-        alert.SetStaffId(staffId);
-        alert.SetMinThreshold(minThreshold);
-        alert.SetAlertStatus(AlertStatus.OPEN);
-        alert.SetCreatedAt(DateTime.UtcNow);
 
         try
         {
@@ -98,53 +91,6 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         }
     }
 
-    public List<Alert> GetAllAlerts()
-    {
-        return _alertMapper.FindAll()?.ToList() ?? new List<Alert>();
-    }
-
-    public Alert? GetAlertById(int alertId)
-    {
-        return _alertMapper.FindById(alertId);
-    }
-
-    public List<Alert> GetAlertsByThreshold(int threshold)
-    {
-        var allAlerts = _alertMapper.FindAll();
-        if (allAlerts is null)
-        {
-            return new List<Alert>();
-        }
-
-        return allAlerts.Where(a => a.GetMinThreshold() == threshold).ToList();
-    }
-
-    public bool UpdateAlertThreshold(int alertId, int newThreshold)
-    {
-        if (alertId <= 0 || newThreshold < 0)
-        {
-            return false;
-        }
-
-        var alert = _alertMapper.FindById(alertId);
-        if (alert is null)
-        {
-            return false;
-        }
-
-        alert.SetMinThreshold(newThreshold);
-
-        try
-        {
-            _alertMapper.Update(alert);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     public bool ResolveAlert(int alertId)
     {
         if (alertId <= 0)
@@ -174,25 +120,36 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
 
     public bool CheckLowStock(int productId, int threshold)
     {
-        if (productId <= 0 || threshold < 0)
+        if (productId <= 0)
         {
             return false;
         }
 
+        // Get the product's configured threshold value from IProductStatusControl
+        int minThreshold = _productStatusControl.GetThresholdQuantityForProduct(productId);
+
+        // Get the current available inventory stock from IInventoryQueryControl
         var currentStock = _inventoryQueryControl.CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
-        if (currentStock > threshold)
+        
+        // Check if stock is below threshold
+        if (currentStock > minThreshold)
         {
             return false;
         }
 
-        // Create alert with no assigned staff (staffId defaults to 0)
-        return CreateAlert(productId, threshold);
+        // Build and create the alert
+        var alert = new Alert();
+        alert.SetProductId(productId);
+        alert.SetStaffId(0); // No assigned staff
+        alert.SetMinThreshold(minThreshold);
+        alert.SetAlertStatus(AlertStatus.OPEN);
+        alert.SetCreatedAt(DateTime.UtcNow);
+
+        return CreateAlert(alert);
     }
 
     public void Update(int productId)
     {
-        // Get the product's configured threshold value
-        decimal threshold = _productQuery.GetThresholdForProduct(productId);
-        _ = CheckLowStock(productId, (int)threshold);
+        _ = CheckLowStock(productId, 0);
     }
 }
