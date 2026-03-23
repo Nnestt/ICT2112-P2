@@ -42,7 +42,8 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         try
         {
             _inventoryItemMapper.Insert(inventoryItem);
-            NotifyObservers(inventoryItem.GetProductId());
+            int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
+            NotifyObservers(productId, availableCount);
             return true;
         }
         catch
@@ -96,7 +97,8 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
 
             if (createdCount > 0)
             {
-                NotifyObservers(productId);
+                int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
+                NotifyObservers(productId, availableCount);
             }
 
             return createdCount;
@@ -139,7 +141,8 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         try
         {
             _inventoryItemMapper.Update(existingItem);
-            NotifyObservers(existingItem.GetProductId());
+            int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
+            NotifyObservers(productId, availableCount);
             return true;
         }
         catch
@@ -164,7 +167,8 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         {
             Console.WriteLine($"DeleteInventoryItem: Deleting item {inventoryItemId} (ProductId={productId}, Serial={serialNumber}, Status={existingItem.GetStatus()})");
             _inventoryItemMapper.Delete(existingItem);
-            NotifyObservers(productId);
+            int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
+            NotifyObservers(productId, availableCount);
             Console.WriteLine($"DeleteInventoryItem: Item {inventoryItemId} deleted successfully");
             return true;
         }
@@ -272,7 +276,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
                 }
             }
 
-            NotifyObservers(productId);
+            NotifyObservers(productId, availableCount);
             return true;
         }
         catch
@@ -399,11 +403,11 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         _observers.Remove(observer);
     }
 
-    public void NotifyObservers(int productId)
+    public void NotifyObservers(int productId, int availableCount)
     {
         foreach (var observer in _observers)
         {
-            observer.Update(productId);
+            observer.Update(productId, availableCount);
         }
     }
 }

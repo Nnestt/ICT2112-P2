@@ -8,13 +8,11 @@ namespace ProRental.Domain.Controls;
 public class LowStockAlertControl : iAlertControl, iStockObserver
 {
     private readonly IAlertMapper _alertMapper;
-    private readonly iInventoryQueryControl _inventoryQueryControl;
     private readonly IProductStatusControl _productStatusControl;
 
-    public LowStockAlertControl(IAlertMapper alertMapper, iInventoryQueryControl inventoryQueryControl, IProductStatusControl productStatusControl)
+    public LowStockAlertControl(IAlertMapper alertMapper, IProductStatusControl productStatusControl)
     {
         _alertMapper = alertMapper ?? throw new ArgumentNullException(nameof(alertMapper));
-        _inventoryQueryControl = inventoryQueryControl ?? throw new ArgumentNullException(nameof(inventoryQueryControl));
         _productStatusControl = productStatusControl ?? throw new ArgumentNullException(nameof(productStatusControl));
     }
 
@@ -118,7 +116,7 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         }
     }
 
-    public bool CheckLowStock(int productId, int threshold)
+    public bool CheckLowStock(int productId, int availableCount)
     {
         if (productId <= 0)
         {
@@ -127,12 +125,9 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
 
         // Get the product's configured threshold value from IProductStatusControl
         int minThreshold = _productStatusControl.GetThresholdQuantityForProduct(productId);
-
-        // Get the current available inventory stock from IInventoryQueryControl
-        var currentStock = _inventoryQueryControl.CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
         
         // Check if stock is below threshold
-        if (currentStock > minThreshold)
+        if (availableCount > minThreshold)
         {
             return false;
         }
@@ -148,8 +143,8 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         return CreateAlert(alert);
     }
 
-    public void Update(int productId)
+    public void Update(int productId, int availableCount)
     {
-        _ = CheckLowStock(productId, 0);
+        _ = CheckLowStock(productId, availableCount);
     }
 }

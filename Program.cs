@@ -173,6 +173,7 @@ builder.Services.AddScoped<iInventoryQueryControl>(sp => sp.GetRequiredService<I
 builder.Services.AddScoped<iInventoryStatusControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iStockSubject>(sp => sp.GetRequiredService<InventoryManagementControl>());
 builder.Services.AddScoped<iAlertControl, LowStockAlertControl>();
+builder.Services.AddScoped<iStockObserver, LowStockAlertControl>();
 
 //product
 builder.Services.AddScoped<ProductCatalogControl>();
@@ -233,7 +234,6 @@ builder.Services.AddScoped<iDamageReportCRUD>(sp => sp.GetRequiredService<Damage
 
 
 var app = builder.Build();
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
