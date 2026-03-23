@@ -129,7 +129,7 @@
                             <li><a class="dropdown-item" href="#"><i class="bi bi-calculator me-2" style="color: #0a9396;"></i>Product Carbon Calculator</a></li>
                             <li><a class="dropdown-item" href="#"><i class="bi bi-truck-flatbed me-2" style="color: #0a9396;"></i>Shipment Carbon Tracker</a></li>
                             <li><a class="dropdown-item" href="#"><i class="bi bi-signpost-2 me-2" style="color: #0a9396;"></i>Route Distance Determination</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
+                            <li><a class="dropdown-item" asp-controller="Warehouse" asp-action="GetWarehouseCarbon" asp-route-hubId="1"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
                             <li><a class="dropdown-item" href="#"><i class="bi bi-recycle me-2" style="color: #0a9396;"></i>Return Process Carbon Lifecycle</a></li>
                             <li><a class="dropdown-item" href="#"><i class="bi bi-collection me-2" style="color: #0a9396;"></i>Batch Delivery Consolidation</a></li>
                         </ul>
@@ -285,7 +285,7 @@
                                 <li class="mb-3"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Product Carbon Calculator</a></li>
                                 <li class="mb-3"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Shipment Carbon Tracker</a></li>
                                 <li class="mb-3"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Route Distance Determination</a></li>
-                                <li class="mb-3"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Warehouse Storage Emissions</a></li>
+                                <li class="mb-3"><a asp-controller="Warehouse" asp-action="GetWarehouseCarbon" asp-route-hubId="1" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Warehouse Storage Emissions</a></li>
                                 <li class="mb-3"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Return Process Carbon Lifecycle</a></li>
                                 <li class="mb-0"><a href="#" class="module-link-3 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Batch Delivery Consolidation</a></li>
                             </ul>

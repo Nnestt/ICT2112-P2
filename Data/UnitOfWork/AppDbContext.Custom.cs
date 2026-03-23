@@ -298,7 +298,7 @@ public partial class AppDbContext
         modelBuilder.Entity<TransportationHub>(entity =>
         {
             entity.Property("HubType").HasField("_hubType").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("hubtype").HasColumnType("hub_type");
+                  .HasColumnName("hub_type").HasColumnType("hub_type");
         });
 
         modelBuilder.Entity<User>(entity =>

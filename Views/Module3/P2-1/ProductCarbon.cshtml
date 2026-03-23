@@ -1,0 +1,134 @@
+@using ProRental.Domain.Entities
+@using ProRental.Interfaces
+@{
+    ViewData["Title"] = "Product Carbon Emission";
+    var productId = ViewData["ProductId"] is int pVal ? pVal : 0;
+    var productName = ViewData["ProductName"] as string ?? "Unknown";
+    var hub = ViewData["Hub"] as TransportationHub;
+    var allProducts = ViewData["AllProducts"] as List<ProductDropdownItem> ?? new List<ProductDropdownItem>();
+    var itemBreakdown = ViewData["ItemBreakdown"] as List<ItemCarbonInfo> ?? new List<ItemCarbonInfo>();
+    var productCarbon = ViewData["ProductCarbon"] is double pc ? pc : 0;
+    var totalAllCarbon = ViewData["TotalAllCarbon"] is double tac ? tac : 0;
+    var itemCount = ViewData["ItemCount"] is int ic ? ic : 0;
+}
+
+<h2 class="mb-4"><i class="bi bi-box-seam"></i> Product Carbon Emission</h2>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetWarehouseCarbon">
+            <i class="bi bi-building"></i> Warehouse Carbon
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" asp-controller="Warehouse" asp-action="GetProductCarbonEmission" asp-route-productId="@productId">
+            <i class="bi bi-box-seam"></i> Product Carbon
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetRecommendedClearing">
+            <i class="bi bi-arrow-down-circle"></i> Recommended Clearing
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetProductTimeInWarehouse">
+            <i class="bi bi-clock-history"></i> Product Time
+        </a>
+    </li>
+</ul>
+
+<!-- Product Selector -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-controller="Warehouse" asp-action="GetProductCarbonEmission" class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label fw-bold">Select Product</label>
+                <select name="productId" class="form-select">
+                    @foreach (var p in allProducts)
+                    {
+                        <option value="@p.ProductId" selected="@(p.ProductId == productId)">
+                            #@p.ProductId — @p.Name
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-calculator"></i> View
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Selected Product Summary -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-box-seam"></i> @productName <span class="text-muted">(#@productId)</span>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered align-middle mb-0">
+            <tr>
+                <th>Units in Warehouse</th>
+                <td>@itemCount</td>
+            </tr>
+            <tr>
+                <th>Total Product CO2</th>
+                <td><span class="badge bg-warning text-dark fs-6">@(string.Format("{0:F4}", productCarbon)) kg CO2</span></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- Per-Item Breakdown Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-list-ul"></i> Individual Item Breakdown — @productName
+    </div>
+    <div class="card-body">
+        @if (itemBreakdown.Count == 0)
+        {
+            <div class="alert alert-secondary mb-0">
+                No inventory items found for this product.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Serial Number</th>
+                        <th>Stored Since</th>
+                        <th>Hours Stored</th>
+                        <th>CO2 Emission</th>
+                        <th>Emission Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < itemBreakdown.Count; i++)
+                    {
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td><code>@itemBreakdown[i].SerialNumber</code></td>
+                            <td>@itemBreakdown[i].StoredSince.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <span class="badge @(itemBreakdown[i].HoursStored > 13140 ? "bg-danger" : itemBreakdown[i].HoursStored > 720 ? "bg-warning text-dark" : "bg-success")">
+                                    @(string.Format("{0:F1}", itemBreakdown[i].HoursStored)) hrs
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @(itemBreakdown[i].CarbonEmission > 5 ? "bg-danger" : itemBreakdown[i].CarbonEmission > 1 ? "bg-warning text-dark" : "bg-success")">
+                                    @(string.Format("{0:F4}", itemBreakdown[i].CarbonEmission)) kg
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted">@(string.Format("{0:F6}", itemBreakdown[i].EmissionRatePerHour)) kg/hr</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

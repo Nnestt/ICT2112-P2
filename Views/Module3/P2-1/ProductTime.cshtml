@@ -1,0 +1,76 @@
+@using ProRental.Domain.Entities
+@using ProRental.Interfaces
+@{
+    ViewData["Title"] = "Product Time in Warehouse";
+    var products = ViewData["Products"] as List<ProductTimeInfo> ?? new List<ProductTimeInfo>();
+    var hub = ViewData["Hub"] as TransportationHub;
+}
+
+<h2 class="mb-4"><i class="bi bi-clock-history"></i> Product Time in Warehouse</h2>
+
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetWarehouseCarbon">
+            <i class="bi bi-building"></i> Warehouse Carbon
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetProductCarbonEmission" asp-route-productId="1">
+            <i class="bi bi-box-seam"></i> Product Carbon
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Warehouse" asp-action="GetRecommendedClearing">
+            <i class="bi bi-arrow-down-circle"></i> Recommended Clearing
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" asp-controller="Warehouse" asp-action="GetProductTimeInWarehouse">
+            <i class="bi bi-clock-history"></i> Product Time
+        </a>
+    </li>
+</ul>
+
+<div class="card mb-4">
+    <div class="card-header">
+        @(hub?.GetAddress() ?? "Warehouse") — Product storage durations
+    </div>
+    <div class="card-body">
+        @if (products.Count == 0)
+        {
+            <div class="alert alert-secondary">
+                <i class="bi bi-check-circle"></i> No products found, or no inventory data available for this warehouse.
+            </div>
+        }
+        else
+        {
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Product</th>
+                        <th>Serial Number</th>
+                        <th>Stored Since</th>
+                        <th>Hours Stored</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < products.Count; i++)
+                    {
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@products[i].ProductName <span class="text-muted">(#@products[i].ProductId)</span></td>
+                            <td><code>@products[i].SerialNumber</code></td>
+                            <td>@products[i].StoredSince.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <span class="badge @(products[i].HoursStored > 168 ? "bg-danger" : products[i].HoursStored > 48 ? "bg-warning text-dark" : "bg-success")">
+                                    @(string.Format("{0:F1}", products[i].HoursStored)) hrs
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

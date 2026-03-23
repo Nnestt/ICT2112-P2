@@ -130,8 +130,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //Services builder(add your mappers/gateways, controllers, control and interface classes here)
 //Team P2-1
 // Data source
+builder.Services.AddScoped<ProRental.Data.Interfaces.ITransportationHubMapper, ProRental.Data.Gateways.TransportationHubMapper>();
 
 // Domain
+builder.Services.AddScoped<ProRental.Domain.Control.TransportationHubFactory>();
+builder.Services.AddScoped<ProRental.Interfaces.IHubCarbonService, ProRental.Domain.Control.TransportationHubManager>();
+builder.Services.AddScoped<ProRental.Interfaces.IHubInfoService, ProRental.Domain.Control.TransportationHubManager>();
+builder.Services.AddScoped<ProRental.Interfaces.IInventoryService, ProRental.Domain.Control.DummyInventoryService>(); // TODO: Replace with Module 2's real implementation
 
 // Presentation/Controllers
 
@@ -179,7 +184,11 @@ var app = builder.Build();
 
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
