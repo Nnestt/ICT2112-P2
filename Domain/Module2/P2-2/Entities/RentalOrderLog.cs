@@ -1,65 +1,67 @@
 namespace ProRental.Domain.Entities;
 
+using System.ComponentModel.DataAnnotations.Schema;
 using ProRental.Domain.Enums;
 
-/// <summary>
-/// Partial class extending the auto-generated Rentalorderlog entity.
-/// Public accessors delegate to the scaffolded private properties,
-/// NOT directly to backing fields — avoids EF field conflict validation errors.
-/// </summary>
 public partial class Rentalorderlog
 {
-    public int rentalorderlogid
+    [NotMapped]
+    public int rental_orderlogid
     {
         get => Rentalorderlogid;
         set => Rentalorderlogid = value;
     }
 
-    public int? orderid
+    [NotMapped]
+    public int? order_id
     {
         get => Orderid;
         set => Orderid = value;
     }
 
-    public int? customerid
+    [NotMapped]
+    public int? customer_id
     {
         get => Customerid;
         set => Customerid = value;
     }
 
-    public DateTime? orderdate
+    [NotMapped]
+    public DateTime? order_date
     {
         get => Orderdate;
         set => Orderdate = value;
     }
 
-    public decimal? totalamount
+    [NotMapped]
+    public decimal? total_amount
     {
         get => Totalamount;
         set => Totalamount = value;
     }
 
-    public string? detailsjson
+    [NotMapped]
+    public string? details_json
     {
         get => Detailsjson;
         set => Detailsjson = value;
     }
 
-    // DeliveryType — PostgreSQL enum (delivery_type_enum)
     private DeliveryType _deliverytype;
     private DeliveryType Deliverytype { get => _deliverytype; set => _deliverytype = value; }
 
-    public DeliveryType deliverytype
+    [NotMapped]
+    public DeliveryType delivery_type
     {
         get => Deliverytype;
         set => Deliverytype = value;
     }
 
-    // Status — PostgreSQL enum (rental_status_enum)
     private RentalStatus _status;
     private RentalStatus Status { get => _status; set => _status = value; }
 
-    public RentalStatus status
+    [NotMapped]
+    public RentalStatus rental_status
     {
         get => Status;
         set => Status = value;

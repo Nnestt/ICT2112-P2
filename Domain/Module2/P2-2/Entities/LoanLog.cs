@@ -1,62 +1,64 @@
 namespace ProRental.Domain.Entities;
 
+using System.ComponentModel.DataAnnotations.Schema;
 using ProRental.Domain.Enums;
 
-/// <summary>
-/// Partial class extending the auto-generated Loanlog entity.
-/// NOTE: Class name must be Loanlog (not LoanLog) to match scaffolded entity.
-/// </summary>
 public partial class Loanlog
 {
-    public int loanlogid
+    [NotMapped]
+    public int loan_logid
     {
         get => Loanlogid;
         set => Loanlogid = value;
     }
 
-    public int loanlistid
+    [NotMapped]
+    public int loan_listid
     {
         get => Loanlistid;
         set => Loanlistid = value;
     }
 
-    public int rentalorderlogid
+    [NotMapped]
+    public int rental_orderlogid
     {
         get => Rentalorderlogid;
         set => Rentalorderlogid = value;
     }
 
-    public DateTime? loandate
+    [NotMapped]
+    public DateTime? loan_date
     {
         get => Loandate;
         set => Loandate = value;
     }
 
-    public DateTime? returndate
+    [NotMapped]
+    public DateTime? return_date
     {
         get => Returndate;
         set => Returndate = value;
     }
 
-    public DateTime? duedate
+    [NotMapped]
+    public DateTime? due_date
     {
         get => Duedate;
         set => Duedate = value;
     }
 
-    public string? detailsjson
+    [NotMapped]
+    public string? details_json
     {
         get => Detailsjson;
         set => Detailsjson = value;
     }
 
-    // Status — PostgreSQL enum (loan_status_enum)
-    // TODO: Confirm with team whether LoanLogStatus enum exists or needs to be created.
-    //       Values: ONGOING, RETURNED, OVERDUE, CANCELLED
-    //       This is different from LoanStatus (OPEN, ON_LOAN, RETURNED) used by LoanList.
+    // TODO: Uncomment once LoanLogStatus enum is confirmed
     // private LoanLogStatus _status;
     // private LoanLogStatus Status { get => _status; set => _status = value; }
-    // public LoanLogStatus status
+    // [NotMapped]
+    // public LoanLogStatus loan_status
     // {
     //     get => Status;
     //     set => Status = value;

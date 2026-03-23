@@ -3,6 +3,7 @@ namespace ProRental.Data.Module2.Gateways;
 using ProRental.Domain.Entities;
 using ProRental.Data.Module2.Interfaces;
 using ProRental.Data.UnitOfWork;
+using Microsoft.EntityFrameworkCore;
 
 public class TransactionLogGateway : ITransactionLogGateway
 {
@@ -23,7 +24,7 @@ public class TransactionLogGateway : ITransactionLogGateway
     public List<Transactionlog> GetAll()
     {
         return context.Transactionlogs
-            .OrderByDescending(t => t.createdat)
+            .OrderByDescending(t => EF.Property<DateTime?>(t, "Createdat"))
             .ToList();
     }
 

@@ -5,13 +5,6 @@ using ProRental.Domain.Enums;
 using ProRental.Interfaces;
 using ProRental.Data.Module2.Interfaces;
 
-/// <summary>
-/// Control class responsible for WRITING transaction logs.
-/// - Receives pushed data from P2-6 (rental orders) and P2-3 (loans, returns, clearance)
-/// - Pulls purchase order data from IPurchaseOrderService and logs new POs
-/// 
-/// Implements: IRentalOrderLogger, IInventoryTransactionLogger
-/// </summary>
 public class TransactionLogControl : IRentalOrderLogger, IInventoryTransactionLogger
 {
     private readonly ITransactionLogGateway _transactionLogGateway;
@@ -40,73 +33,78 @@ public class TransactionLogControl : IRentalOrderLogger, IInventoryTransactionLo
         _purchaseOrderService = purchaseOrderService;
     }
 
-    // ── IRentalOrderLogger ──────────────────────────────────────
-
-    public void pushRentalOrderData(int orderId, int customerId, DateTime orderDate,
-                                     decimal totalAmount, string deliveryType, string status,
-                                     string? detailsJson)
+        public void pushRentalOrderData(int orderId, int customerId, DateTime orderDate,
+                                    decimal totalAmount, string deliveryType, string status,
+                                    string? detailsJson)
     {
         if (_rentalOrderLogGateway.ExistsByOrderId(orderId))
             return;
 
         var transactionLog = new Transactionlog
         {
-            logtype = LogType.RENTAL_ORDER,
-            createdat = DateTime.UtcNow
+            log_type = LogType.RENTAL_ORDER,
+            created_at = DateTime.UtcNow
         };
-        _transactionLogGateway.Insert(transactionLog);
 
-        var rentalLog = new Rentalorderlog
+        try
         {
-            rentalorderlogid = transactionLog.transactionlogid,
-            orderid = orderId,
-            customerid = customerId,
-            orderdate = orderDate,
-            totalamount = totalAmount,
-            detailsjson = detailsJson
-        };
+            _transactionLogGateway.Insert(transactionLog);
 
-        // TODO: Set enum fields once mappings are confirmed
-        // rentalLog.deliverytype = Enum.Parse<DeliveryType>(deliveryType);
-        // rentalLog.status = Enum.Parse<RentalStatus>(status);
+            var rentalLog = new Rentalorderlog
+            {
+                rental_orderlogid = transactionLog.transaction_logid,
+                order_id = orderId,
+                customer_id = customerId,
+                order_date = orderDate,
+                total_amount = totalAmount,
+                details_json = detailsJson
+            };
 
-        _rentalOrderLogGateway.Insert(rentalLog);
+            _rentalOrderLogGateway.Insert(rentalLog);
+        }
+        catch
+        {
+            _transactionLogGateway.Delete(transactionLog.transaction_logid);
+        }
     }
 
-    // ── IInventoryTransactionLogger ─────────────────────────────
-
-    public void pushLoanData(int loanListId, int rentalOrderLogId, string status,
-                              DateTime? loanDate, DateTime? returnDate, DateTime? dueDate,
-                              string? detailsJson)
+        public void pushLoanData(int loanListId, int rentalOrderLogId, string status,
+                            DateTime? loanDate, DateTime? returnDate, DateTime? dueDate,
+                            string? detailsJson)
     {
         if (_loanLogGateway.ExistsByLoanListId(loanListId))
             return;
 
         var transactionLog = new Transactionlog
         {
-            logtype = LogType.LOAN,
-            createdat = DateTime.UtcNow
+            log_type = LogType.LOAN,
+            created_at = DateTime.UtcNow
         };
-        _transactionLogGateway.Insert(transactionLog);
 
-        var loanLog = new Loanlog
+        try
         {
-            loanlogid = transactionLog.transactionlogid,
-            loanlistid = loanListId,
-            rentalorderlogid = rentalOrderLogId,
-            loandate = loanDate,
-            returndate = returnDate,
-            duedate = dueDate,
-            detailsjson = detailsJson
-        };
+            _transactionLogGateway.Insert(transactionLog);
 
-        // TODO: Set enum field once mapping is confirmed
-        // loanLog.status = Enum.Parse<LoanLogStatus>(status);
+            var loanLog = new Loanlog
+            {
+                loan_logid = transactionLog.transaction_logid,
+                loan_listid = loanListId,
+                rental_orderlogid = rentalOrderLogId,
+                loan_date = loanDate,
+                return_date = returnDate,
+                due_date = dueDate,
+                details_json = detailsJson
+            };
 
-        _loanLogGateway.Insert(loanLog);
+            _loanLogGateway.Insert(loanLog);
+        }
+        catch
+        {
+            _transactionLogGateway.Delete(transactionLog.transaction_logid);
+        }
     }
 
-    public void pushReturnData(int returnRequestId, int rentalOrderLogId, string? customerId,
+        public void pushReturnData(int returnRequestId, int rentalOrderLogId, string? customerId,
                                 string status, DateTime? requestDate, DateTime? completionDate,
                                 string? imageUrl, string? detailsJson)
     {
@@ -115,97 +113,105 @@ public class TransactionLogControl : IRentalOrderLogger, IInventoryTransactionLo
 
         var transactionLog = new Transactionlog
         {
-            logtype = LogType.RETURN,
-            createdat = DateTime.UtcNow
+            log_type = LogType.RETURN,
+            created_at = DateTime.UtcNow
         };
-        _transactionLogGateway.Insert(transactionLog);
 
-        var returnLog = new Returnlog
+        try
         {
-            returnlogid = transactionLog.transactionlogid,
-            returnrequestid = returnRequestId,
-            rentalorderlogid = rentalOrderLogId,
-            customerid = customerId,
-            requestdate = requestDate,
-            completiondate = completionDate,
-            imageurl = imageUrl,
-            detailsjson = detailsJson
-        };
+            _transactionLogGateway.Insert(transactionLog);
 
-        // TODO: Set enum field once mapping is confirmed
-        // returnLog.status = Enum.Parse<ReturnStatus>(status);
+            var returnLog = new Returnlog
+            {
+                return_logid = transactionLog.transaction_logid,
+                return_requestid = returnRequestId,
+                rental_orderlogid = rentalOrderLogId,
+                customer_id = customerId,
+                request_date = requestDate,
+                completion_date = completionDate,
+                image_url = imageUrl,
+                details_json = detailsJson
+            };
 
-        _returnLogGateway.Insert(returnLog);
+            _returnLogGateway.Insert(returnLog);
+        }
+        catch
+        {
+            _transactionLogGateway.Delete(transactionLog.transaction_logid);
+        }
     }
 
-    public void pushClearanceLogData(int clearanceBatchId, string? batchName,
-                                      DateTime? clearanceDate, string status,
-                                      string? detailsJson)
+        public void pushClearanceLogData(int clearanceBatchId, string? batchName,
+                                    DateTime? clearanceDate, string status,
+                                    string? detailsJson)
     {
         if (_clearanceLogGateway.ExistsByClearanceBatchId(clearanceBatchId))
             return;
 
         var transactionLog = new Transactionlog
         {
-            logtype = LogType.CLEARANCE,
-            createdat = DateTime.UtcNow
+            log_type = LogType.CLEARANCE,
+            created_at = DateTime.UtcNow
         };
-        _transactionLogGateway.Insert(transactionLog);
 
-        var clearanceLog = new Clearancelog
+        try
         {
-            clearancelogid = transactionLog.transactionlogid,
-            clearancebatchid = clearanceBatchId,
-            batchname = batchName,
-            clearancedate = clearanceDate,
-            detailsjson = detailsJson
-        };
+            _transactionLogGateway.Insert(transactionLog);
 
-        // TODO: Set enum field once mapping is confirmed
-        // clearanceLog.status = Enum.Parse<ClearanceLogStatus>(status);
+            var clearanceLog = new Clearancelog
+            {
+                clearance_logid = transactionLog.transaction_logid,
+                clearance_batchid = clearanceBatchId,
+                batch_name = batchName,
+                clearance_date = clearanceDate,
+                details_json = detailsJson
+            };
 
-        _clearanceLogGateway.Insert(clearanceLog);
+            _clearanceLogGateway.Insert(clearanceLog);
+        }
+        catch
+        {
+            _transactionLogGateway.Delete(transactionLog.transaction_logid);
+        }
     }
 
-    // ── Purchase Order Pull ─────────────────────────────────────
-
-    /// <summary>
-    /// Pulls purchase order data from IPurchaseOrderService and logs any new POs.
-    /// Called by TransactionFilterControl before displaying logs.
-    /// Checks for duplicates — only logs POs that haven't been logged yet.
-    /// </summary>
     public void PullAndLogPurchaseOrders()
     {
         var allPOs = _purchaseOrderService.GetAllPurchaseOrders();
 
         foreach (var po in allPOs)
         {
-            // Skip if already logged
             if (_purchaseOrderLogGateway.ExistsByPoId(po.PoId))
                 continue;
 
             var transactionLog = new Transactionlog
             {
-                logtype = LogType.PURCHASE_ORDER,
-                createdat = DateTime.UtcNow
+                log_type = LogType.PURCHASE_ORDER,
+                created_at = DateTime.UtcNow
             };
-            _transactionLogGateway.Insert(transactionLog);
 
-            var poLog = new Purchaseorderlog
+            try
             {
-                purchaseorderlogid = transactionLog.transactionlogid,
-                poid = po.PoId,
-                podate = po.PoDate,
-                supplierid = po.SupplierId,
-                expecteddeliverydate = po.ExpectedDeliveryDate,
-                totalamount = po.TotalAmount,
-                detailsjson = po.DetailsJson
-            };
+                _transactionLogGateway.Insert(transactionLog);
 
-            // TODO: Set enum field once mapping is confirmed
-            // poLog.status = Enum.Parse<RentalStatus>(po.Status);
+                var poLog = new Purchaseorderlog
+                {
+                    purchaseorder_logid = transactionLog.transaction_logid,
+                    po_id = po.PoId,
+                    po_date = po.PoDate,
+                    supplier_id = po.SupplierId,
+                    expected_deliverydate = po.ExpectedDeliveryDate,
+                    total_amount = po.TotalAmount,
+                    details_json = po.DetailsJson
+                };
 
-            _purchaseOrderLogGateway.Insert(poLog);
+                _purchaseOrderLogGateway.Insert(poLog);
+            }
+            catch
+            {
+                // If child insert fails, clean up the orphan parent
+                _transactionLogGateway.Delete(transactionLog.transaction_logid);
+            }
         }
     }
 }

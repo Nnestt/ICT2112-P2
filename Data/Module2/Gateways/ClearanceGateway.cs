@@ -24,8 +24,8 @@ public class ClearanceLogGateway : IClearanceLogGateway
     public List<Clearancelog> GetAll()
     {
         return context.Clearancelogs
-            .Include(c => c.ClearancelogNavigation) // joins TransactionLog for CreatedAt
-            .OrderByDescending(c => c.ClearancelogNavigation.createdat)
+            .Include(c => c.ClearancelogNavigation)
+            .OrderByDescending(c=> EF.Property<DateTime?>(c.ClearancelogNavigation, "Createdat"))
             .ToList();
     }
 
@@ -33,12 +33,12 @@ public class ClearanceLogGateway : IClearanceLogGateway
     {
         return context.Clearancelogs
             .Include(c => c.ClearancelogNavigation)
-            .FirstOrDefault(c => c.clearancelogid == clearanceLogId);
+            .FirstOrDefault(c => EF.Property<int>(c, "Clearancelogid") == clearanceLogId);
     }
 
     public bool ExistsByClearanceBatchId(int clearanceBatchId)
     {
         return context.Clearancelogs
-            .Any(c => c.clearancebatchid == clearanceBatchId);
+        .Any(c => EF.Property<int>(c, "Clearancebatchid") == clearanceBatchId);
     }
 }

@@ -1,60 +1,64 @@
 namespace ProRental.Domain.Entities;
 
+using System.ComponentModel.DataAnnotations.Schema;
 using ProRental.Domain.Enums;
 
-/// <summary>
-/// Partial class extending the auto-generated Purchaseorderlog entity.
-/// NOTE: Class name must be Purchaseorderlog (not PurchaseOrderLog) to match scaffolded entity.
-/// </summary>
 public partial class Purchaseorderlog
 {
-    public int purchaseorderlogid
+    [NotMapped]
+    public int purchaseorder_logid
     {
         get => Purchaseorderlogid;
         set => Purchaseorderlogid = value;
     }
 
-    public int poid
+    [NotMapped]
+    public int po_id
     {
         get => Poid;
         set => Poid = value;
     }
 
-    public DateTime? podate
+    [NotMapped]
+    public DateTime? po_date
     {
         get => Podate;
         set => Podate = value;
     }
 
-    public int? supplierid
+    [NotMapped]
+    public int? supplier_id
     {
         get => Supplierid;
         set => Supplierid = value;
     }
 
-    public DateTime? expecteddeliverydate
+    [NotMapped]
+    public DateTime? expected_deliverydate
     {
         get => Expecteddeliverydate;
         set => Expecteddeliverydate = value;
     }
 
-    public decimal? totalamount
+    [NotMapped]
+    public decimal? total_amount
     {
         get => Totalamount;
         set => Totalamount = value;
     }
 
-    public string? detailsjson
+    [NotMapped]
+    public string? details_json
     {
         get => Detailsjson;
         set => Detailsjson = value;
     }
 
-    // Status — PostgreSQL enum (rental_status_enum)
     private RentalStatus _status;
     private RentalStatus Status { get => _status; set => _status = value; }
 
-    public RentalStatus status
+    [NotMapped]
+    public RentalStatus po_status
     {
         get => Status;
         set => Status = value;

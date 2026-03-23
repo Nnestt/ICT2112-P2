@@ -1,66 +1,71 @@
 namespace ProRental.Domain.Entities;
 
+using System.ComponentModel.DataAnnotations.Schema;
 using ProRental.Domain.Enums;
 
-/// <summary>
-/// Partial class extending the auto-generated Returnlog entity.
-/// NOTE: Class name must be Returnlog (not ReturnLog) to match scaffolded entity.
-/// </summary>
 public partial class Returnlog
 {
-    public int returnlogid
+    [NotMapped]
+    public int return_logid
     {
         get => Returnlogid;
         set => Returnlogid = value;
     }
 
-    public int returnrequestid
+    [NotMapped]
+    public int return_requestid
     {
         get => Returnrequestid;
         set => Returnrequestid = value;
     }
 
-    public int rentalorderlogid
+    [NotMapped]
+    public int rental_orderlogid
     {
         get => Rentalorderlogid;
         set => Rentalorderlogid = value;
     }
 
-    public string? customerid
+    [NotMapped]
+    public string? customer_id
     {
         get => Customerid;
         set => Customerid = value;
     }
 
-    public DateTime? requestdate
+    [NotMapped]
+    public DateTime? request_date
     {
         get => Requestdate;
         set => Requestdate = value;
     }
 
-    public DateTime? completiondate
+    [NotMapped]
+    public DateTime? completion_date
     {
         get => Completiondate;
         set => Completiondate = value;
     }
 
-    public string? imageurl
+    [NotMapped]
+    public string? image_url
     {
         get => Imageurl;
         set => Imageurl = value;
     }
 
-    public string? detailsjson
+    [NotMapped]
+    public string? details_json
     {
         get => Detailsjson;
         set => Detailsjson = value;
     }
 
-    // Status — PostgreSQL enum (return_status_enum)
     private ReturnStatus _status;
     private ReturnStatus Status { get => _status; set => _status = value; }
 
-    public ReturnStatus status
+    [NotMapped]
+    public ReturnStatus return_status
     {
         get => Status;
         set => Status = value;

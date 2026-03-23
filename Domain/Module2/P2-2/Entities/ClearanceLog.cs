@@ -1,50 +1,50 @@
 namespace ProRental.Domain.Entities;
 
+using System.ComponentModel.DataAnnotations.Schema;
 using ProRental.Domain.Enums;
 
-/// <summary>
-/// Partial class extending the auto-generated Clearancelog entity.
-/// NOTE: Class name must be Clearancelog (not ClearanceLog) to match scaffolded entity.
-/// </summary>
 public partial class Clearancelog
 {
-    public int clearancelogid
+    [NotMapped]
+    public int clearance_logid
     {
         get => Clearancelogid;
         set => Clearancelogid = value;
     }
 
-    public int clearancebatchid
+    [NotMapped]
+    public int clearance_batchid
     {
         get => Clearancebatchid;
         set => Clearancebatchid = value;
     }
 
-    public string? batchname
+    [NotMapped]
+    public string? batch_name
     {
         get => Batchname;
         set => Batchname = value;
     }
 
-    public DateTime? clearancedate
+    [NotMapped]
+    public DateTime? clearance_date
     {
         get => Clearancedate;
         set => Clearancedate = value;
     }
 
-    public string? detailsjson
+    [NotMapped]
+    public string? details_json
     {
         get => Detailsjson;
         set => Detailsjson = value;
     }
 
-    // Status — PostgreSQL enum (clearance_status_enum)
-    // TODO: Confirm with team whether ClearanceLogStatus enum exists or needs to be created.
-    //       Values: ONGOING, COMPLETED, CANCELLED
-    //       This is different from ClearanceStatus (CLEARANCE, SOLD) used by ClearanceItem.
+    // TODO: Uncomment once ClearanceLogStatus enum is confirmed
     // private ClearanceLogStatus _status;
     // private ClearanceLogStatus Status { get => _status; set => _status = value; }
-    // public ClearanceLogStatus status
+    // [NotMapped]
+    // public ClearanceLogStatus clearance_status
     // {
     //     get => Status;
     //     set => Status = value;

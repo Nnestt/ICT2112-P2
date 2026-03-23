@@ -24,8 +24,8 @@ public class ReturnLogGateway : IReturnLogGateway
     public List<Returnlog> GetAll()
     {
         return context.Returnlogs
-            .Include(r => r.ReturnlogNavigation) // joins TransactionLog for CreatedAt
-            .OrderByDescending(r => r.ReturnlogNavigation.createdat)
+            .Include(r => r.ReturnlogNavigation)
+            .OrderByDescending(r => EF.Property<DateTime?>(r.ReturnlogNavigation, "Createdat"))
             .ToList();
     }
 
@@ -33,12 +33,12 @@ public class ReturnLogGateway : IReturnLogGateway
     {
         return context.Returnlogs
             .Include(r => r.ReturnlogNavigation)
-            .FirstOrDefault(r => r.returnlogid == returnLogId);
+            .FirstOrDefault(r => EF.Property<int>(r, "Returnlogid") == returnLogId);
     }
 
     public bool ExistsByReturnRequestId(int returnRequestId)
     {
-        return context.Returnlogs
-            .Any(r => r.returnrequestid == returnRequestId);
+        return context.Returnlogs.
+        Any(r => EF.Property<int>(r, "Returnrequestid") == returnRequestId);
     }
 }

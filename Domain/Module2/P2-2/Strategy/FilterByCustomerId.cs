@@ -3,10 +3,6 @@ namespace ProRental.Domain.Module2.P2_2.Strategy;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces;
 
-/// <summary>
-/// Filters transaction logs by Customer ID.
-/// Matches against: RentalOrderLog.CustomerId, ReturnLog.CustomerId.
-/// </summary>
 public class FilterByCustomerId : IFilterStrategy
 {
     private readonly string _customerId;
@@ -28,12 +24,10 @@ public class FilterByCustomerId : IFilterStrategy
 
         return logs.Where(log =>
         {
-            if (log.Rentalorderlog != null && log.Rentalorderlog.customerid == customerIdInt)
+            if (log.Rentalorderlog != null && log.Rentalorderlog.customer_id == customerIdInt)
                 return true;
-
-            if (log.Returnlog != null && log.Returnlog.customerid == _customerId)
+            if (log.Returnlog != null && log.Returnlog.customer_id == _customerId)
                 return true;
-
             return false;
         }).ToList();
     }

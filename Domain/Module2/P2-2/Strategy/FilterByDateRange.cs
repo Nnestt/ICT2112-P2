@@ -3,10 +3,6 @@ namespace ProRental.Domain.Module2.P2_2.Strategy;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces;
 
-/// <summary>
-/// Filters transaction logs by date range.
-/// Matches against: TransactionLog.CreatedAt.
-/// </summary>
 public class FilterByDateRange : IFilterStrategy
 {
     private readonly DateTime _startDate;
@@ -18,10 +14,6 @@ public class FilterByDateRange : IFilterStrategy
         _endDate = endDate;
     }
 
-    /// <summary>
-    /// Constructor that parses a pipe-delimited string "startDate|endDate".
-    /// Used when the filter value comes from the UI as a single string.
-    /// </summary>
     public FilterByDateRange(string dateRange)
     {
         var parts = dateRange.Split('|');
@@ -38,8 +30,8 @@ public class FilterByDateRange : IFilterStrategy
     {
         return logs.Where(log =>
         {
-            if (log.createdat == null) return false;
-            return log.createdat >= _startDate && log.createdat <= _endDate;
+            if (log.created_at == null) return false;
+            return log.created_at >= _startDate && log.created_at <= _endDate;
         }).ToList();
     }
 }

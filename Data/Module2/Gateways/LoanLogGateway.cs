@@ -24,8 +24,8 @@ public class LoanLogGateway : ILoanLogGateway
     public List<Loanlog> GetAll()
     {
         return context.Loanlogs
-            .Include(l => l.LoanlogNavigation) // joins TransactionLog for CreatedAt
-            .OrderByDescending(l => l.LoanlogNavigation.createdat)
+            .Include(l => l.LoanlogNavigation)
+            .OrderByDescending(l => EF.Property<DateTime?>(l.LoanlogNavigation, "Createdat"))
             .ToList();
     }
 
@@ -33,12 +33,11 @@ public class LoanLogGateway : ILoanLogGateway
     {
         return context.Loanlogs
             .Include(l => l.LoanlogNavigation)
-            .FirstOrDefault(l => l.loanlogid == loanLogId);
+            .FirstOrDefault(l => EF.Property<int>(l, "Loanlogid") == loanLogId);
     }
 
     public bool ExistsByLoanListId(int loanListId)
     {
-        return context.Loanlogs
-            .Any(l => l.loanlistid == loanListId);
+        return context.Loanlogs.Any(l => EF.Property<int>(l, "Loanlistid") == loanListId);
     }
 }

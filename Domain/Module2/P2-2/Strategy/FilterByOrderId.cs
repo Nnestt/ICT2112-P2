@@ -3,10 +3,6 @@ namespace ProRental.Domain.Module2.P2_2.Strategy;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces;
 
-/// <summary>
-/// Filters transaction logs by Order ID.
-/// Matches against: RentalOrderLog.OrderId.
-/// </summary>
 public class FilterByOrderId : IFilterStrategy
 {
     private readonly string _orderId;
@@ -28,9 +24,8 @@ public class FilterByOrderId : IFilterStrategy
 
         return logs.Where(log =>
         {
-            if (log.Rentalorderlog != null && log.Rentalorderlog.orderid == orderIdInt)
+            if (log.Rentalorderlog != null && log.Rentalorderlog.order_id == orderIdInt)
                 return true;
-
             return false;
         }).ToList();
     }

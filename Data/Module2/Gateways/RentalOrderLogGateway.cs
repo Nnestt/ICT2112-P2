@@ -24,8 +24,8 @@ public class RentalOrderLogGateway : IRentalOrderLogGateway
     public List<Rentalorderlog> GetAll()
     {
         return context.Rentalorderlogs
-            .Include(r => r.RentalorderlogNavigation) // joins TransactionLog for CreatedAt
-            .OrderByDescending(r => r.RentalorderlogNavigation.createdat)
+            .Include(r => r.RentalorderlogNavigation)
+            .OrderByDescending(r => EF.Property<DateTime?>(r.RentalorderlogNavigation, "Createdat"))
             .ToList();
     }
 
@@ -33,12 +33,11 @@ public class RentalOrderLogGateway : IRentalOrderLogGateway
     {
         return context.Rentalorderlogs
             .Include(r => r.RentalorderlogNavigation)
-            .FirstOrDefault(r => r.rentalorderlogid == rentalOrderLogId);
+            .FirstOrDefault(r => EF.Property<int>(r, "Rentalorderlogid") == rentalOrderLogId);
     }
 
     public bool ExistsByOrderId(int orderId)
     {
-        return context.Rentalorderlogs
-            .Any(r => r.orderid == orderId);
+        return context.Rentalorderlogs.Any(r => EF.Property<int?>(r, "Orderid") == orderId);
     }
 }
