@@ -8,13 +8,19 @@ namespace ProRental.Domain.Controls;
 public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQueryControl, iInventoryStatusControl, iStockSubject
 {
     private readonly IInventoryItemMapper _inventoryItemMapper;
+    private readonly IProductMapper _productMapper;
     private readonly List<iStockObserver> _observers = new();
 
-    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers)
+    public InventoryManagementControl(IInventoryItemMapper inventoryItemMapper, IEnumerable<iStockObserver> observers, IProductMapper productMapper)
     {
         _inventoryItemMapper = inventoryItemMapper ?? throw new ArgumentNullException(nameof(inventoryItemMapper));
+        _productMapper = productMapper ?? throw new ArgumentNullException(nameof(productMapper));
         _observers = observers.ToList();
     }
+
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // CRUD Methods
+    // ─────────────────────────────────────────────────────────────────────────────────
 
     public bool CreateInventoryItem(int productId, string serialNumber, InventoryStatus status, DateTime? expiryDate)
     {
@@ -171,6 +177,10 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // Query/Read Methods
+    // ─────────────────────────────────────────────────────────────────────────────────
+
     public List<Inventoryitem> GetInventoryByProduct(int productId)
     {
         return _inventoryItemMapper.FindByProductId(productId)?.ToList() ?? new List<Inventoryitem>();
@@ -181,10 +191,107 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return _inventoryItemMapper.FindByStatus(status)?.ToList() ?? new List<Inventoryitem>();
     }
 
-    public int GetTotalStockCount(int productId)
+    public List<Inventoryitem> GetAllInventoryItems()
     {
-        return _inventoryItemMapper.FindByProductId(productId)?.Count() ?? 0;
+        var items = _inventoryItemMapper.FindAll()?.ToList() ?? new List<Inventoryitem>();
+        // Sort to show RESERVED items at top
+        return items.OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED).ToList();
     }
+
+    public List<Inventoryitem> SearchInventoryItems(string query)
+    {
+        var allItems = _inventoryItemMapper.FindAll();
+        if (allItems is null || string.IsNullOrWhiteSpace(query))
+        {
+            var items = allItems?.ToList() ?? new List<Inventoryitem>();
+            return items.OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED).ToList();
+        }
+
+        var normalized = query.Trim().ToLower();
+        var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
+
+        var results = allItems.Where(item =>
+            item.GetSerialNumber().ToLower().Contains(normalized) ||
+            (hasNumericQuery && item.GetProductId() == numericQuery) ||
+            (hasNumericQuery && item.GetInventoryItemId() == numericQuery))
+        .OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED)
+        .ToList();
+
+        return results;
+    }
+
+    public int CheckProductQuantityByStatus(int productId, InventoryStatus status)
+    {
+        var items = _inventoryItemMapper.FindByProductId(productId);
+        if (items is null)
+        {
+            return 0;
+        }
+
+        return items.Count(item => item.GetStatus() == status);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // Business Logic Methods
+    // ─────────────────────────────────────────────────────────────────────────────────
+
+    public bool UpdateInventoryStatus(int inventoryItemId, InventoryStatus status)
+    {
+        var item = _inventoryItemMapper.FindById(inventoryItemId);
+        if (item is null)
+        {
+            return false;
+        }
+
+        item.SetStatus(status);
+        item.SetUpdatedDate(DateTime.UtcNow);
+
+        try
+        {
+            _inventoryItemMapper.Update(item);
+            int productId = item.GetProductId();
+            
+            // Check available quantity for this product
+            int availableCount = CheckProductQuantityByStatus(productId, InventoryStatus.AVAILABLE);
+            
+            // Sync product status based on availability
+            var product = _productMapper.FindById(productId);
+            if (product is not null)
+            {
+                ProductStatus newProductStatus = availableCount == 0 
+                    ? ProductStatus.UNAVAILABLE 
+                    : ProductStatus.AVAILABLE;
+
+                // Only update product if status change is needed
+                if (product.GetStatus() != newProductStatus)
+                {
+                    product.UpdateStatus(newProductStatus);
+                    _productMapper.Update(product);
+                }
+            }
+
+            NotifyObservers(productId);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public List<int> AllocateAvailableItems(int productId, int quantity)
+    {
+        var availableItems = GetInventoryByProduct(productId)
+            .Where(item => item.GetStatus() == InventoryStatus.AVAILABLE)
+            .Take(quantity)
+            .ToList();
+
+        return availableItems.Select(item => item.GetInventoryItemId()).ToList();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // Validation Methods (Private)
+    // ─────────────────────────────────────────────────────────────────────────────────
 
     private bool ValidateInventoryItem(Inventoryitem inventoryItem)
     {
@@ -266,78 +373,9 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         return !hasDuplicateSerial;
     }
 
-    public int CheckProductQuantityByStatus(int productId, InventoryStatus status)
-    {
-        var items = _inventoryItemMapper.FindByProductId(productId);
-        if (items is null)
-        {
-            return 0;
-        }
-
-        return items.Count(item => item.GetStatus() == status);
-    }
-
-    public List<Inventoryitem> GetAllInventoryItems()
-    {
-        var items = _inventoryItemMapper.FindAll()?.ToList() ?? new List<Inventoryitem>();
-        // Sort to show RESERVED items at top
-        return items.OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED).ToList();
-    }
-
-    public List<Inventoryitem> SearchInventoryItems(string query)
-    {
-        var allItems = _inventoryItemMapper.FindAll();
-        if (allItems is null || string.IsNullOrWhiteSpace(query))
-        {
-            var items = allItems?.ToList() ?? new List<Inventoryitem>();
-            return items.OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED).ToList();
-        }
-
-        var normalized = query.Trim().ToLower();
-        var hasNumericQuery = int.TryParse(normalized, out var numericQuery);
-
-        var results = allItems.Where(item =>
-            item.GetSerialNumber().ToLower().Contains(normalized) ||
-            (hasNumericQuery && item.GetProductId() == numericQuery) ||
-            (hasNumericQuery && item.GetInventoryItemId() == numericQuery))
-        .OrderByDescending(i => i.GetStatus() == InventoryStatus.RESERVED)
-        .ToList();
-
-        return results;
-    }
-
-    public List<int> AllocateAvailableItems(int productId, int quantity)
-    {
-        var availableItems = GetInventoryByProduct(productId)
-            .Where(item => item.GetStatus() == InventoryStatus.AVAILABLE)
-            .Take(quantity)
-            .ToList();
-
-        return availableItems.Select(item => item.GetInventoryItemId()).ToList();
-    }
-
-    public bool UpdateInventoryStatus(int inventoryItemId, InventoryStatus status)
-    {
-        var item = _inventoryItemMapper.FindById(inventoryItemId);
-        if (item is null)
-        {
-            return false;
-        }
-
-        item.SetStatus(status);
-        item.SetUpdatedDate(DateTime.UtcNow);
-
-        try
-        {
-            _inventoryItemMapper.Update(item);
-            NotifyObservers(item.GetProductId());
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // Observer Pattern Methods
+    // ─────────────────────────────────────────────────────────────────────────────────
 
     public void AttachObserver(iStockObserver observer)
     {

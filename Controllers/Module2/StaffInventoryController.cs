@@ -214,8 +214,13 @@ public class StaffInventoryController : Controller
                 return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
             }
 
-            if (_crudControl.UpdateInventoryItem(inventoryItemId, productId, serialNumber, status ?? InventoryStatus.AVAILABLE, expiryDate))
+            var finalStatus = status ?? InventoryStatus.AVAILABLE;
+
+            if (_crudControl.UpdateInventoryItem(inventoryItemId, productId, serialNumber, finalStatus, expiryDate))
             {
+                // Sync product availability status based on inventory
+                _statusControl.UpdateInventoryStatus(inventoryItemId, finalStatus);
+
                 TempData["Message"] = "Inventory item updated successfully.";
                 return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
             }
