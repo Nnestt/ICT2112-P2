@@ -1,0 +1,18 @@
+@{
+    ViewData["Title"] = "Account Created";
+    var name = TempData["SignupName"] as string;
+}
+
+<div class="row justify-content-center py-5">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 text-center">
+
+        <span class="bi bi-patch-check-fill fs-1 text-success"></span>
+        <h1 class="h3 mt-3 fw-semibold">You're all set, @(name ?? "there")!</h1>
+        <p class="text-muted">Your ProRental account has been created successfully.</p>
+
+        <a asp-action="Login" asp-controller="Module1" class="btn btn-primary mt-3">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign in to your account
+        </a>
+
+    </div>
+</div>

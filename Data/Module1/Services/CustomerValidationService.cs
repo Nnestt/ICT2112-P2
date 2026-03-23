@@ -21,16 +21,23 @@ public class CustomerValidationService : ICustomerValidationService
 
     public CustomerValidationResult ValidateCustomer(int customerId)
     {
-        // Customer.Customerid is private — query via raw SQL to avoid CS0122.
-        var matches = _db.Customers
-            .FromSqlRaw(@"SELECT * FROM ""Customer"" WHERE ""customerId"" = {0}", customerId)
+        var customers = _db.Customers
             .AsEnumerable()
+            .Where(c => GetPrivateProperty<int>(c, "Customerid") == customerId)
             .ToList();
 
-        if (matches.Count == 0)
-            return CustomerValidationResult.Invalid(customerId,
-                $"Customer ID {customerId} was not found. Please check and try again.");
+        if (customers.Count == 0)
+            return CustomerValidationResult.Invalid(customerId, "Customer ID not found.");
 
         return CustomerValidationResult.Valid(customerId);
+    }
+
+    private static T? GetPrivateProperty<T>(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(
+            propertyName,
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        return prop == null ? default : (T?)prop.GetValue(obj);
     }
 }

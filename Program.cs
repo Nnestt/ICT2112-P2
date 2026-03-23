@@ -24,14 +24,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromHours(2);   // matches Session.ExpiresAt (2 hr)
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-});
-
 // builder.Services.AddDbContext<AppDbContext>(options =>
 //     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
@@ -92,7 +84,7 @@ var dataSource = dataSourceBuilder.Build();
 // builder.Services.AddDbContext<AppDbContext>(options =>
 //     options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(dataSource, o => 
+    options.UseNpgsql(dataSource, o =>
     {
         o.MapEnum<AccessEventType>("access_event_type");
         o.MapEnum<AlertStatus>("alert_status");
@@ -186,17 +178,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ISessionMapper, SessionMapper>();
 builder.Services.AddScoped<IAuthenticationService, ProRentalAuthenticationService>();
 builder.Services.AddScoped<ICustomerValidationService, CustomerValidationService>();
- 
+
 // Domain (controls — pure business logic, no DB dependency)
 builder.Services.AddScoped<ISessionService, SessionControl>();
 builder.Services.AddScoped<AuthenticationControl>();
 builder.Services.AddScoped<CustomerIDValidationControl>();
 
+// HTTP context accessor (required for session access in Razor layouts)
+builder.Services.AddHttpContextAccessor();
+
 // Session middleware (required for HttpContext.Session)
-builder.Services.AddSession(options => {
+builder.Services.AddSession(options =>
+{
     options.IdleTimeout = TimeSpan.FromHours(2);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 // Presentation/Controllers
@@ -215,8 +212,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseSession();      
 app.UseRouting();
-app.UseSession();
 app.UseAuthorization();
 
 app.MapControllerRoute(

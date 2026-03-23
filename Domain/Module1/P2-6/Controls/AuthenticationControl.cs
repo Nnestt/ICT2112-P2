@@ -29,12 +29,10 @@ public class AuthenticationControl
     /// <param name="userId">The user's numeric ID.</param>
     /// <param name="password">The user's plaintext password (hashing is handled by IAuthenticationService).</param>
     /// <returns>AuthResult indicating success/failure with session or error message.</returns>
-    public AuthResult AuthenticateUser(int userId, string password)
-    {
-        var result = _authenticationService.Authenticate(userId, password);
-        return result;
-    }
-
+    public AuthResult AuthenticateUser(string email, string password)
+{
+    return _authenticationService.Authenticate(email, password);
+}
     /// <summary>
     /// Terminates the session identified by sessionId, effectively logging the user out.
     /// </summary>

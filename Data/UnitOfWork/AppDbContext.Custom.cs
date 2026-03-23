@@ -291,12 +291,6 @@ public partial class AppDbContext
                   .HasColumnName("hubtype").HasColumnType("hub_type");
         });
 
-        modelBuilder.Entity<User>(entity =>
-      {
-            entity.Property<UserRole>("UserRole").HasField("_userRole").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("userrole").HasColumnType("user_role_enum");
-      });
-
         modelBuilder.Entity<Vettingrecord>(entity =>
         {
             entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)

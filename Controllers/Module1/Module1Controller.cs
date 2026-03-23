@@ -31,9 +31,9 @@ public class Module1Controller : Controller
     // POST /Module1/Login
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Login(int userId, string password)
+    public IActionResult Login(string email, string password)
     {
-        var result = _authControl.AuthenticateUser(userId, password);
+        var result = _authControl.AuthenticateUser(email, password);
 
         if (!result.IsSuccess)
         {
@@ -41,8 +41,10 @@ public class Module1Controller : Controller
             return View("P2-6/Login");
         }
 
-        // Store sessionId in an HTTP session cookie so subsequent requests can validate it.
         HttpContext.Session.SetInt32("SessionId", result.Session!.SessionId);
+        HttpContext.Session.SetString("UserName", result.UserName ?? email);
+        HttpContext.Session.SetString("UserRole", result.Session.RoleString);
+
         return RedirectToAction("Index", "Home");
     }
 
@@ -77,7 +79,7 @@ public class Module1Controller : Controller
         if (!result.IsValid)
         {
             ViewBag.ValidationMessage = result.ValidationMessage;
-            return View("P2-6/_CustomerIdEntry");
+            return View("P2-6/CustomerIdEntry");
         }
 
         // Store the validated customer ID for the downstream checkout flow.
@@ -96,9 +98,9 @@ public class Module1Controller : Controller
     // POST /Module1/StaffLogin
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult StaffLogin(int staffUserId, string staffPassword)
+    public IActionResult StaffLogin(string StaffEmail, string StaffPassword)
     {
-        var result = _authControl.AuthenticateUser(staffUserId, staffPassword);
+        var result = _authControl.AuthenticateUser(StaffEmail, StaffPassword);
 
         if (!result.IsSuccess)
         {
@@ -107,6 +109,52 @@ public class Module1Controller : Controller
         }
 
         HttpContext.Session.SetInt32("SessionId", result.Session!.SessionId);
+        HttpContext.Session.SetString("UserName", result.UserName ?? StaffEmail);
+        HttpContext.Session.SetString("UserRole", result.Session.RoleString);
         return RedirectToAction("Index", "Home");
+    }
+
+    // ── Signup ───────────────────────────────────────────────────────────
+
+    // GET /Module1/Signup
+    public IActionResult Signup()
+    {
+        return View("P2-6/Signup");
+    }
+
+    // POST /Module1/Signup
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Signup(
+        string firstName,
+        string lastName,
+        string email,
+        string? phone,
+        string password,
+        string confirmPassword,
+        bool agreeTerms)
+    {
+        if (password != confirmPassword)
+        {
+            ModelState.AddModelError(string.Empty, "Passwords do not match.");
+            return View("P2-6/Signup");
+        }
+
+        if (!agreeTerms)
+        {
+            ModelState.AddModelError(string.Empty, "You must agree to the Terms of Service and Privacy Policy.");
+            return View("P2-6/Signup");
+        }
+
+        // TODO: wire up SignupControl here when backend is ready.
+
+        TempData["SignupName"] = firstName;
+        return RedirectToAction("SignupSuccess");
+    }
+
+    // GET /Module1/SignupSuccess
+    public IActionResult SignupSuccess()
+    {
+        return View("P2-6/SignupSuccess");
     }
 }

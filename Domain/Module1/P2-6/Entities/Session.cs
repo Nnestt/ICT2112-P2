@@ -18,11 +18,13 @@ public partial class Session
     // ── Factory method ───────────────────────────────────────────────────
     public static Session Create(int userId, UserRole role)
     {
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
         var session = new Session();
-        typeof(Session).GetProperty("Userid")!.SetValue(session, userId);
-        typeof(Session).GetProperty("Role")!.SetValue(session, role.ToString());
-        typeof(Session).GetProperty("Createdat")!.SetValue(session, DateTime.UtcNow);
-        typeof(Session).GetProperty("Expiresat")!.SetValue(session, DateTime.UtcNow.AddHours(2));
+        typeof(Session).GetProperty("Userid", flags)!.SetValue(session, userId);
+        typeof(Session).GetProperty("Role", flags)!.SetValue(session, role.ToString());
+        typeof(Session).GetProperty("Createdat", flags)!.SetValue(session, DateTime.UtcNow);
+        typeof(Session).GetProperty("Expiresat", flags)!.SetValue(session, DateTime.UtcNow.AddHours(2));
         return session;
     }
 }

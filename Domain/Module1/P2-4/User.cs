@@ -3,25 +3,31 @@ namespace ProRental.Domain.Entities;
 
 public partial class User
 {
-    private UserRole _userRole;
+    public void UpdateUserRole(UserRole userRole) => 
+        typeof(User).GetProperty("Userrole", 
+            System.Reflection.BindingFlags.NonPublic | 
+            System.Reflection.BindingFlags.Instance)!
+            .SetValue(this, userRole);
 
-    private UserRole UserRole 
-    { 
-        get => _userRole; 
-        set => _userRole = value; 
-    }
-
-	public void UpdateUserRole(UserRole userRole) => _userRole = userRole;
-
-	// A public constructor (Your Mappers/Gateways will use this!)
     public User(string name, string email, string passwordHash, UserRole role)
     {
-        Name = name;
-        Email = email;
-        Passwordhash = passwordHash;
-        UserRole = role;
+        typeof(User).GetProperty("Name",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance)!
+            .SetValue(this, name);
+        typeof(User).GetProperty("Email",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance)!
+            .SetValue(this, email);
+        typeof(User).GetProperty("Passwordhash",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance)!
+            .SetValue(this, passwordHash);
+        typeof(User).GetProperty("Userrole",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance)!
+            .SetValue(this, role);
     }
 
-    // Parameterless constructor required by EF Core for scaffolding/queries
     protected User() { }
 }
