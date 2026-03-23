@@ -1,0 +1,191 @@
+@model ProRental.Controllers.PurchaseOrderPageViewModel
+
+@{
+    ViewData["Title"] = "Purchase Order View";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">
+            <i class="bi bi-file-earmark-text me-2"></i>
+            Purchase Order View
+        </h2>
+
+        <a asp-controller="PurchaseOrderPage"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.CreatedPoId.HasValue)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            Purchase Order #@Model.CreatedPoId created successfully.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Replenishment Request Details
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Request ID</label>
+                    <div class="fw-semibold">@Model.RequestId</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Requested By</label>
+                    <div>@(string.IsNullOrWhiteSpace(Model.RequestedBy) ? "-" : Model.RequestedBy)</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Created At</label>
+                    <div>@(Model.CreatedAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label text-muted">Status</label>
+                    <div>
+                        @if (Model.Status == "Approved")
+                        {
+                            <span class="badge bg-success">@Model.Status</span>
+                        }
+                        else if (Model.Status == "Rejected")
+                        {
+                            <span class="badge bg-danger">@Model.Status</span>
+                        }
+                        else if (Model.Status == "Pending")
+                        {
+                            <span class="badge bg-warning text-dark">@Model.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@(string.IsNullOrWhiteSpace(Model.Status) ? "Unknown" : Model.Status)</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label text-muted">Remarks</label>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Remarks) ? "-" : Model.Remarks)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="bi bi-box-seam me-2"></i>
+                Requested Items
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Items != null && Model.Items.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Line Item ID</th>
+                                <th>Product ID</th>
+                                <th>Product Name</th>
+                                <th>Quantity</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.LineItemId</td>
+                                    <td>@item.ProductId</td>
+                                    <td>@item.ProductName</td>
+                                    <td>@item.Qty</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Remarks) ? "-" : item.Remarks)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning mb-0">
+                    No items found for this request.
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">
+                <i class="bi bi-truck me-2"></i>
+                Available Suppliers
+            </h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Suppliers != null && Model.Suppliers.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Supplier ID</th>
+                                <th>Supplier Name</th>
+                                <th>Details</th>
+                                <th>Credit Period</th>
+                                <th>Avg Turnaround Time</th>
+                                <th>Verified</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var supplier in Model.Suppliers)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@supplier.SupplierId</td>
+                                    <td>@supplier.SupplierName</td>
+                                    <td>@(string.IsNullOrWhiteSpace(supplier.Details) ? "-" : supplier.Details)</td>
+                                    <td>@(supplier.CreditPeriod?.ToString() ?? "-") days</td>
+                                    <td>@(supplier.AvgTurnaroundTime?.ToString("0.##") ?? "-") days</td>
+                                    <td>
+                                        @if (supplier.IsVerified)
+                                        {
+                                            <span class="badge bg-success">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">No</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning mb-0">
+                    No suppliers found.
+                </div>
+            }
+        </div>
+    </div>
+</div>

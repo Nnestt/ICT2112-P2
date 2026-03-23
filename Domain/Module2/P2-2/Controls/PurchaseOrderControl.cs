@@ -160,5 +160,33 @@ namespace ProRental.Domain.Control
                 throw;
             }
         }
+        public List<PurchaseOrderRequestListItemViewModel> GetAllRequests()
+        {
+            var requests = new List<PurchaseOrderRequestListItemViewModel>();
+
+            using var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+            if (conn.State != ConnectionState.Open)
+                conn.Open();
+
+            using var cmd = new NpgsqlCommand(@"
+        SELECT requestid, requestedby, createdat, status::text, remarks
+        FROM replenishmentrequest
+        ORDER BY createdat DESC, requestid DESC;", conn);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                requests.Add(new PurchaseOrderRequestListItemViewModel
+                {
+                    RequestId = reader.GetInt32(0),
+                    RequestedBy = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    CreatedAt = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
+                    Status = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    Remarks = reader.IsDBNull(4) ? "" : reader.GetString(4)
+                });
+            }
+
+            return requests;
+        }
     }
 }

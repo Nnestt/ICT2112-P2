@@ -11,7 +11,10 @@ namespace ProRental.Controllers
         public List<PurchaseOrderItemViewModel> Items { get; set; } = new();
         public List<PurchaseOrderSupplierViewModel> Suppliers { get; set; } = new();
 
+        public List<PurchaseOrderRequestListItemViewModel> Requests { get; set; } = new();
+
         public int? CreatedPoId { get; set; }
+        
     }
 
     public class PurchaseOrderItemViewModel
@@ -32,4 +35,15 @@ namespace ProRental.Controllers
         public double? AvgTurnaroundTime { get; set; }
         public bool IsVerified { get; set; }
     }
+
+    public class PurchaseOrderRequestListItemViewModel
+    {
+        public int RequestId { get; set; }
+        public string RequestedBy { get; set; } = "";
+        public DateTime? CreatedAt { get; set; }
+        public string Status { get; set; } = "";
+        public string Remarks { get; set; } = "";
+        
+    }
+    
 }
