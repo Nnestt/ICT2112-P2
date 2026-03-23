@@ -1,72 +1,213 @@
-@model ProRental.Domain.Entities.Analytic
+@model ProRental.Controllers.AnalyticsDetailsViewModel
 @{
-    ViewData["Title"] = "Analytics Details";
+    var a = Model.Analytic;
+    ViewData["Title"] = "Analytics #" + a.GetID();
+    var typeBadge = a.GetAnalyticsType() switch {
+        "DAILY"     => "bg-info",
+        "SUPTREND"  => "bg-warning text-dark",
+        "PRODTREND" => "bg-success",
+        _           => "bg-secondary"
+    };
+    // Pre-fill report title
+    var dateLabel = a.GetStartDate()?.ToString("yyyy-MM-dd") == a.GetEndDate()?.ToString("yyyy-MM-dd")
+        ? a.GetStartDate()?.ToString("yyyy-MM-dd")
+        : $"{a.GetStartDate()?.ToString("yyyy-MM-dd")} to {a.GetEndDate()?.ToString("yyyy-MM-dd")}";
+    var refLabel  = a.GetAnalyticsType() == "DAILY" ? "Daily" : (a.GetRefPrimaryName() ?? "");
+    var prefilledTitle = $"{refLabel} — {dateLabel}";
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Analytics #@Model.GetID()</h2>
+        <h2>Analytics #@a.GetID() <span class="badge @typeBadge fs-6 ms-2">@a.GetAnalyticsType()</span></h2>
         <a asp-action="Index" class="btn btn-outline-secondary">← Back</a>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <span class="badge @(Model.GetAnalyticsType() == "DAILY" ? "bg-info" :
-                                  Model.GetAnalyticsType() == "SUPTREND" ? "bg-warning text-dark" :
-                                  "bg-success") fs-6">
-                @Model.GetAnalyticsType()
-            </span>
-        </div>
+    <!-- Summary card -->
+    <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <dl class="row">
+            <dl class="row mb-0">
                 <dt class="col-sm-3">Date Range</dt>
-                <dd class="col-sm-9">
-                    @Model.GetStartDate()?.ToString("yyyy-MM-dd") — @Model.GetEndDate()?.ToString("yyyy-MM-dd")
-                </dd>
+                <dd class="col-sm-9">@a.GetStartDate()?.ToString("yyyy-MM-dd") — @a.GetEndDate()?.ToString("yyyy-MM-dd")</dd>
                 <dt class="col-sm-3">Loan Amount</dt>
-                <dd class="col-sm-9">@Model.GetLoanAmt()</dd>
+                <dd class="col-sm-9">@a.GetLoanAmt()</dd>
                 <dt class="col-sm-3">Return Amount</dt>
-                <dd class="col-sm-9">@Model.GetReturnAmt()</dd>
+                <dd class="col-sm-9">@a.GetReturnAmt()</dd>
                 <dt class="col-sm-3">Reference</dt>
-                <dd class="col-sm-9">@Model.GetRefPrimaryName() (@Model.GetRefPrimaryID())</dd>
+                <dd class="col-sm-9">@a.GetRefPrimaryName() @(a.GetRefPrimaryID().HasValue ? $"(ID: {a.GetRefPrimaryID()})" : "")</dd>
                 <dt class="col-sm-3">Reference Value</dt>
-                <dd class="col-sm-9">@Model.GetRefValue()?.ToString("C")</dd>
+                <dd class="col-sm-9">@a.GetRefValue()?.ToString("C")</dd>
             </dl>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">Generate Report</div>
-        <div class="card-body">
-            <form method="post" asp-action="GenerateReport">
-                <input type="hidden" name="refAnalyticsID" value="@Model.GetID()" />
-                <div class="mb-3">
-                    <label class="form-label">Report Title</label>
-                    <input type="text" name="title" class="form-control" required />
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Visual Type</label>
-                        <select name="visualType" class="form-select">
-                            <option value="TABLE">Table</option>
-                            <option value="BAR">Bar</option>
-                            <option value="LINE">Line</option>
-                            <option value="PIE">Pie</option>
-                            <option value="COLUMN">Column</option>
-                            <option value="AREA">Area</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">File Format</label>
-                        <select name="fileFormat" class="form-select">
-                            <option value="PDF">PDF</option>
-                            <option value="XLSX">XLSX</option>
-                            <option value="CSV">CSV</option>
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">Generate Report</button>
-            </form>
+    <!-- Transaction Logs -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-list-ul me-2"></i>Transaction Logs in this Period
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Log ID</th>
+                        <th>Type</th>
+                        <th>Created At</th>
+                        <th>Supplier</th>
+                        <th>Product</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.TransactionLogs)
+                    {
+                        var logBadge = log.LogType switch {
+                            "LOAN"           => "bg-primary",
+                            "RETURN"         => "bg-warning text-dark",
+                            "PURCHASE_ORDER" => "bg-success",
+                            "RENTAL_ORDER"   => "bg-info text-dark",
+                            "CLEARANCE"      => "bg-secondary",
+                            _                => "bg-dark"
+                        };
+                        <tr>
+                            <td>#@log.LogID</td>
+                            <td><span class="badge @logBadge">@log.LogType</span></td>
+                            <td>@log.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@(log.SupplierName ?? (log.SupplierID.HasValue ? $"ID {log.SupplierID}" : "—"))</td>
+                            <td>@(log.ProductName  ?? (log.ProductID.HasValue  ? $"ID {log.ProductID}"  : "—"))</td>
+                            <td class="text-muted small">@log.Summary</td>
+                        </tr>
+                    }
+                    @if (!Model.TransactionLogs.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-3">No transaction logs found for this period.</td></tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
+
+    <!-- Report section -->
+    @if (Model.ExistingReport is not null)
+    {
+        var r = Model.ExistingReport;
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-earmark-text me-2"></i>Report — @r.GetTitle()</span>
+                <div class="d-flex gap-2">
+                    <a asp-action="ExportReport" asp-route-id="@r.GetReportID()"
+                       class="btn btn-sm btn-success">
+                        <i class="bi bi-download me-1"></i>Export @r.GetFileFormat()
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="document.getElementById('deleteReportForm').submit()">Delete</button>
+                </div>
+            </div>
+            <div class="card-body">
+
+                @* Preview: iframe for PDF, table mockup for CSV/XLSX *@
+                @if (r.GetFileFormat() == ProRental.Domain.Enums.FileFormat.PDF)
+                {
+                    <iframe src="@Url.Action("ExportReport", new { id = r.GetReportID() })"
+                            width="100%" height="400px" class="border rounded"></iframe>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr><th>Analytics ID</th><th>Title</th><th>Visual Type</th><th>Format</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>@r.GetRefAnalyticsID()</td>
+                                    <td>@r.GetTitle()</td>
+                                    <td>@r.GetVisualType()</td>
+                                    <td>@r.GetFileFormat()</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <!-- Update Report form -->
+                <hr />
+                <h6 class="fw-semibold">Update Report</h6>
+                <form method="post" asp-action="UpdateReport" class="row g-2">
+                    <input type="hidden" name="id"             value="@r.GetReportID()" />
+                    <input type="hidden" name="refAnalyticsID" value="@a.GetID()" />
+                    <div class="col-md-4">
+                        <input type="text" name="title" class="form-control"
+                               value="@r.GetTitle()" placeholder="Report title" required />
+                    </div>
+                    @{
+                        var vtNames = Enum.GetValues<ProRental.Domain.Enums.VisualType>()
+                                        .Select(vt => (value: vt.ToString(), selected: r.GetVisualType() == vt ? "selected" : ""))
+                                        .ToList();
+                    }
+                    <select name="visualType" class="form-select">
+                        @foreach (var opt in vtNames)
+                        {
+                            <option value="@opt.value" selected="@opt.selected">@opt.value</option>
+                        }
+                    </select>
+                    @{
+                        var ffNames = Enum.GetValues<ProRental.Domain.Enums.FileFormat>()
+                                        .Select(ff => (value: ff.ToString(), selected: r.GetFileFormat() == ff ? "selected" : ""))
+                                        .ToList();
+                    }
+                    <select name="fileFormat" class="form-select">
+                        @foreach (var opt in ffNames)
+                        {
+                            <option value="@opt.value" selected="@opt.selected">@opt.value</option>
+                        }
+                    </select>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <form id="deleteReportForm" method="post"
+              asp-action="DeleteReport"
+              asp-route-id="@r.GetReportID()"
+              asp-route-refAnalyticsID="@a.GetID()">
+        </form>
+    }
+    else
+    {
+        <!-- Generate Report form — only shown when no report exists yet -->
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-plus-circle me-2"></i>Generate Report
+            </div>
+            <div class="card-body">
+                <form method="post" asp-action="GenerateReport" class="row g-3">
+                    <input type="hidden" name="refAnalyticsID" value="@a.GetID()" />
+                    <div class="col-md-4">
+                        <label class="form-label">Title</label>
+                        <input type="text" name="title" class="form-control"
+                               value="@prefilledTitle" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Visual Type</label>
+                        <select name="visualType" class="form-select">
+                            @foreach (var vt in Enum.GetValues<ProRental.Domain.Enums.VisualType>())
+                            { <option value="@vt">@vt</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">File Format</label>
+                        <select name="fileFormat" class="form-select">
+                            @foreach (var ff in Enum.GetValues<ProRental.Domain.Enums.FileFormat>())
+                            { <option value="@ff">@ff</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Generate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
 </div>

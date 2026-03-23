@@ -8,7 +8,6 @@ namespace ProRental.Data.Gateways;
 public class ReportMapper : IReportExportMapper
 {
     private readonly AppDbContext _db;
-
     public ReportMapper(AppDbContext db) => _db = db;
 
     public async Task<bool> InsertAsync(Reportexport report)
@@ -20,8 +19,10 @@ public class ReportMapper : IReportExportMapper
     public async Task<Reportexport?> FindByIDAsync(int id)
         => await _db.Reportexports.FindAsync(id);
 
+    public async Task<IEnumerable<Reportexport>> GetAllAsync()
+        => await _db.Reportexports.ToListAsync();
+
     public async Task<Reportexport?> FindByTitleAsync(string title)
-        // Load into memory — EF cannot translate private property access
         => (await _db.Reportexports.ToListAsync())
             .FirstOrDefault(r => r.GetTitle() == title);
 

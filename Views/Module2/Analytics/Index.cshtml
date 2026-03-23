@@ -1,58 +1,131 @@
-@model IEnumerable<ProRental.Domain.Entities.Analytic>
+@model ProRental.Controllers.AnalyticsIndexViewModel
 @{
     ViewData["Title"] = "Analytics";
+    var today = DateTime.Now.ToString("yyyy-MM-dd");
+    var startVal = Model.FilterStart?.ToString("yyyy-MM-dd") ?? today;
+    var endVal   = Model.FilterEnd?.ToString("yyyy-MM-dd") ?? today;
 }
 
 <div class="container mt-4">
-    <h2 class="mb-3">Analytics</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-bar-chart-line me-2" style="color:#0d6efd;"></i>Analytics</h2>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i> New Analytics
+        </a>
+    </div>
 
-    <form method="get" asp-action="ByDateRange" class="row g-2 mb-4">
-        <div class="col-auto">
-            <input type="date" name="start" class="form-control" />
-        </div>
-        <div class="col-auto">
-            <input type="date" name="end" class="form-control" />
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-secondary">Filter by Date</button>
-        </div>
-    </form>
+    <!-- Filters -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <div class="row g-3">
 
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th><th>Type</th><th>Start</th><th>End</th>
-                <th>Loan</th><th>Return</th><th>Ref Name</th><th>Value</th><th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.GetID()</td>
-                    <td>
-                        <span class="badge @(item.GetAnalyticsType() == "DAILY" ? "bg-info" :
-                                             item.GetAnalyticsType() == "SUPTREND" ? "bg-warning text-dark" :
-                                             "bg-success")">
-                            @item.GetAnalyticsType()
-                        </span>
-                    </td>
-                    <td>@item.GetStartDate()?.ToString("yyyy-MM-dd")</td>
-                    <td>@item.GetEndDate()?.ToString("yyyy-MM-dd")</td>
-                    <td>@item.GetLoanAmt()</td>
-                    <td>@item.GetReturnAmt()</td>
-                    <td>@item.GetRefPrimaryName()</td>
-                    <td>@item.GetRefValue()?.ToString("C")</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@item.GetID()"
-                           class="btn btn-sm btn-outline-primary">View</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">No analytics records found.</div>
-    }
+                <!-- Type dropdown -->
+                @{
+                    var selAll  = (Model.FilterType == null || Model.FilterType == "ALL") ? "selected" : "";
+                    var selD    = Model.FilterType == "DAILY"     ? "selected" : "";
+                    var selS    = Model.FilterType == "SUPTREND"  ? "selected" : "";
+                    var selP    = Model.FilterType == "PRODTREND" ? "selected" : "";
+                }
+                <select id="typeFilter" class="form-select">
+                    <option value="ALL"       selected="@selAll">All Types</option>
+                    <option value="DAILY"     selected="@selD">Daily</option>
+                    <option value="SUPTREND"  selected="@selS">Supplier Trend</option>
+                    <option value="PRODTREND" selected="@selP">Product Trend</option>
+                </select>
+
+                <!-- Date range -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Date Range</label>
+                    <form method="get" asp-action="Index" class="d-flex gap-2">
+                        <input type="hidden" name="type" id="hiddenType" value="@Model.FilterType" />
+                        <input type="date" name="start" class="form-control" value="@startVal" />
+                        <input type="date" name="end"   class="form-control" value="@endVal" />
+                        <button type="submit" class="btn btn-outline-secondary text-nowrap">Filter</button>
+                    </form>
+                </div>
+
+                <!-- Supplier search -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Supplier</label>
+                    <form method="get" asp-action="Index" class="d-flex gap-2">
+                        <input type="hidden" name="type" value="SUPTREND" />
+                        <input type="text" name="supplier" class="form-control"
+                               placeholder="Supplier name..." value="@Model.FilterSupplier" />
+                        <button type="submit" class="btn btn-outline-warning text-nowrap">Search</button>
+                    </form>
+                </div>
+
+                <!-- Product search -->
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">Product</label>
+                    <form method="get" asp-action="Index" class="d-flex gap-2">
+                        <input type="hidden" name="type" value="PRODTREND" />
+                        <input type="text" name="product" class="form-control"
+                               placeholder="Product name..." value="@Model.FilterProduct" />
+                        <button type="submit" class="btn btn-outline-success text-nowrap">Search</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Loans</th>
+                        <th>Returns</th>
+                        <th>Reference</th>
+                        <th>Value</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Analytics)
+                    {
+                        var typeBadge = item.GetAnalyticsType() switch {
+                            "DAILY"     => "bg-info",
+                            "SUPTREND"  => "bg-warning text-dark",
+                            "PRODTREND" => "bg-success",
+                            _           => "bg-secondary"
+                        };
+                        <tr>
+                            <td class="align-middle">@item.GetID()</td>
+                            <td class="align-middle">
+                                <span class="badge @typeBadge">@item.GetAnalyticsType()</span>
+                            </td>
+                            <td class="align-middle">@item.GetStartDate()?.ToString("yyyy-MM-dd")</td>
+                            <td class="align-middle">@item.GetEndDate()?.ToString("yyyy-MM-dd")</td>
+                            <td class="align-middle">@item.GetLoanAmt()</td>
+                            <td class="align-middle">@item.GetReturnAmt()</td>
+                            <td class="align-middle">@item.GetRefPrimaryName()</td>
+                            <td class="align-middle">@item.GetRefValue()?.ToString("C")</td>
+                            <td class="align-middle">
+                                <a asp-action="Details" asp-route-id="@item.GetID()"
+                                   class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Analytics.Any())
+                    {
+                        <tr><td colspan="9" class="text-center text-muted py-4">No analytics records found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
+<script>
+    // Sync type dropdown into hidden fields on date filter form
+    document.getElementById('typeFilter').addEventListener('change', function () {
+        document.getElementById('hiddenType').value = this.value;
+    });
+</script>

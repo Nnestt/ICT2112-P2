@@ -66,7 +66,7 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("alert_status");
         });
 
-      //   modelBuilder.Entity<Analytic>(entity =>
+      //   modelBuilder.Entity<Analytic>(entity => // Commented out
       //   {
       //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
       //             .HasColumnName("type").HasColumnType("analytics_type_enum");
@@ -198,7 +198,7 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("replenishment_status_enum");
         });
 
-      //   modelBuilder.Entity<Reportexport>(entity =>
+      //   modelBuilder.Entity<Reportexport>(entity => // Commented out
       //   {
       //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
       //             .HasColumnName("type").HasColumnType("visual_type_enum");

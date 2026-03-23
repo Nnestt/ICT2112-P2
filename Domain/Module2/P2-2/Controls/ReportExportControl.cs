@@ -16,8 +16,8 @@ public class ReportExportControl
         VisualType? visualType = null, FileFormat? fileFormat = null)
     {
         var report = new Reportexport();
-        report.SetRefAnalyticsID(refAnalyticsID);   // via partial class setter
-        report.SetTitle(title);                      // via partial class setter
+        report.SetRefAnalyticsID(refAnalyticsID);
+        report.SetTitle(title);
         report.UpdateType(visualType ?? VisualType.TABLE);
         report.UpdateFormat(fileFormat ?? FileFormat.PDF);
         await _reportMapper.InsertAsync(report);
@@ -25,6 +25,9 @@ public class ReportExportControl
 
     public async Task<Reportexport?> GetReportAsync(int targetID)
         => await _reportMapper.FindByIDAsync(targetID);
+
+    public async Task<IEnumerable<Reportexport>> GetAllReportsAsync()
+        => await _reportMapper.GetAllAsync();
 
     public async Task UpdateReportAsync(
         int targetID, string title, VisualType visualType, FileFormat fileFormat)

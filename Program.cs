@@ -144,11 +144,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
 builder.Services.AddScoped<IAnalyticsMapper, AnalysisRecordMapper>();
 builder.Services.AddScoped<IReportExportMapper, ReportMapper>();
+builder.Services.AddScoped<ITransactionLogService, TransactionLogService>();
 
 // Domain
 builder.Services.AddScoped<AnalyticsControl>();
 builder.Services.AddScoped<ReportExportControl>();
 builder.Services.AddScoped<AnalyticsFactory>();
+builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
 
 //Team P2-3
 // Data source

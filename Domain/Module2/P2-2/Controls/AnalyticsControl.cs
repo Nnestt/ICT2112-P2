@@ -1,42 +1,56 @@
 using ProRental.Domain.Entities;
+using ProRental.Domain.Enums;
 using ProRental.Interfaces;
 
 namespace ProRental.Domain.Control;
 
-/// <summary>
-/// Control class responsible for analytics business logic.
-/// Depends on IAnalyticsMapper (data access) and AnalyticsFactory (entity creation).
-/// Does NOT depend on concrete entity types — only IAnalytics and Analytic (base).
-/// </summary>
 public class AnalyticsControl : IAnalyticsData
 {
     private readonly IAnalyticsMapper _analyticsMapper;
     private readonly AnalyticsFactory _factory;
+    private readonly ITransactionLogService _transactionLogService;
 
-    public AnalyticsControl(IAnalyticsMapper analyticsMapper, AnalyticsFactory factory)
+    public AnalyticsControl(
+        IAnalyticsMapper analyticsMapper,
+        AnalyticsFactory factory,
+        ITransactionLogService transactionLogService)
     {
-        _analyticsMapper = analyticsMapper;
-        _factory = factory;
+        _analyticsMapper       = analyticsMapper;
+        _factory               = factory;
+        _transactionLogService = transactionLogService;
     }
 
-    // ── Generate ────────────────────────────────────────────────────────────────
+    // ── Create ───────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Generates a new analytics record from a list of transaction objects.
-    /// Uses the factory to create the appropriate analytics type.
-    /// </summary>
-    public async Task<IAnalytics> GenerateAnalyticsAsync(List<object> transactions, string analyticsType = "DAILY")
+    public async Task<Analytic> CreateAnalyticsAsync(
+        string analyticsType, DateTime startDate, DateTime endDate,
+        string refPrimaryName, int? refPrimaryID = null)
     {
-        IAnalytics analytics = analyticsType switch
+        var logs    = await _transactionLogService.GetTransactionLogsByDateRangeAsync(startDate, endDate);
+        var logList = logs.ToList();
+        int loanAmt   = logList.Count(l => l.LogType == "LOAN");
+        int returnAmt = logList.Count(l => l.LogType == "RETURN");
+
+        var entity = new Analytic();
+        entity.UpdateType(analyticsType switch
         {
-            "SUPTREND"  => _factory.CreateSupplierTrend(),
-            "PRODTREND" => _factory.CreateProductTrend(),
-            _           => _factory.CreateDailyLog()
-        };
-        return analytics;
+            "SUPTREND"  => AnalyticsType.SUPTREND,
+            "PRODTREND" => AnalyticsType.PRODTREND,
+            _           => AnalyticsType.DAILY
+        });
+        entity.SetStartDate(startDate);
+        entity.SetEndDate(endDate);
+        entity.SetLoanAmt(loanAmt);
+        entity.SetReturnAmt(returnAmt);
+        entity.SetRefPrimaryName(refPrimaryName);
+        entity.SetRefPrimaryID(refPrimaryID);
+        entity.SetRefValue(0);
+
+        await _analyticsMapper.InsertAsync(entity);
+        return entity;
     }
 
-    // ── Read ────────────────────────────────────────────────────────────────────
+    // ── Read ─────────────────────────────────────────────────────────────────
 
     public async Task<Analytic?> GetAnalyticsAsync(int targetID)
         => await _analyticsMapper.FindByIDAsync(targetID);
@@ -48,17 +62,29 @@ public class AnalyticsControl : IAnalyticsData
         => await _analyticsMapper.FindByDateAsync(start, end);
 
     public async Task<IEnumerable<Analytic>> GetAnalyticsBySupplierAsync(string supplier)
-    {
-        // Resolve supplier name to ID via mapper query
-        return await _analyticsMapper.FindBySupplierAsync(0); // supplierID resolved by mapper
-    }
+        => (await _analyticsMapper.FindBySupplierAsync(0))
+            .Where(a => a.GetRefPrimaryName()?.Contains(supplier, StringComparison.OrdinalIgnoreCase) == true);
 
     public async Task<IEnumerable<Analytic>> GetAnalyticsByProductAsync(string product)
+        => (await _analyticsMapper.FindByProductAsync(0))
+            .Where(a => a.GetRefPrimaryName()?.Contains(product, StringComparison.OrdinalIgnoreCase) == true);
+
+    public async Task<IEnumerable<Analytic>> GetAllAnalyticsAsync()
+        => await _analyticsMapper.FindByDateAsync(DateTime.MinValue, DateTime.MaxValue);
+
+    // ── Transaction Logs for Details ─────────────────────────────────────────
+
+    public async Task<IEnumerable<TransactionLogDto>> GetLogsForAnalyticsAsync(Analytic analytic)
     {
-        return await _analyticsMapper.FindByProductAsync(0); // productID resolved by mapper
+        var start = analytic.GetStartDate() ?? DateTime.MinValue;
+        var end   = analytic.GetEndDate()   ?? DateTime.MaxValue;
+        return await _transactionLogService.GetTransactionLogsByDateRangeAsync(start, end);
     }
 
-    // ── Update / Delete ─────────────────────────────────────────────────────────
+    public async Task<IEnumerable<TransactionLogDto>> GetAllLogsAsync()
+        => await _transactionLogService.GetAllTransactionLogsAsync();
+
+    // ── Update / Delete ───────────────────────────────────────────────────────
 
     public async Task UpdateAnalyticsAsync(int targetID, List<object> transactions)
     {
