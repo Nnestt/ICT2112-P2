@@ -150,7 +150,7 @@
                 <div class="card-body p-4 p-lg-5">
                     <div class="formula-chip p-3 mb-4">
                         <div class="fw-semibold text-success mb-1">Formula</div>
-                        <div class="text-muted mb-0"><code>Footprint = m x 0.5 x (1 + t / 100)</code></div>
+                        <div class="mb-0"><code>Carbon Footprint = Product Mass x 0.5 x (1 + Toxic Percentage / 100)</code></div>
                     </div>
 
                     <form asp-action="Index" asp-controller="ProductFootprint" method="post" novalidate>
@@ -161,13 +161,13 @@
                             <div class="col-12">
                                 <label asp-for="ProductId" class="form-label fw-semibold"></label>
                                 <select asp-for="ProductId" asp-items="Model.ProductOptions" class="form-select form-select-lg">
-                                    <option value="">Select a product SKU</option>
+                                    <option value="">Select a product</option>
                                 </select>
                                 <span asp-validation-for="ProductId" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
-                                <label asp-for="ProductMass" class="form-label fw-semibold"></label>
+                                <label asp-for="ProductMass" class="form-label fw-semibold">Product Mass (g)</label>
                                 <input asp-for="ProductMass" class="form-control form-control-lg" type="number" min="0" step="0.01" />
                                 <span asp-validation-for="ProductMass" class="text-danger small"></span>
                             </div>
@@ -189,8 +189,7 @@
                     {
                         <div class="alert alert-success mt-4 mb-0">
                             <div class="fw-semibold mb-1">Calculation saved successfully.</div>
-                            <div>Calculated product carbon footprint: <strong>@Model.CarbonFootprint.Value.ToString("0.00")</strong></div>
-                            <div>Stored at: <strong>@Model.CalculatedAt?.ToString("yyyy-MM-dd HH:mm:ss")</strong></div>
+                            <div>Calculated product carbon footprint: <strong>@Model.CarbonFootprint.Value.ToString("0.00") g CO2e</strong></div>
                         </div>
                     }
                 </div>

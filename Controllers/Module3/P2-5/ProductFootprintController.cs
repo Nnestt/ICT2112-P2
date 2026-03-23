@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using ProRental.Domain.Module3.P2_5.Entities;
 using ProRental.Interfaces.Module3.P2_5;
 
@@ -35,6 +36,10 @@ public sealed class ProductFootprintController : Controller
 
         try
         {
+            model.CarbonFootprint = _productFootprintCalculatorService.CalculateProductFootprint(
+                model.ProductMass!.Value,
+                model.ToxicPercentage!.Value);
+
             var result = _productFootprintCalculatorService.CalculateAndStoreFootprint(
                 model.ProductId!.Value,
                 model.ProductMass!.Value,
@@ -50,6 +55,18 @@ public sealed class ProductFootprintController : Controller
         catch (ArgumentOutOfRangeException exception)
         {
             ModelState.AddModelError(string.Empty, exception.Message);
+        }
+        catch (DbUpdateException exception)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                $"The footprint was calculated but could not be saved to the database: {exception.GetBaseException().Message}");
+        }
+        catch (Exception exception)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                $"The footprint was calculated but an unexpected error occurred while saving: {exception.GetBaseException().Message}");
         }
 
         return View("~/Views/Module3/P2-5/ProductFootprintCalculator.cshtml", model);
