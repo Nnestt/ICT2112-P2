@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Domain.Controls;
+using ProRental.Interfaces.Domain;
 
 namespace ProRental.Controllers.Module1;
 
@@ -12,12 +13,15 @@ public class Module1Controller : Controller
     private readonly AuthenticationControl _authControl;
     private readonly CustomerIDValidationControl _customerIdValidationControl;
 
+    private readonly IOrderService _orderService;
+
     public Module1Controller(
         AuthenticationControl authControl,
-        CustomerIDValidationControl customerIdValidationControl)
+        CustomerIDValidationControl customerIdValidationControl, IOrderService orderService)
     {
         _authControl = authControl;
         _customerIdValidationControl = customerIdValidationControl;
+        _orderService = orderService;
     }
 
     // ── Login ────────────────────────────────────────────────────────────
@@ -109,4 +113,92 @@ public class Module1Controller : Controller
         HttpContext.Session.SetInt32("SessionId", result.Session!.SessionId);
         return RedirectToAction("Index", "Home");
     }
+
+    // ── Order Management ──────────────────────────────────────────────────────
+
+// GET /Module1/Orders?customerId=1&status=all
+public IActionResult Orders(int customerId = 1, string status = "all")
+{
+    var orders = _orderService.GetOrdersByCustomer(customerId);
+
+    // Filter by status tab
+    var filtered = status.ToLower() switch
+    {
+        "pending"   => orders.Where(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.PENDING).ToList(),
+        "confirmed" => orders.Where(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.CONFIRMED ||
+                                         o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.PROCESSING).ToList(),
+        "dispatch"  => orders.Where(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.READY_FOR_DISPATCH ||
+                                         o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.DISPATCHED).ToList(),
+        "delivered" => orders.Where(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.DELIVERED).ToList(),
+        "cancelled" => orders.Where(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.CANCELLED).ToList(),
+        _           => orders
+    };
+
+    ViewBag.CustomerId  = customerId;
+    ViewBag.ActiveTab   = status;
+    ViewBag.AllCount        = orders.Count;
+    ViewBag.PendingCount    = orders.Count(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.PENDING);
+    ViewBag.ConfirmedCount  = orders.Count(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.CONFIRMED ||
+                                                 o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.PROCESSING);
+    ViewBag.DispatchCount   = orders.Count(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.READY_FOR_DISPATCH ||
+                                                 o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.DISPATCHED);
+    ViewBag.DeliveredCount  = orders.Count(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.DELIVERED);
+    ViewBag.CancelledCount  = orders.Count(o => o.CurrentStatus == ProRental.Domain.Enums.OrderStatus.CANCELLED);
+
+    return View("P2-6/Orders", filtered);
+}
+
+// GET /Module1/OrderDetail/5
+public IActionResult OrderDetail(int orderId)
+{
+    var order = _orderService.GetOrder(orderId);
+    return View("P2-6/OrderDetail", order);
+}
+
+// POST /Module1/CancelOrder
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult CancelOrder(int orderId, int customerId = 1)
+{
+    _orderService.CancelOrder(orderId);
+    return RedirectToAction("Orders", new { customerId, status = "cancelled" });
+}
+
+// GET /Module1/CreateOrderTest
+public IActionResult CreateOrderTest()
+{
+    return View("P2-6/CreateOrderTest");
+}
+
+// POST /Module1/CreateOrderTest
+[HttpPost]
+[ValidateAntiForgeryToken]
+public IActionResult CreateOrderTest(int customerId, int checkoutId,
+    string deliveryType, decimal totalAmount,
+    int productId1, int quantity1, decimal unitPrice1,
+    int productId2, int quantity2, decimal unitPrice2)
+{
+    var itemData = new List<(int, int, decimal, DateTime, DateTime)>
+    {
+        (productId1, quantity1, unitPrice1, DateTime.UtcNow, DateTime.UtcNow.AddDays(7)),
+        (productId2, quantity2, unitPrice2, DateTime.UtcNow, DateTime.UtcNow.AddDays(7)),
+    };
+
+    var productQuantities = new Dictionary<int, int>
+    {
+        { productId1, quantity1 },
+        { productId2, quantity2 }
+    };
+
+    var delivery = Enum.Parse<ProRental.Domain.Enums.DeliveryDuration>(deliveryType);
+
+    var order = _orderService.CreateOrder(customerId, checkoutId, itemData,
+                                           delivery, totalAmount, productQuantities);
+
+    TempData["CreatedOrderId"]     = order.OrderId;
+    TempData["CreatedOrderStatus"] = order.CurrentStatus?.ToString();
+
+    return RedirectToAction("OrderDetail", new { orderId = order.OrderId });
+}
+
 }

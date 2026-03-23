@@ -11,13 +11,14 @@ using ProRental.Domain.Controls;
 using ProRental.Controllers.Module1;
 using ProRental.Data.Services;
 
+
 // uncomment when ready to code
-// using ProRental.Data;
-// using ProRental.Domain.Controls;
-// using ProRental.Domain.Entities;
-// using ProRental.Interfaces.Domain;
-// using ProRental.Interfaces.Data;
-// using ProRental.Controllers;
+using ProRental.Data;
+using ProRental.Domain.Controls;
+//using ProRental.Domain.Entities;
+using ProRental.Interfaces.Domain;
+using ProRental.Interfaces.Data;
+using ProRental.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -182,6 +183,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 //Team P2-6
+// Data source
+builder.Services.AddScoped<IOrderMapper, OrderMapper>();
+builder.Services.AddScoped<IOrderService, OrderManagementControl>();
+builder.Services.AddScoped<IInventoryService, FakeInventoryService>();
+// Domain
+
+// Presentation/Controllers
+builder.Services.AddScoped<IOrderService, OrderManagementControl>();
+
 // Data source (mappers / DB-backed service implementations)
 builder.Services.AddScoped<ISessionMapper, SessionMapper>();
 builder.Services.AddScoped<IAuthenticationService, ProRentalAuthenticationService>();
