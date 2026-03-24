@@ -174,18 +174,26 @@ builder.Services.AddScoped<IStaffFootprintGateway, StaffFootprintGateway>();
 builder.Services.AddScoped<IOrderCarbonDataGateway, OrderCarbonDataGateway>();
 builder.Services.AddScoped<IRewardGateway, RewardGateway>();
 builder.Services.AddScoped<IOrderGateway, OrderGateway>();
+builder.Services.AddScoped<IPackagingMaterialGateway, PackagingMaterialGateway>();
+builder.Services.AddScoped<IPackagingProfileGateway, PackagingProfileGateway>();
+builder.Services.AddScoped<IPackagingConfigurationGateway, PackagingConfigurationGateway>();
 
 // Domain
 builder.Services.AddScoped<ICarbonChartService, CarbonChartControl>();
 builder.Services.AddScoped<IProductFootprintCalculatorService, ProductFootprintCalculatorControl>();
 builder.Services.AddScoped<IProductFootprintService, ProductFootprintService>();
 builder.Services.AddScoped<IRewardsControl, RewardsControl>();
+builder.Services.AddScoped<IPackagingProfilerControl, PackagingProfilerControl>();
+builder.Services.AddScoped<IPackagingFootprintControl, PackagingFootprintControl>();
 
 // Presentation/Controllers
 
 
 //Team P2-6
 // Data source
+
+// Module 1 order service — provides order + product data for packaging profile creation
+builder.Services.AddScoped<ProRental.Data.Module1.Interfaces.IOrderService, ProRental.Data.Module1.Gateways.OrderService>();
 
 // Domain
 

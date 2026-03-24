@@ -1,0 +1,337 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Packaging Carbon Footprint";
+    Layout = null;
+
+    var rows = Model?.ToList() ?? new List<dynamic>();
+    var totalKg = rows.Sum(r => (float)r.FootprintKg);
+    var totalOrders = rows.Select(r => (int)r.OrderId).Distinct().Count();
+    var avgKg = totalOrders > 0 ? totalKg / totalOrders : 0f;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Packaging Carbon Footprint - Pro Rentals</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+
+        .carbon-dashboard {
+            background:
+                radial-gradient(circle at top right, rgba(26, 147, 111, 0.18), transparent 28%),
+                linear-gradient(180deg, #f4fbf8 0%, #edf7f2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-hero {
+            background: linear-gradient(135deg, #113d2f 0%, #1a936f 55%, #2ec4b6 100%);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            content: "";
+            height: 18rem;
+            position: absolute;
+            right: -4rem;
+            top: -6rem;
+            width: 18rem;
+        }
+
+        .stat-card {
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(17, 61, 47, 0.08);
+        }
+
+        .stat-icon {
+            background: linear-gradient(135deg, #e8f5ee, #d0ede0);
+            border-radius: 0.75rem;
+            color: #1a936f;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            font-size: 1.4rem;
+        }
+
+        .footprint-bar-track {
+            background: #e9ecef;
+            border-radius: 99px;
+            height: 6px;
+        }
+
+        .footprint-bar {
+            background: linear-gradient(90deg, #1a936f, #2ec4b6);
+            border-radius: 99px;
+            height: 6px;
+        }
+
+        .empty-state {
+            align-items: center;
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 2px dashed #b8d9c9;
+            border-radius: 1rem;
+            color: #4c6b5c;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            justify-content: center;
+            min-height: 240px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/CarbonMonitoring/CarbonDashboardView">Carbon Dashboard</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page"
+                           href="/CarbonFootprint/DisplayAllPackagingFootprint">Packaging Footprint</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section class="carbon-dashboard py-5">
+        <div class="container">
+
+            <div class="dashboard-hero text-white p-4 p-lg-5 mb-4">
+                <div class="row align-items-center gy-4 position-relative">
+                    <div class="col-lg-8">
+                        <span class="badge rounded-pill text-bg-light text-success fw-semibold mb-3">
+                            Module 3 P2-5
+                        </span>
+                        <h1 class="display-6 fw-bold mb-3">
+                            <i class="bi bi-box2-heart me-2"></i>Packaging Carbon Footprint
+                        </h1>
+                        <p class="lead mb-0 text-white-50">
+                            Carbon footprint per order calculated from packaging profiles,
+                            configurations and materials linked through the packaging tables.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-stack"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Orders Tracked</div>
+                                <div class="fs-3 fw-bold text-dark">@totalOrders</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-cloud-haze2"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Total Packaging Carbon</div>
+                                <div class="fs-3 fw-bold text-dark">
+                                    @totalKg.ToString("F2")
+                                    <small class="fs-6 fw-normal text-muted">kg CO₂</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-bar-chart-line"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Average per Order</div>
+                                <div class="fs-3 fw-bold text-dark">
+                                    @avgKg.ToString("F2")
+                                    <small class="fs-6 fw-normal text-muted">kg CO₂</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!rows.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-box2 fs-1" style="color: #1a936f;"></i>
+                    <div class="fw-semibold">No packaging footprint data found</div>
+                    <small class="text-muted">Results will appear here once orders have been processed.</small>
+                </div>
+            }
+            else
+            {
+                <div class="card stat-card">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-semibold mb-1">Packaging Material Emissions</h2>
+                        <p class="text-muted small mb-4">
+                            Detailed carbon footprint breakdown by individual packaging components across all orders.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Product</th>
+                                        <th>Profile ID</th>
+                                        <th>Fragility</th>
+                                        <th>Volume</th>
+                                        <th>Category</th>
+                                        <th>Material</th>
+                                        <th>Type</th>
+                                        <th class="text-center">Qty</th>
+                                        <th class="text-center">Recyclable</th>
+                                        <th class="text-center">Reusable</th>
+                                        <th class="text-end">Footprint (kg CO₂)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in rows)
+                                    {
+                                        var fragilityClass = ((string)row.FragilityLevel) == "high" ? "danger" : ((string)row.FragilityLevel) == "medium" ? "warning" : "success";
+                                        var vol = (double)row.Volume;
+                                        var categoryClass = ((string)(row.Category ?? "secondary")) == "primary" ? "success" : "secondary";
+                                        var footprint = (float)row.FootprintKg;
+                                        var barPct = (int)Math.Min(footprint / (totalKg == 0 ? 1 : totalKg) * 100, 100);
+                                        
+                                        <tr>
+                                            <td><span class="fw-semibold">#@row.OrderId</span></td>
+                                            <td>@row.ProductName</td>
+                                            <td><span class="text-muted small">@row.ProfileId</span></td>
+                                            <td>
+                                                <span class="badge bg-@fragilityClass rounded-pill">
+                                                    @row.FragilityLevel
+                                                </span>
+                                            </td>
+                                            
+                                            <td>@vol.ToString("F2")</td>
+                                            <td>
+                                                <span class="badge bg-@categoryClass rounded-pill">
+                                                    @(row.Category ?? "secondary")
+                                                </span>
+                                            </td>
+                                            <td>@row.MaterialName</td>
+                                            <td><span class="text-muted small">@(row.MaterialType ?? "—")</span></td>
+                                            <td class="text-center">@row.Quantity</td>
+                                            <td class="text-center">
+                                                @if ((bool)row.Recyclable)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                @if ((bool)row.Reusable)
+                                                {
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="fw-bold">@footprint.ToString("F2")</span>
+                                                <div class="mt-1 footprint-bar-track">
+                                                    <div class="footprint-bar" style="width:@barPct%;"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="11" class="text-end fw-semibold">Grand Total</td>
+                                        <td class="text-end fw-bold">@totalKg.ToString("F2") kg CO₂</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental
+                        operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/CarbonFootprint/DisplayAllPackagingFootprint" class="text-secondary text-decoration-none small">Packaging Footprint</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-cart3 me-1"></i>Order Processing</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-boxes me-1"></i>Inventory Management</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small"><i class="bi bi-leaf me-1"></i>Carbon Footprint</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small"><i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-telephone me-2"></i>+65 6123 4567</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-envelope me-2"></i>support@@prorentals.sg</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 · Pro Rentals Order Processing System v1.0 · 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Data.Module3.P2_5.Interfaces;
 using ProRental.Domain.Entities;
+using ProRental.Interfaces.Module3.P2_5;
 
 namespace ProRental.Controllers.Module3.P2_5;
 
@@ -8,11 +9,13 @@ public class CarbonFootprintController : Controller
 {
     private readonly IBuildingFootprintGateway _buildingGateway;
     private readonly IStaffFootprintGateway _staffGateway;
+    private readonly IPackagingProfilerControl _packagingControl;
 
-    public CarbonFootprintController(IBuildingFootprintGateway buildingGateway, IStaffFootprintGateway staffGateway)
+    public CarbonFootprintController(IBuildingFootprintGateway buildingGateway, IStaffFootprintGateway staffGateway, IPackagingProfilerControl packagingControl)
     {
         _buildingGateway = buildingGateway;
         _staffGateway = staffGateway;
+        _packagingControl = packagingControl;
     }
 
     public IActionResult ProductFootprintView()
@@ -32,7 +35,8 @@ public class CarbonFootprintController : Controller
 
     public IActionResult PackagingFootprintView()
     {
-        return View("~/Views/Module3/P2-5/PackagingFootprintView.cshtml");
+        var footprints = _packagingControl.GetAllPackagingFootprints();
+        return View("~/Views/Module3/P2-5/PackagingFootprintView.cshtml", footprints);
     }
 
     /// <summary>

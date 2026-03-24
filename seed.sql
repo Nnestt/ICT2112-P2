@@ -616,6 +616,55 @@ VALUES
 ('Reusable Camera Transport Box', 'Plastic', TRUE, TRUE),
 ('Shock Absorbing Packing Foam', 'Foam', FALSE, FALSE);
 
+--Packaging Profile--
+WITH inserted_profiles AS (
+    INSERT INTO packagingprofile (orderid, volume, fragilitylevel) VALUES
+    (1, 2.5, 'high'),
+    (2, 1.2, 'medium'),
+    (3, 0.8, 'low'),
+    (4, 3.0, 'high'),
+    (5, 1.5, 'medium')
+    RETURNING profileid, orderid
+),
+
+--Packaging Configuration--
+inserted_configs AS (
+    INSERT INTO packagingconfiguration (profileid)
+    SELECT profileid FROM inserted_profiles
+    ORDER BY orderid
+    RETURNING configurationid, profileid
+),
+
+--Packaging Configuration Map--
+config_map AS (
+    SELECT ic.configurationid, ip.orderid
+    FROM inserted_configs ic
+    JOIN inserted_profiles ip ON ic.profileid = ip.profileid
+)
+
+--Packaging Materials Map--
+INSERT INTO packagingconfigmaterials (configurationid, materialid, category, quantity)
+SELECT c.configurationid, m.materialid, m.category, m.quantity
+FROM config_map c
+JOIN (VALUES
+    (1,  1,  'primary',   1),
+    (1,  2,  'secondary', 1),
+    (1,  5,  'secondary', 2),
+    (2,  6,  'primary',   1),
+    (2,  5,  'secondary', 1),
+    (2,  3,  'secondary', 1),
+    (3,  18, 'primary',   1),
+    (3,  5,  'secondary', 2),
+    (4,  9,  'primary',   1),
+    (4,  4,  'secondary', 1),
+    (4,  11, 'secondary', 1),
+    (5,  8,  'primary',   1),
+    (5,  7,  'secondary', 1),
+    (5,  18, 'secondary', 1)
+) AS m(orderid, materialid, category, quantity)
+ON c.orderid = m.orderid;
+
+
 -- Team 2-2 Seed Data
 -- PURCHASE ORDERS & STOCK
 INSERT INTO PurchaseOrder (supplierID, poDate, status, expectedDeliveryDate, totalAmount) VALUES
