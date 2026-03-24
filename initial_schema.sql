@@ -679,11 +679,17 @@ CREATE TYPE checkout_status_enum AS ENUM ('IN_PROGRESS','CONFIRMED','CANCELLED')
 CREATE TYPE order_status_enum AS ENUM (
     'PENDING',
     'CONFIRMED',
-    'PROCESSING',
+    'PACKING',
     'READY_FOR_DISPATCH',
     'DISPATCHED',
     'DELIVERED',
-    'CANCELLED'
+    'IN_RENTAL',
+    'CANCELLED',
+    'RETURN_PICKUP',
+    'RETURNED',
+    'INSPECTION',
+    'REFUND_PROCESSING',
+    'COMPLETED'
 );
 
 CREATE TYPE delivery_duration_enum AS ENUM ('NextDay','ThreeDays','OneWeek');
@@ -1244,3 +1250,11 @@ ALTER TABLE return_stage
 ALTER TABLE Checkout
 ADD CONSTRAINT fk_checkout_delivery
     FOREIGN KEY (option_id) REFERENCES shipping_option(option_id) ON DELETE RESTRICT; 
+
+-- Team 4: Added states for order_status_enum
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'IN_RENTAL';
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'RETURN_PICKUP';
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'RETURNED';
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'INSPECTION';
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'REFUND_PROCESSING';
+ALTER TYPE order_status_enum ADD VALUE IF NOT EXISTS 'COMPLETED';   

@@ -8,6 +8,10 @@ namespace ProRental.Data.UnitOfWork;
 
 public partial class AppDbContext : DbContext
 {
+    public AppDbContext()
+    {
+    }
+
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
@@ -163,6 +167,10 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Warehouse> Warehouses { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=pro_rental;Username=devuser;Password=devpassword");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -188,7 +196,7 @@ public partial class AppDbContext : DbContext
             .HasPostgresEnum("notification_granularity_enum", new[] { "ALL", "IMPORTANT_ONLY", "NONE" })
             .HasPostgresEnum("notification_type_enum", new[] { "ORDER_UPDATE", "PROMOTION", "SYSTEM", "PRODUCT" })
             .HasPostgresEnum("order_history_status_enum", new[] { "PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_DISPATCH", "DISPATCHED", "DELIVERED", "CANCELLED" })
-            .HasPostgresEnum("order_status_enum", new[] { "PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_DISPATCH", "DISPATCHED", "DELIVERED", "CANCELLED" })
+            .HasPostgresEnum("order_status_enum", new[] { "PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_DISPATCH", "DISPATCHED", "DELIVERED", "CANCELLED", "IN_RENTAL", "RETURN_PICKUP", "RETURNED", "INSPECTION", "REFUND_PROCESSING", "COMPLETED" })
             .HasPostgresEnum("payment_method_enum", new[] { "CREDIT_CARD" })
             .HasPostgresEnum("payment_purpose_enum", new[] { "RENTAL_FEE_DEPOSIT", "PENALTY_FEE" })
             .HasPostgresEnum("po_status_enum", new[] { "COMPLETED", "CONFIRMED", "SUBMITTED", "APPROVED", "REJECTED", "CANCELLED" })
@@ -2805,7 +2813,7 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey("Userid").HasName("User_pkey");
 
-            entity.ToTable("User", "public");
+            entity.ToTable("User");
 
             // entity.HasIndex("Email", "User_email_key").IsUnique();
             entity.HasIndex("Email").HasDatabaseName("User_email_key").IsUnique();

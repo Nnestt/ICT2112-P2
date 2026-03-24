@@ -376,9 +376,9 @@ INSERT INTO "Order" (customerId, checkoutId, transactionId, orderDate, status, d
 -- READY_FOR_DISPATCH
 (6,  6,  6,    NOW() - INTERVAL '12 days', 'READY_FOR_DISPATCH', 'OneWeek',    265.00),  -- 6
 (11, 12, 7,    NOW() - INTERVAL '6 days',  'READY_FOR_DISPATCH', 'NextDay',     60.00),  -- 7
--- PROCESSING
-(7,  7,  8,    NOW() - INTERVAL '10 days', 'PROCESSING',         'ThreeDays',  150.00),  -- 8
-(8,  8,  9,    NOW() - INTERVAL '7 days',  'PROCESSING',         'NextDay',     45.00),  -- 9
+-- PACKING
+(7,  7,  8,    NOW() - INTERVAL '10 days', 'PACKING',         'ThreeDays',  150.00),  -- 8
+(8,  8,  9,    NOW() - INTERVAL '7 days',  'PACKING',         'NextDay',     45.00),  -- 9
 -- CONFIRMED
 (9,  9,  10,   NOW() - INTERVAL '5 days',  'CONFIRMED',          'ThreeDays',   90.00),  -- 10
 (1,  11, 11,   NOW() - INTERVAL '3 days',  'CONFIRMED',          'OneWeek',    210.00),  -- 11
