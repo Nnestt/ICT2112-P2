@@ -77,25 +77,6 @@ public class DamageReportControl : iDamageReportCRUD, iDamageReportQuery
         return reports;
     }
 
-    public bool ValidateDamageReport(Damagereport damageReport)
-    {
-        if (damageReport is null)
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(damageReport.GetDescription()))
-        {
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(damageReport.GetSeverity()))
-        {
-            return false;
-        }
-
-        return true;
-    }
 
     public byte[] DownloadDamageReport(int damageReportId)
     {

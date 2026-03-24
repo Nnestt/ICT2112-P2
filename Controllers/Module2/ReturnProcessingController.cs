@@ -8,12 +8,12 @@ namespace ProRental.Controllers;
 [Route("module2/[controller]")]
 public class ReturnProcessingController : Controller
 {
-    private readonly iReturnOrderQuery  _returnOrderQuery;
-    private readonly iReturnOrderCRUD   _returnOrderCRUD;
-    private readonly iReturnItemQuery   _returnItemQuery;
-    private readonly iReturnItemCRUD    _returnItemCRUD;
-    private readonly iDamageReportQuery _damageReportQuery;
-    private readonly iDamageReportCRUD  _damageReportCRUD;
+    private readonly iReturnOrderQuery   _returnOrderQuery;
+    private readonly iReturnOrderCRUD    _returnOrderCRUD;
+    private readonly iReturnItemQuery    _returnItemQuery;
+    private readonly iReturnItemCRUD     _returnItemCRUD;
+    private readonly iDamageReportQuery  _damageReportQuery;
+    private readonly iDamageReportCRUD   _damageReportCRUD;
 
     public ReturnProcessingController(
         iReturnOrderQuery  returnOrderQuery,
@@ -21,17 +21,18 @@ public class ReturnProcessingController : Controller
         iReturnItemQuery   returnItemQuery,
         iReturnItemCRUD    returnItemCRUD,
         iDamageReportQuery damageReportQuery,
-        iDamageReportCRUD  damageReportCRUD)
+        iDamageReportCRUD  damageReportCRUD
+    )
     {
-        _returnOrderQuery  = returnOrderQuery;
-        _returnOrderCRUD   = returnOrderCRUD;
-        _returnItemQuery   = returnItemQuery;
-        _returnItemCRUD    = returnItemCRUD;
-        _damageReportQuery = damageReportQuery;
-        _damageReportCRUD  = damageReportCRUD;
+        _returnOrderQuery   = returnOrderQuery;
+        _returnOrderCRUD    = returnOrderCRUD;
+        _returnItemQuery    = returnItemQuery;
+        _returnItemCRUD     = returnItemCRUD;
+        _damageReportQuery  = damageReportQuery;
+        _damageReportCRUD   = damageReportCRUD;
     }
 
-    // ReturnRequest.cshtml — return processing queue
+    // ── ReturnRequest.cshtml — queue of orders awaiting return ────────────
     [HttpGet("")]
     [HttpGet("index")]
     [HttpGet("DisplayReturnRequests")]
@@ -40,23 +41,34 @@ public class ReturnProcessingController : Controller
         try
         {
             var requests = _returnOrderQuery.GetAllReturnRequests();
-            var itemMap  = new Dictionary<int, List<Returnitem>>();
+
+            var itemMap        = new Dictionary<int, List<Returnitem>>();
+            var damageReportMap = new Dictionary<int, bool>(); // itemId → has damage report
+
             foreach (var req in requests)
             {
-                itemMap[req.GetReturnRequestId()] =
-                    _returnItemQuery.GetReturnItemByRequestId(req.GetReturnRequestId());
+                var items = _returnItemQuery.GetReturnItemByRequestId(req.GetReturnRequestId());
+                itemMap[req.GetReturnRequestId()] = items;
+
+                foreach (var item in items)
+                {
+                    var report = _damageReportQuery.GetDamageReportByReturnItem(item.GetReturnItemId());
+                    damageReportMap[item.GetReturnItemId()] = report != null;
+                }
             }
-            ViewBag.ItemMap = itemMap;
+
+            ViewBag.ItemMap        = itemMap;
+            ViewBag.DamageReportMap = damageReportMap;
             return View("~/Views/Module2/ReturnProcess/ReturnRequest.cshtml", requests);
         }
         catch
         {
-            TempData["Message"] = "Unable to load return requests. Please verify database access permissions.";
+            TempData["Message"] = "Unable to load return requests.";
             return View("~/Views/Module2/ReturnProcess/ReturnRequest.cshtml", new List<Returnrequest>());
         }
     }
 
-    // ReturnItemDetail.cshtml — list of items inside one return request
+    // ── ReturnItemDetail.cshtml — items inside a return request ──────────
     [HttpGet("ShowReturnDetails/{requestId:int}")]
     public IActionResult ShowReturnDetails(int requestId)
     {
@@ -66,7 +78,17 @@ public class ReturnProcessingController : Controller
             if (request is null) return NotFound();
 
             var items = _returnItemQuery.GetReturnItemByRequestId(requestId);
-            ViewBag.Request = request;
+
+            // Build damage report map: itemId → DamageReport (null if none)
+            var damageReportMap = new Dictionary<int, ProRental.Domain.Entities.Damagereport?>();
+            foreach (var item in items)
+            {
+                damageReportMap[item.GetReturnItemId()] =
+                    _damageReportQuery.GetDamageReportByReturnItem(item.GetReturnItemId());
+            }
+
+            ViewBag.Request         = request;
+            ViewBag.DamageReportMap = damageReportMap;
             return View("~/Views/Module2/ReturnProcess/ReturnItemDetail.cshtml", items);
         }
         catch (Exception ex)
@@ -76,15 +98,16 @@ public class ReturnProcessingController : Controller
         }
     }
 
-    // ReturnItemDamageReport.cshtml — 4-phase processing form for one item
-    [HttpGet("DisplayRepairProgress/{itemId:int}")]
-    public IActionResult DisplayRepairProgress(int itemId)
+    // ── ReturnItemDamageReport.cshtml — 4-phase processing form ──────────
+    [HttpGet("ReturnForm/{itemId:int}")]
+    public IActionResult ReturnForm(int itemId)
     {
         try
         {
             var item = _returnItemQuery.GetReturnItem(itemId);
             if (item is null) return NotFound();
 
+            // Pass existing damage report (if any) to pre-fill the modal
             ViewBag.DamageReport = _damageReportQuery.GetDamageReportByReturnItem(itemId);
             return View("~/Views/Module2/ReturnProcess/ReturnItemDamageReport.cshtml", item);
         }
@@ -95,171 +118,215 @@ public class ReturnProcessingController : Controller
         }
     }
 
-    // ReturnItemDamageReport.cshtml — direct link to damage report section
-    [HttpGet("DisplayDamageReport/{returnItemId:int}")]
-    public IActionResult DisplayDamageReport(int returnItemId)
+    // ── Save damage report (from popup modal in Phase 1) ─────────────────
+    // hasDamage is a JS-side flag only — it determines whether to show the
+    // damage report modal in the view. It is NOT stored in the database.
+    [HttpPost("SaveDamageReport/{returnItemId:int}")]
+    [ValidateAntiForgeryToken]
+    public IActionResult SaveDamageReport(int returnItemId,
+        string? description, string? severity, decimal? repairCost, string? images)
     {
         try
         {
             var item = _returnItemQuery.GetReturnItem(returnItemId);
             if (item is null) return NotFound();
 
-            ViewBag.DamageReport = _damageReportQuery.GetDamageReportByReturnItem(returnItemId);
-            return View("~/Views/Module2/ReturnProcess/ReturnItemDamageReport.cshtml", item);
-        }
-        catch (Exception ex)
-        {
-            TempData["Message"] = $"An error occurred: {ex.Message}";
-            return RedirectToAction(nameof(DisplayReturnRequests));
-        }
-    }
-
-    // ReturnItemDetail.cshtml — status tracking (same as ShowReturnDetails)
-    [HttpGet("ShowReturnStatusTracking/{requestId:int}")]
-    public IActionResult ShowReturnStatusTracking(int requestId)
-    {
-        try
-        {
-            var request = _returnOrderQuery.GetReturnRequestById(requestId);
-            if (request is null) return NotFound();
-
-            var items = _returnItemQuery.GetReturnItemByRequestId(requestId);
-            ViewBag.Request = request;
-            return View("~/Views/Module2/ReturnProcess/ReturnItemDetail.cshtml", items);
-        }
-        catch (Exception ex)
-        {
-            TempData["Message"] = $"An error occurred: {ex.Message}";
-            return RedirectToAction(nameof(DisplayReturnRequests));
-        }
-    }
-
-    // Upload damage images — saves to existing damage report
-    [HttpPost("UploadDamageImages/{returnItemId:int}")]
-    [ValidateAntiForgeryToken]
-    public IActionResult UploadDamageImages(int returnItemId, string? imageUrls)
-    {
-        try
-        {
-            var existing = _damageReportQuery.GetDamageReportByReturnItem(returnItemId);
-            if (existing is null)
+            if (item.GetStatus() != ReturnItemStatus.DAMAGE_INSPECTION)
             {
-                TempData["Message"] = "No damage report found for this item.";
-                return RedirectToAction(nameof(DisplayDamageReport), new { returnItemId });
+                TempData["Message"] = "Damage report can no longer be edited.";
+                return RedirectToAction(nameof(ReturnForm), new { itemId = returnItemId });
             }
-            existing.SetImages(imageUrls ?? string.Empty);
-            TempData["Message"] = _damageReportCRUD.SubmitDamageReport(returnItemId, existing)
-                ? "Damage images updated successfully."
-                : "Failed to update damage images.";
-            return RedirectToAction(nameof(DisplayDamageReport), new { returnItemId });
+
+            var existing = _damageReportQuery.GetDamageReportByReturnItem(returnItemId);
+            Damagereport report = existing ?? new Damagereport();
+            report.SetReturnItemId(returnItemId);
+            report.SetDescription(description ?? string.Empty);
+            report.SetSeverity(severity ?? string.Empty);
+            report.SetRepairCost(repairCost ?? 0m);
+            report.SetImages(images ?? string.Empty);
+            report.SetReportDate(DateTime.UtcNow);
+
+            TempData["Message"] = _damageReportCRUD.SubmitDamageReport(returnItemId, report)
+                ? "Damage report saved."
+                : "Failed to save damage report.";
+
+            return RedirectToAction(nameof(ReturnForm), new { itemId = returnItemId });
         }
         catch (Exception ex)
         {
             TempData["Message"] = $"An error occurred: {ex.Message}";
-            return RedirectToAction(nameof(DisplayReturnRequests));
+            return RedirectToAction(nameof(ReturnForm), new { itemId = returnItemId });
         }
     }
 
-    // Single POST handler for all 4 phases + damage report save
-    [HttpPost("HandleReturnSubmission/{itemId:int}")]
+    // ── Submit Phase 1: Damage Inspection ────────────────────────────────
+    // hasDamage: true → REPAIRING, false → SERVICING (skips repair phase)
+    [HttpPost("SubmitDamageInspection/{itemId:int}")]
     [ValidateAntiForgeryToken]
-    public IActionResult HandleReturnSubmission(int itemId, string stage,
-        bool hasDamage = false, string? description = null, string? severity = null,
-        decimal? repairCost = null, string? images = null,
-        string? partsUsed = null, string? technicianNotes = null,
-        string? beforeImageUrl = null, string? afterImageUrl = null,
-        string? serviceType = null, string? technicianName = null,
-        string? serviceNotes = null, string? partsChecked = null,
-        string? cleaningMethod = null, string? cleaningAgent = null,
-        string? cleanedBy = null, string? cleaningNotes = null)
+    public IActionResult SubmitDamageInspection(int itemId, bool hasDamage)
     {
         try
         {
             var item = _returnItemQuery.GetReturnItem(itemId);
             if (item is null) return NotFound();
 
-            switch (stage.ToUpper())
+            if (item.GetStatus() != ReturnItemStatus.DAMAGE_INSPECTION)
             {
-                case "DAMAGE_INSPECTION":
-                    if (item.GetStatus() != ReturnItemStatus.DAMAGE_INSPECTION)
-                    {
-                        TempData["Message"] = "This item is no longer in the Damage Inspection stage.";
-                        break;
-                    }
-                    if (hasDamage) item.ConductRepairing();
-                    else           item.ConductServicing();
-                    TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
-                        ? (hasDamage ? "Damage inspection submitted. Status set to Repairing."
-                                     : "No damage found. Status set to Servicing.")
-                        : "Failed to submit damage inspection.";
-                    break;
-
-                case "SAVE_DAMAGE_REPORT":
-                    if (item.GetStatus() != ReturnItemStatus.DAMAGE_INSPECTION)
-                    {
-                        TempData["Message"] = "Damage report can no longer be edited.";
-                        break;
-                    }
-                    var existing = _damageReportQuery.GetDamageReportByReturnItem(itemId);
-                    Damagereport report = existing ?? new Damagereport();
-                    report.SetReturnItemId(itemId);
-                    report.SetDescription(description ?? string.Empty);
-                    report.SetSeverity(severity ?? string.Empty);
-                    report.SetRepairCost(repairCost ?? 0m);
-                    report.SetImages(images ?? string.Empty);
-                    report.SetReportDate(DateTime.UtcNow);
-                    TempData["Message"] = _damageReportCRUD.SubmitDamageReport(itemId, report)
-                        ? "Damage report saved successfully."
-                        : "Failed to save damage report.";
-                    break;
-
-                case "REPAIRING":
-                    if (item.GetStatus() != ReturnItemStatus.REPAIRING)
-                    {
-                        TempData["Message"] = "This item is not in the Repairing stage.";
-                        break;
-                    }
-                    item.ConductServicing();
-                    TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
-                        ? "Repair submitted. Status set to Servicing."
-                        : "Failed to submit repair.";
-                    break;
-
-                case "SERVICING":
-                    if (item.GetStatus() != ReturnItemStatus.SERVICING)
-                    {
-                        TempData["Message"] = "This item is not in the Servicing stage.";
-                        break;
-                    }
-                    item.ConductCleaning();
-                    TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
-                        ? "Servicing submitted. Status set to Cleaning."
-                        : "Failed to submit servicing.";
-                    break;
-
-                case "CLEANING":
-                    if (item.GetStatus() != ReturnItemStatus.CLEANING)
-                    {
-                        TempData["Message"] = "This item is not in the Cleaning stage.";
-                        break;
-                    }
-                    item.CompleteReturn();
-                    TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
-                        ? "Cleaning complete. Item returned to inventory."
-                        : "Failed to submit cleaning.";
-                    break;
-
-                default:
-                    TempData["Message"] = "Unknown submission stage.";
-                    break;
+                TempData["Message"] = "Item is no longer in Damage Inspection stage.";
+                return RedirectToAction(nameof(ReturnForm), new { itemId });
             }
 
-            return RedirectToAction(nameof(DisplayRepairProgress), new { itemId });
+            if (hasDamage) item.ConductRepairing();
+            else           item.ConductServicing();
+
+            TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
+                ? (hasDamage ? "Damage found. Status set to Repairing."
+                             : "No damage. Status set to Servicing.")
+                : "Failed to submit inspection.";
+
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
         }
         catch (Exception ex)
         {
             TempData["Message"] = $"An error occurred: {ex.Message}";
-            return RedirectToAction(nameof(DisplayRepairProgress), new { itemId });
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+    }
+
+    // ── Submit Phase 2: Repairing → Servicing ────────────────────────────
+    [HttpPost("SubmitRepairing/{itemId:int}")]
+    [ValidateAntiForgeryToken]
+    public IActionResult SubmitRepairing(int itemId)
+    {
+        try
+        {
+            var item = _returnItemQuery.GetReturnItem(itemId);
+            if (item is null) return NotFound();
+
+            if (item.GetStatus() != ReturnItemStatus.REPAIRING)
+            {
+                TempData["Message"] = "Item is not in the Repairing stage.";
+                return RedirectToAction(nameof(ReturnForm), new { itemId });
+            }
+
+            item.ConductServicing();
+
+            TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
+                ? "Repair complete. Status set to Servicing."
+                : "Failed to submit repair.";
+
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+        catch (Exception ex)
+        {
+            TempData["Message"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+    }
+
+    // ── Submit Phase 3: Servicing → Cleaning ─────────────────────────────
+    [HttpPost("SubmitServicing/{itemId:int}")]
+    [ValidateAntiForgeryToken]
+    public IActionResult SubmitServicing(int itemId)
+    {
+        try
+        {
+            var item = _returnItemQuery.GetReturnItem(itemId);
+            if (item is null) return NotFound();
+
+            if (item.GetStatus() != ReturnItemStatus.SERVICING)
+            {
+                TempData["Message"] = "Item is not in the Servicing stage.";
+                return RedirectToAction(nameof(ReturnForm), new { itemId });
+            }
+
+            item.ConductCleaning();
+
+            TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
+                ? "Servicing complete. Status set to Cleaning."
+                : "Failed to submit servicing.";
+
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+        catch (Exception ex)
+        {
+            TempData["Message"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+    }
+
+    // ── Submit Phase 4: Cleaning → Return to Inventory ───────────────────
+    [HttpPost("SubmitCleaning/{itemId:int}")]
+    [ValidateAntiForgeryToken]
+    public IActionResult SubmitCleaning(int itemId)
+    {
+        try
+        {
+            var item = _returnItemQuery.GetReturnItem(itemId);
+            if (item is null) return NotFound();
+
+            if (item.GetStatus() != ReturnItemStatus.CLEANING)
+            {
+                TempData["Message"] = "Item is not in the Cleaning stage.";
+                return RedirectToAction(nameof(ReturnForm), new { itemId });
+            }
+
+            item.CompleteReturn();
+
+            TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
+                ? "Cleaning complete. Item returned to inventory."
+                : "Failed to submit cleaning.";
+
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+        catch (Exception ex)
+        {
+            TempData["Message"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction(nameof(ReturnForm), new { itemId });
+        }
+    }
+
+    // ── Export damage report as PDF ───────────────────────────────────────
+    [HttpGet("ExportDamageReport/{itemId:int}")]
+    public IActionResult ExportDamageReport(int itemId)
+    {
+        try
+        {
+            var item   = _returnItemQuery.GetReturnItem(itemId);
+            var report = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+            if (item is null || report is null) return NotFound();
+
+            // Build plain-text PDF content using HTML
+            var html = $@"
+            <!DOCTYPE html><html><head><meta charset='utf-8'/>
+            <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+            h1   {{ color: #c0392b; }}
+            .row {{ margin-bottom: 12px; }}
+            .label {{ font-weight: bold; color: #555; }}
+            </style></head><body>
+            <h1>Damage Report</h1>
+            <hr/>
+            <div class='row'><span class='label'>Return Item ID:</span> {item.GetReturnItemId()}</div>
+            <div class='row'><span class='label'>Inventory Item ID:</span> {item.GetInventoryItemId()}</div>
+            <div class='row'><span class='label'>Return Request ID:</span> {item.GetReturnRequestId()}</div>
+            <hr/>
+            <div class='row'><span class='label'>Description:</span> {System.Net.WebUtility.HtmlEncode(report.GetDescription() ?? "—")}</div>
+            <div class='row'><span class='label'>Severity:</span> {System.Net.WebUtility.HtmlEncode(report.GetSeverity() ?? "—")}</div>
+            <div class='row'><span class='label'>Estimated Repair Cost:</span> ${report.GetRepairCost()?.ToString("F2") ?? "0.00"}</div>
+            <div class='row'><span class='label'>Images:</span> {System.Net.WebUtility.HtmlEncode(report.GetImages() ?? "—")}</div>
+            <div class='row'><span class='label'>Date Reported:</span> {report.GetReportDate():dd MMM yyyy HH:mm} UTC</div>
+            <hr/>
+            <p style='color:#888;font-size:12px;'>Generated by Pro Rentals Return Processing System</p>
+            </body></html>";
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(html);
+            return File(bytes, "text/html", $"DamageReport_Item{itemId}.html");
+        }
+        catch (Exception ex)
+        {
+            TempData["Message"] = $"Export failed: {ex.Message}";
+            return RedirectToAction(nameof(ShowReturnDetails), new { requestId = 0 });
         }
     }
 }
