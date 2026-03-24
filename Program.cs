@@ -9,6 +9,7 @@ using ProRental.Domain.Module2.P2_3.Controls;
 using ProRental.Domain.Module2.P2_3.Mappers;
 using ProRental.Domain.Module3.P2_5.Controls;
 using ProRental.Domain.Entities;
+using ProRental.Interfaces.Data.Module3.P2_5;
 using ProRental.Interfaces.Module2.P2_3;
 using ProRental.Interfaces.Module3.P2_5;
 
@@ -166,6 +167,7 @@ builder.Services.AddScoped<IProductCatalogService, ProductCatalogControl>();
 //Team P2-5
 // Data source
 builder.Services.AddScoped<IBuildingFootprintGateway, BuildingFootprintGateway>();
+builder.Services.AddScoped<ICatalogGateway, CatalogGateway>();
 builder.Services.AddScoped<IProductCatalogGateway, ProductCatalogGateway>();
 builder.Services.AddScoped<IProductFootprintGateway, ProductFootprintGateway>();
 builder.Services.AddScoped<IStaffFootprintGateway, StaffFootprintGateway>();
