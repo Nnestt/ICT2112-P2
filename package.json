@@ -1,0 +1,30 @@
+{
+  "name": "ict2112-p2-m3",
+  "version": "1.0.0",
+  "description": "> **Read this fully before writing a single line of code.**  \r > This guide covers everything you need to get your local environment running and understand how the team works together.",
+  "main": "index.js",
+  "dependencies": {
+    "playwright-core": "^1.58.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:feature1": "dotnet build ProRental.csproj && dotnet build tests/Feature1ShippingOptionDbHarness/Feature1ShippingOptionDbHarness.csproj && playwright test tests/playwright/feature1-shipping-options.e2e.spec.js",
+    "test:shipping-options": "npm run test:feature1",
+    "playwright:install": "playwright install chromium"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WJKoh13/ICT2112-P2-M3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/WJKoh13/ICT2112-P2-M3/issues"
+  },
+  "homepage": "https://github.com/WJKoh13/ICT2112-P2-M3#readme"
+}

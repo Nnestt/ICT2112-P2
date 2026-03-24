@@ -1,19 +1,35 @@
 using ProRental.Data.UnitOfWork;
+using ProRental.Data.Module3.P2_1.Gateways;
+using ProRental.Data.Module3.P2_1.Interfaces;
+using ProRental.Data.Module3.P2_1.Mappers;
+using ProRental.Domain.Module3.P2_1.Controls;
+using ProRental.Domain.Module3.P2_1.Factories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
+using ProRental.Configuration.Module3.P2_1;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Entities;
+using ProRental.Testing;
+using ProRental.Interfaces.Module3.P2_1;
 
 // uncomment when ready to code
 // using ProRental.Data;
 // using ProRental.Domain.Controls;
 // using ProRental.Domain.Entities;
-// using ProRental.Interfaces.Domain;
-// using ProRental.Interfaces.Data;
+// using ProRental.Interfaces.Module3.P2_1;
 // using ProRental.Controllers;
 
+//p2-1 feat 1 test
+
 var builder = WebApplication.CreateBuilder(args);
+
+if (args.Length > 0 && string.Equals(args[0], "--phase-tests", StringComparison.OrdinalIgnoreCase))
+{
+    Environment.ExitCode = await PhaseTestRunner.RunAsync(args.Skip(1).ToArray());
+    return;
+}
+//end p2-1 feat 1 test
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -137,6 +153,21 @@ builder.Services.AddScoped<ProRental.Domain.Control.TransportationHubFactory>();
 builder.Services.AddScoped<ProRental.Interfaces.IHubCarbonService, ProRental.Domain.Control.TransportationHubManager>();
 builder.Services.AddScoped<ProRental.Interfaces.IHubInfoService, ProRental.Domain.Control.TransportationHubManager>();
 builder.Services.AddScoped<ProRental.Interfaces.IInventoryService, ProRental.Domain.Control.DummyInventoryService>(); // TODO: Replace with Module 2's real implementation
+builder.Services.AddFeature1Services();
+//TODO: ADD THIS INTO A REGISTRATION
+builder.Services.AddScoped<ITransportMapper, TransportMapper>();
+builder.Services.AddScoped<TruckMapper>();
+builder.Services.AddScoped<ShipMapper>();
+builder.Services.AddScoped<PlaneMapper>();
+builder.Services.AddScoped<TrainMapper>();
+builder.Services.AddScoped<IPricingRuleGateway, PricingRuleGateway>();
+
+// Domain
+builder.Services.AddScoped<IHubCarbonService, HubCarbonService>();
+builder.Services.AddScoped<IRouteDistanceCalculator, RouteDistanceCalculator>();
+builder.Services.AddScoped<ITransportService, TransportationManager>();
+builder.Services.AddScoped<ITransportCarbonService, TransportCarbonManager>();
+builder.Services.AddScoped<TransportationFactory>();
 
 // Presentation/Controllers
 

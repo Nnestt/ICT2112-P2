@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using ProRental.Domain.Enums;
 
 namespace ProRental.Domain.Entities;
 

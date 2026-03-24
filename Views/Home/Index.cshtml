@@ -344,6 +344,20 @@
                                     <i class="bi bi-bell me-2" style="color: #2d7a4f;"></i>Notifications
                                 </a>
                             </div>
+                            <div class="mt-4 pt-3 border-top">
+                                <label for="shipping-order-id" class="form-label fw-semibold mb-2">Feature 1 Shipping Options</label>
+                                <form asp-controller="ShippingOptions" asp-action="GetShippingOptions" method="get" class="d-flex gap-2">
+                                    <input id="shipping-order-id"
+                                           name="orderId"
+                                           type="number"
+                                           min="1"
+                                           class="form-control"
+                                           placeholder="Existing order ID"
+                                           required />
+                                    <button type="submit" class="btn btn-module-1">Open</button>
+                                </form>
+                                <small class="text-muted d-block mt-2">Temporary entry point for an existing checkout order.</small>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,34 @@
+@model ProRental.Models.Module3.P2_1.ShippingSelectionResult
+@* Feature 1 confirmation page: shows the one real shipping option that was generated
+   only after the customer confirmed a preference. *@
+@* by: ernest *@
+@{
+    ViewData["Title"] = "Shipping Option Selected";
+}
+
+<section class="py-4">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+            <p class="text-uppercase text-muted small mb-1">Checkout complete</p>
+            <h1 class="h3 mb-3">Shipping preference confirmed</h1>
+            <p class="lead mb-4">Your final route and shipping option were generated after you confirmed this preference.</p>
+
+            <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted">Order</dt>
+                <dd class="col-sm-8">@Model.OrderId</dd>
+                <dt class="col-sm-4 text-muted">Option</dt>
+                <dd class="col-sm-8">@Model.OptionId</dd>
+                <dt class="col-sm-4 text-muted">Preference</dt>
+                <dd class="col-sm-8">@Model.PreferenceType</dd>
+                <dt class="col-sm-4 text-muted">Cost</dt>
+                <dd class="col-sm-8">@Model.Cost.ToString("C")</dd>
+                <dt class="col-sm-4 text-muted">Delivery Days</dt>
+                <dd class="col-sm-8">@Model.DeliveryDays</dd>
+                <dt class="col-sm-4 text-muted">Carbon</dt>
+                <dd class="col-sm-8">@Model.CarbonFootprintKg.ToString("0.##") kg CO2</dd>
+                <dt class="col-sm-4 text-muted">Transport</dt>
+                <dd class="col-sm-8">@Model.TransportModeLabel</dd>
+            </dl>
+        </div>
+    </div>
+</section>

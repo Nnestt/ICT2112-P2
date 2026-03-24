@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ProRental.PhaseTests\**\*.cs" />
+    <Compile Remove="tests\Feature1ShippingOptionDbHarness\**\*.cs" />
+    <None Remove="ProRental.PhaseTests\**\*" />
+    <None Remove="tests\Feature1ShippingOptionDbHarness\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
