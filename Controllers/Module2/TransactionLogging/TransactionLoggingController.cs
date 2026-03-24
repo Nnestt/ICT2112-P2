@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProRental.Interfaces;
+using ProRental.Data.Module2.Interfaces;
+using ProRental.Domain.Entities;
 
 namespace ProRental.Controllers;
 
@@ -10,10 +12,17 @@ namespace ProRental.Controllers;
 public class TransactionLoggingController : Controller
 {
     private readonly ITransactionLoggingUI _loggingUI;
+    private readonly ILoanLogGateway _loanLogGateway;
+    private readonly IReturnLogGateway _returnLogGateway;       
 
-    public TransactionLoggingController(ITransactionLoggingUI loggingUI)
+    public TransactionLoggingController(
+        ITransactionLoggingUI loggingUI  ,  
+        ILoanLogGateway loanLogGateway,
+    IReturnLogGateway returnLogGateway)
     {
-        _loggingUI = loggingUI;
+            _loggingUI = loggingUI;
+    _loanLogGateway = loanLogGateway;
+    _returnLogGateway = returnLogGateway;
     }
 
     /// <summary>
@@ -64,13 +73,20 @@ public class TransactionLoggingController : Controller
     /// Returns the detail data for a single log entry as a partial view.
     /// Called via AJAX when a user clicks a row to expand details.
     /// </summary>
-    [HttpGet]
-    public IActionResult Details(int id)
-    {
-        var log = _loggingUI.GetLogDetails(id);
-        if (log == null)
-            return NotFound();
+[HttpGet]
+public IActionResult Details(int id)
+{
+    var log = _loggingUI.GetLogDetails(id);
+    if (log == null)
+        return NotFound();
 
-        return View("~/Views/Module2/TransactionLogging/Details.cshtml", log);
+    // If this is a Rental Order, fetch linked loans and returns
+    if (log.Rentalorderlog != null)
+    {
+        ViewBag.LinkedLoans = _loanLogGateway.GetByRentalOrderLogId(log.transaction_logid);
+        ViewBag.LinkedReturns = _returnLogGateway.GetByRentalOrderLogId(log.transaction_logid);
     }
+
+    return View("~/Views/Module2/TransactionLogging/Details.cshtml", log);
+}
 }

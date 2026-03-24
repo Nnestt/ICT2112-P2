@@ -11,5 +11,6 @@ public interface ILoanLogGateway
     Loanlog Insert(Loanlog log);
     List<Loanlog> GetAll();
     Loanlog? GetById(int loanLogId);
+    List<Loanlog> GetByRentalOrderLogId(int rentalOrderLogId);
     bool ExistsByLoanListId(int loanListId);
 }

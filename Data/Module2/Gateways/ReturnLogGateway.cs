@@ -29,6 +29,15 @@ public class ReturnLogGateway : IReturnLogGateway
             .ToList();
     }
 
+    public List<Returnlog> GetByRentalOrderLogId(int rentalOrderLogId)
+{
+    return context.Returnlogs
+        .Include(r => r.ReturnlogNavigation)
+        .Where(r => EF.Property<int>(r, "Rentalorderlogid") == rentalOrderLogId)
+        .OrderByDescending(r => EF.Property<DateTime?>(r.ReturnlogNavigation, "Createdat"))
+        .ToList();
+}
+
     public Returnlog? GetById(int returnLogId)
     {
         return context.Returnlogs

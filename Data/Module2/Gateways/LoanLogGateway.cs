@@ -29,6 +29,15 @@ public class LoanLogGateway : ILoanLogGateway
             .ToList();
     }
 
+    public List<Loanlog> GetByRentalOrderLogId(int rentalOrderLogId)
+{
+    return context.Loanlogs
+        .Include(l => l.LoanlogNavigation)
+        .Where(l => EF.Property<int>(l, "Rentalorderlogid") == rentalOrderLogId)
+        .OrderByDescending(l => EF.Property<DateTime?>(l.LoanlogNavigation, "Createdat"))
+        .ToList();
+}
+
     public Loanlog? GetById(int loanLogId)
     {
         return context.Loanlogs

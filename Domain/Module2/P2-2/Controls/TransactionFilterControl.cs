@@ -6,7 +6,7 @@ using ProRental.Interfaces;
 using ProRental.Data.Module2.Interfaces;
 using ProRental.Domain.Module2.P2_2.Strategy;
 
-public class TransactionFilterControl : ITransactionLoggingUI
+public class TransactionFilterControl : ITransactionLoggingUI, ITransactionLogService
 {
     private readonly ITransactionLogGateway _transactionLogGateway;
     private readonly IRentalOrderLogGateway _rentalOrderLogGateway;

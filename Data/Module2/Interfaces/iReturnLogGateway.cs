@@ -11,5 +11,6 @@ public interface IReturnLogGateway
     Returnlog Insert(Returnlog log);
     List<Returnlog> GetAll();
     Returnlog? GetById(int returnLogId);
+    List<Returnlog> GetByRentalOrderLogId(int rentalOrderLogId);
     bool ExistsByReturnRequestId(int returnRequestId);
 }
