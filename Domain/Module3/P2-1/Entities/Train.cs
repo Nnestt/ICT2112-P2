@@ -2,6 +2,29 @@ namespace ProRental.Domain.Entities;
 
 public partial class Train
 {
+    private int getTransportId() => _transportId;
+
+    private int getTrainID() => _trainId;
+
+    private void setTrainID(int trainId)
+    {
+        _trainId = trainId;
+    }
+
+    private string getTrainType() => _trainType ?? string.Empty;
+
+    private void setTrainType(string trainType)
+    {
+        _trainType = trainType;
+    }
+
+    private string getTrainNumber() => _trainNumber ?? string.Empty;
+
+    private void setTrainNumber(string trainNumber)
+    {
+        _trainNumber = trainNumber;
+    }
+
     public int ReadTransportId() => getTransportId();
 
     public int ReadTrainId() => getTrainID();
