@@ -5,8 +5,8 @@ namespace ProRental.Interfaces.Domain;
 
 public interface iReturnOrderQuery
 {
-    ICollection<Returnrequest> GetAllReturnRequests();
-    Returnrequest? GetReturnRequestById(int returnRequestId);
     ReturnRequestStatus GetReturnStatus(int returnRequestId);
     Returnrequest? GetReturnRequestByOrderId(int orderId);
+    ICollection<Returnrequest> GetAllReturnRequests();
+    Returnrequest? GetReturnRequestById(int returnRequestId);
 }

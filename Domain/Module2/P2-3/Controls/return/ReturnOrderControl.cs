@@ -8,39 +8,17 @@ namespace ProRental.Domain.Controls;
 public class ReturnOrderControl : iReturnOrderCRUD, iReturnOrderQuery, iReturnProcess
 {
     private readonly IReturnRequestMapper _returnRequestMapper;
-    private readonly IReturnItemMapper _returnItemMapper;
+    private readonly IReturnItemMapper    _returnItemMapper;
 
     public ReturnOrderControl(
         IReturnRequestMapper returnRequestMapper,
-        IReturnItemMapper returnItemMapper)
+        IReturnItemMapper    returnItemMapper)
     {
         _returnRequestMapper = returnRequestMapper ?? throw new ArgumentNullException(nameof(returnRequestMapper));
         _returnItemMapper    = returnItemMapper    ?? throw new ArgumentNullException(nameof(returnItemMapper));
     }
 
     // -- iReturnOrderQuery ------------------------------------------------
-
-    public ICollection<Returnrequest> GetAllReturnRequests()
-    {
-        return _returnRequestMapper.FindAll() ?? new List<Returnrequest>();
-    }
-
-    public ICollection<Returnrequest> GetProcessingReturnRequests()
-    {
-        return _returnRequestMapper.FindByStatus(ReturnRequestStatus.PROCESSING)
-               ?? new List<Returnrequest>();
-    }
-
-    public ICollection<Returnrequest> GetCompletedReturnRequests()
-    {
-        return _returnRequestMapper.FindByStatus(ReturnRequestStatus.COMPLETED)
-               ?? new List<Returnrequest>();
-    }
-
-    public Returnrequest? GetReturnRequestById(int returnRequestId)
-    {
-        return _returnRequestMapper.FindById(returnRequestId);
-    }
 
     public ReturnRequestStatus GetReturnStatus(int returnRequestId)
     {
@@ -53,157 +31,93 @@ public class ReturnOrderControl : iReturnOrderCRUD, iReturnOrderQuery, iReturnPr
         return _returnRequestMapper.FindByOrderId(orderId);
     }
 
+    public ICollection<Returnrequest> GetAllReturnRequests()
+    {
+        return _returnRequestMapper.FindAll() ?? new List<Returnrequest>();
+    }
+
+    public Returnrequest? GetReturnRequestById(int returnRequestId)
+    {
+        return _returnRequestMapper.FindById(returnRequestId);
+    }
+
     // -- iReturnOrderCRUD -------------------------------------------------
 
     public bool CreateReturnRequest(Returnrequest returnRequest)
     {
-        if (returnRequest is null)
-        {
-            return false;
-        }
-
-        try
-        {
-            _returnRequestMapper.Insert(returnRequest);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        if (returnRequest is null) return false;
+        try { _returnRequestMapper.Insert(returnRequest); return true; }
+        catch { return false; }
     }
+
+    public bool CompleteReturnProcess(int returnRequestId)
+    {
+        var items = _returnItemMapper.FindByReturnRequest(returnRequestId);
+        if (items is null || items.Count == 0) return false;
+        if (!items.All(i => i.GetStatus() == ReturnItemStatus.RETURN_TO_INVENTORY)) return false;
+
+        var fresh = _returnRequestMapper.FindById(returnRequestId);
+        if (fresh is null) return false;
+
+        fresh.CompleteReturn();
+
+        try { _returnRequestMapper.Update(fresh); return true; }
+        catch { return false; }
+    }
+
+    // -- Control-level methods (from diagram) -----------------------------
 
     public bool UpdateReturnStatus(int returnRequestId, string status)
     {
-        var request = _returnRequestMapper.FindById(returnRequestId);
-        if (request is null)
-        {
-            return false;
-        }
-
-        if (!Enum.TryParse<ReturnRequestStatus>(status, out var parsedStatus))
-        {
-            return false;
-        }
-
-        request.SetStatus(parsedStatus);
-
-        try
-        {
-            _returnRequestMapper.Update(request);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var fresh = _returnRequestMapper.FindById(returnRequestId);
+        if (fresh is null) return false;
+        if (!Enum.TryParse<ReturnRequestStatus>(status, out var parsedStatus)) return false;
+        fresh.SetStatus(parsedStatus);
+        try { _returnRequestMapper.Update(fresh); return true; }
+        catch { return false; }
     }
 
     public bool AcknowledgeReturn(int returnRequestId, int staffId)
     {
-        var request = _returnRequestMapper.FindById(returnRequestId);
-        if (request is null)
-        {
-            return false;
-        }
-
-        try
-        {
-            _returnRequestMapper.Update(request);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var fresh = _returnRequestMapper.FindById(returnRequestId);
+        if (fresh is null) return false;
+        try { _returnRequestMapper.Update(fresh); return true; }
+        catch { return false; }
     }
 
     public bool RejectReturn(int returnRequestId, int staffId, string reason)
     {
-        var request = _returnRequestMapper.FindById(returnRequestId);
-        if (request is null || string.IsNullOrWhiteSpace(reason))
-        {
-            return false;
-        }
-
-        request.SetStatus(ReturnRequestStatus.COMPLETED);
-
-        try
-        {
-            _returnRequestMapper.Update(request);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    // Called when all items in a request reach RETURN_TO_INVENTORY
-    public bool CompleteReturnProcess(int returnRequestId)
-    {
-        var request = _returnRequestMapper.FindById(returnRequestId);
-        if (request is null)
-        {
-            return false;
-        }
-
-        var items = _returnItemMapper.FindByReturnRequest(returnRequestId);
-        if (items is null || items.Count == 0)
-        {
-            return false;
-        }
-
-        // Only complete if every item is RETURN_TO_INVENTORY
-        if (!items.All(i => i.GetStatus() == ReturnItemStatus.RETURN_TO_INVENTORY))
-        {
-            return false;
-        }
-
-        request.CompleteReturn();
-
-        try
-        {
-            _returnRequestMapper.Update(request);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        var fresh = _returnRequestMapper.FindById(returnRequestId);
+        if (fresh is null || string.IsNullOrWhiteSpace(reason)) return false;
+        fresh.SetStatus(ReturnRequestStatus.COMPLETED);
+        try { _returnRequestMapper.Update(fresh); return true; }
+        catch { return false; }
     }
 
     public bool ValidateReturnRequest(Returnrequest returnRequest)
     {
-        if (returnRequest is null)
-        {
-            return false;
-        }
-
-        if (returnRequest.GetOrderId() <= 0)
-        {
-            return false;
-        }
-
-        if (returnRequest.GetCustomerId() <= 0)
-        {
-            return false;
-        }
-
-        var existing = _returnRequestMapper.FindByOrderId(returnRequest.GetOrderId());
-        if (existing != null)
-        {
-            return false;
-        }
-
-        return true;
+        if (returnRequest is null) return false;
+        if (returnRequest.GetOrderId() <= 0 || returnRequest.GetCustomerId() <= 0) return false;
+        return _returnRequestMapper.FindByOrderId(returnRequest.GetOrderId()) is null;
     }
 
     // -- iReturnProcess ---------------------------------------------------
 
-    public bool TriggerReturnProcess(int orderId)
+    public bool TriggerReturnProcess(int orderId, int customerId, DateTime requestDate, List<int> inventoryItemIds)
     {
-        var existing = _returnRequestMapper.FindByOrderId(orderId);
-        return existing is null;
+        if (orderId <= 0 || customerId <= 0 || inventoryItemIds is null || inventoryItemIds.Count == 0) return false;
+        if (_returnRequestMapper.FindByOrderId(orderId) != null) return false;
+
+        try
+        {
+            var returnRequest = new Returnrequest();
+            returnRequest.SetOrderId(orderId);
+            returnRequest.SetCustomerId(customerId);
+            returnRequest.SetStatus(ReturnRequestStatus.PROCESSING);
+            returnRequest.SetRequestDate(DateTime.UtcNow);
+            _returnRequestMapper.Insert(returnRequest);
+            return true;
+        }
+        catch { return false; }
     }
 }
