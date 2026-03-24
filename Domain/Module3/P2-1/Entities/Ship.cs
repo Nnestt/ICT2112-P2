@@ -2,8 +2,6 @@ namespace ProRental.Domain.Entities;
 
 public partial class Ship
 {
-    private int getTransportId() => _transportId;
-
     private int getShipID() => _shipId;
 
     private void setShipID(int shipId)
@@ -31,8 +29,6 @@ public partial class Ship
     {
         _maxVesselSize = maxVesselSize;
     }
-
-    public int ReadTransportId() => getTransportId();
 
     public int ReadShipId() => getShipID();
 

@@ -2,8 +2,6 @@ namespace ProRental.Domain.Entities;
 
 public partial class Truck
 {
-    private int getTransportId() => _transportId;
-
     private int getTruckID() => _truckId;
 
     private void setTruckID(int truckId)
@@ -24,8 +22,6 @@ public partial class Truck
     {
         _licensePlate = licensePlate;
     }
-
-    public int ReadTransportId() => getTransportId();
 
     public int ReadTruckId() => getTruckID();
 

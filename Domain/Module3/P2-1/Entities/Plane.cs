@@ -2,8 +2,6 @@ namespace ProRental.Domain.Entities;
 
 public partial class Plane
 {
-    private int getTransportId() => _transportId;
-
     private int getPlaneID() => _planeId;
 
     private void setPlaneID(int planeId)
@@ -24,8 +22,6 @@ public partial class Plane
     {
         _planeCallsign = planeCallsign;
     }
-
-    public int ReadTransportId() => getTransportId();
 
     public int ReadPlaneId() => getPlaneID();
 
