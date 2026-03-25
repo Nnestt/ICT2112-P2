@@ -1,229 +1,344 @@
 @using ProRental.Domain.Entities
 @{
     ViewData["Title"] = "Rewards Dashboard";
+    Layout = null;
     var orders        = ViewBag.Orders as List<Order> ?? new();
     var carbonRecords = ViewBag.CarbonRecords as List<Ordercarbondatum> ?? new();
     var rewards       = ViewBag.Rewards as List<Customerreward> ?? new();
 
-    // Build lookup dictionaries for quick access in the table
     var carbonByOrderId = carbonRecords.ToDictionary(c => c.GetOrderid());
-    var rewardByCarbon = rewards.GroupBy(r => r.GetOrdercarbondataid())
-                            .ToDictionary(g => g.Key, g => g.First());
+    var rewardByCarbon  = rewards.GroupBy(r => r.GetOrdercarbondataid())
+                                 .ToDictionary(g => g.Key, g => g.First());
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rewards Dashboard - Pro Rentals</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+    </style>
+</head>
+<body>
 
-<div class="container mt-4">
-
-    <h2 class="mb-1">🌿 Customer Carbon &amp; Eco-Rewards Dashboard</h2>
-    <p class="text-muted mb-4">Track order carbon footprints and manage eco-reward vouchers.</p>
-
-    @* ── Feedback banners ──────────────────────────────────────────────────── *@
-    @if (TempData["SuccessMessage"] is string success)
-    {
-        <div class="alert alert-info alert-dismissible fade show">
-            @success <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["ScoreMessage"] is string score)
-    {
-        <div class="alert alert-primary alert-dismissible fade show">
-            @score <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["RewardMessage"] is string rewardMsg)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            @rewardMsg <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @* ── Summary stats ────────────────────────────────────────────────────── *@
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card text-center border-0 bg-light">
-                <div class="card-body">
-                    <div class="fs-2 fw-bold text-primary">@orders.Count</div>
-                    <div class="text-muted small">Total Orders</div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/CarbonMonitoring/CarbonDashboardView">Carbon Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/CarbonMonitoring/BuildingFootprintView">Building Footprint</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/RewardsDashboard/DisplayRewards">Rewards Dashboard</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="#" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                    </a>
+                    <a href="#" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                    </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center border-0 bg-light">
-                <div class="card-body">
-                    <div class="fs-2 fw-bold text-info">@carbonRecords.Count</div>
-                    <div class="text-muted small">Carbon Calculated</div>
-                </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+
+        <h2 class="mb-1">🌿 Customer Carbon &amp; Eco-Rewards Dashboard</h2>
+        <p class="text-muted mb-4">Track order carbon footprints and manage eco-reward vouchers.</p>
+
+        @* ── Feedback banners ────────────────────────────────────────────── *@
+        @if (TempData["SuccessMessage"] is string success)
+        {
+            <div class="alert alert-info alert-dismissible fade show">
+                @success <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-0 bg-light">
-                <div class="card-body">
-                    <div class="fs-2 fw-bold text-success">@rewards.Count</div>
-                    <div class="text-muted small">Rewards Issued</div>
-                </div>
+        }
+        @if (TempData["ScoreMessage"] is string score)
+        {
+            <div class="alert alert-primary alert-dismissible fade show">
+                @score <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center border-0 bg-light">
-                <div class="card-body">
-                    <div class="fs-2 fw-bold text-danger">
-                        @carbonRecords.Count(c => c.GetImpactlevel() == "High" || c.GetImpactlevel() == "Very High")
+        }
+        @if (TempData["RewardMessage"] is string rewardMsg)
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                @rewardMsg <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @* ── Summary stats ───────────────────────────────────────────────── *@
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card text-center border-0 bg-light">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-primary">@orders.Count</div>
+                        <div class="text-muted small">Total Orders</div>
                     </div>
-                    <div class="text-muted small">High Impact Orders</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-0 bg-light">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-info">@carbonRecords.Count</div>
+                        <div class="text-muted small">Carbon Calculated</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-0 bg-light">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-success">@rewards.Count</div>
+                        <div class="text-muted small">Rewards Issued</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center border-0 bg-light">
+                    <div class="card-body">
+                        <div class="fs-2 fw-bold text-danger">
+                            @carbonRecords.Count(c => c.GetImpactlevel() == "High" || c.GetImpactlevel() == "Very High")
+                        </div>
+                        <div class="text-muted small">High Impact Orders</div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    @* ── Orders table ─────────────────────────────────────────────────────── *@
-    <div class="card mb-4">
-        <div class="card-header fw-semibold">Orders</div>
-        <div class="card-body p-0">
-            @if (!orders.Any())
-            {
-                <p class="p-3 text-muted mb-0">No orders found.</p>
-            }
-            else
-            {
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Customer ID</th>
-                            <th>Order Date</th>
-                            <th>Total (g CO₂)</th>
-                            <th>Impact</th>
-                            <th>Reward</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var order in orders)
-                        {
-                            var hasCarbon = carbonByOrderId.TryGetValue(order.GetOrderid(), out var carbon);
-                            var hasReward = hasCarbon && rewardByCarbon.TryGetValue(carbon!.GetOrdercarbondataid(), out var rewardForOrder);
-
+        @* ── Orders table ────────────────────────────────────────────────── *@
+        <div class="card mb-4">
+            <div class="card-header fw-semibold">Orders</div>
+            <div class="card-body p-0">
+                @if (!orders.Any())
+                {
+                    <p class="p-3 text-muted mb-0">No orders found.</p>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td>@order.GetOrderid()</td>
-                                <td>@order.GetCustomerid()</td>
-                                <td>@order.GetOrderdate().ToString("dd MMM yyyy")</td>
-                                <td>
-                                    @if (hasCarbon)
-                                    {
-                                        @carbon!.GetTotalcarbon().ToString("F2")
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (hasCarbon)
-                                    {
-                                        var colour = carbon!.GetImpactBadgeColour();
-                                        <span class="badge bg-@colour">@carbon.GetImpactlevel()</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Not calculated</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (hasReward)
-                                    {
-                                        rewardByCarbon.TryGetValue(carbon!.GetOrdercarbondataid(), out var r);
-                                        <span class="text-success fw-semibold">@r!.GetFormattedValue()</span>
-                                    }
-                                    else if (hasCarbon)
-                                    {
-                                        <span class="text-muted small">None</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">—</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (!hasCarbon)
-                                    {
-                                        <form asp-action="ProcessOrder"
-                                              asp-controller="RewardsDashboard"
-                                              method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="orderId" value="@order.GetOrderid()" />
-                                            <button type="submit" class="btn btn-sm btn-primary">
-                                                Calculate Carbon
-                                            </button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <form asp-action="CalculateEcoScore"
-                                              asp-controller="RewardsDashboard"
-                                              method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="orderId" value="@order.GetOrderid()" />
-                                            <button type="submit" class="btn btn-sm btn-outline-primary me-1">
-                                                Eco Score
-                                            </button>
-                                        </form>
+                                <th>Order ID</th>
+                                <th>Customer ID</th>
+                                <th>Order Date</th>
+                                <th>Total (g CO₂)</th>
+                                <th>Impact</th>
+                                <th>Reward</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in orders)
+                            {
+                                var hasCarbon = carbonByOrderId.TryGetValue(order.GetOrderid(), out var carbon);
+                                var hasReward = hasCarbon && rewardByCarbon.TryGetValue(carbon!.GetOrdercarbondataid(), out var rewardForOrder);
 
-                                        @if (!hasReward)
+                                <tr>
+                                    <td>@order.GetOrderid()</td>
+                                    <td>@order.GetCustomerid()</td>
+                                    <td>@order.GetOrderdate().ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        @if (hasCarbon)
                                         {
-                                            <form asp-action="DetermineReward"
+                                            @carbon!.GetTotalcarbon().ToString("F2")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (hasCarbon)
+                                        {
+                                            var colour = carbon!.GetImpactBadgeColour();
+                                            <span class="badge bg-@colour">@carbon.GetImpactlevel()</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Not calculated</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (hasReward)
+                                        {
+                                            rewardByCarbon.TryGetValue(carbon!.GetOrdercarbondataid(), out var r);
+                                            <span class="text-success fw-semibold">@r!.GetFormattedValue()</span>
+                                        }
+                                        else if (hasCarbon)
+                                        {
+                                            <span class="text-muted small">None</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!hasCarbon)
+                                        {
+                                            <form asp-action="ProcessOrder"
                                                   asp-controller="RewardsDashboard"
                                                   method="post" class="d-inline">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="orderId" value="@order.GetOrderid()" />
-                                                <button type="submit" class="btn btn-sm btn-outline-success">
-                                                    Issue Reward
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    Calculate Carbon
                                                 </button>
                                             </form>
                                         }
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </div>
-    </div>
+                                        else
+                                        {
+                                            <form asp-action="CalculateEcoScore"
+                                                  asp-controller="RewardsDashboard"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="orderId" value="@order.GetOrderid()" />
+                                                <button type="submit" class="btn btn-sm btn-outline-primary me-1">
+                                                    Eco Score
+                                                </button>
+                                            </form>
 
-    @* ── Rewards history ──────────────────────────────────────────────────── *@
-    <div class="card">
-        <div class="card-header fw-semibold">Rewards History</div>
-        <div class="card-body p-0">
-            @if (!rewards.Any())
-            {
-                <p class="p-3 text-muted mb-0">No rewards issued yet.</p>
-            }
-            else
-            {
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Reward ID</th>
-                            <th>Customer ID</th>
-                            <th>Type</th>
-                            <th>Value</th>
-                            <th>Issued At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var r in rewards)
-                        {
+                                            @if (!hasReward)
+                                            {
+                                                <form asp-action="DetermineReward"
+                                                      asp-controller="RewardsDashboard"
+                                                      method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="orderId" value="@order.GetOrderid()" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                                        Issue Reward
+                                                    </button>
+                                                </form>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @* ── Rewards history ─────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-header fw-semibold">Rewards History</div>
+            <div class="card-body p-0">
+                @if (!rewards.Any())
+                {
+                    <p class="p-3 text-muted mb-0">No rewards issued yet.</p>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <td>@r.GetRewardid()</td>
-                                <td>@r.GetCustomerid()</td>
-                                <td>@r.GetRewardtype()</td>
-                                <td class="fw-bold text-success">@r.GetFormattedValue()</td>
-                                <td>@r.GetCreatedat().ToString("dd MMM yyyy HH:mm")</td>
+                                <th>Reward ID</th>
+                                <th>Customer ID</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>Issued At</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+                        </thead>
+                        <tbody>
+                            @foreach (var r in rewards)
+                            {
+                                <tr>
+                                    <td>@r.GetRewardid()</td>
+                                    <td>@r.GetCustomerid()</td>
+                                    <td>@r.GetRewardtype()</td>
+                                    <td class="fw-bold text-success">@r.GetFormattedValue()</td>
+                                    <td>@r.GetCreatedat().ToString("dd MMM yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
         </div>
+
     </div>
 
-</div>
+    <footer class="bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental
+                        operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/BuildingFootprintView" class="text-secondary text-decoration-none small">Building Footprint</a></li>
+                        <li class="mb-1"><a href="/RewardsDashboard/DisplayRewards" class="text-secondary text-decoration-none small">Rewards Dashboard</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Track My Order</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Contact Us</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-cart3 me-1"></i>Order Processing</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-boxes me-1"></i>Inventory Management</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small"><i class="bi bi-leaf me-1"></i>Carbon Footprint</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-bar-chart me-1"></i>Analytics &amp; Reports</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-shield-lock me-1"></i>Staff Portal</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small"><i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-telephone me-2"></i>+65 6123 4567</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-envelope me-2"></i>support@@prorentals.sg</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT</li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 - Pro Rentals Order Processing System v1.0 - 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
