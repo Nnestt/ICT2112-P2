@@ -150,7 +150,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 //Team P2-2
-builder.Services.AddScoped<IReplenishmentRequestQuery, ReplenishmentRequestQueryGateway>();
 builder.Services.AddScoped<IPurchaseOrderMapper, PurchaseOrderMapper>();
 builder.Services.AddScoped<IPOLineItemMapper, POLineItemMapper>();
 builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderControl>();
