@@ -90,7 +90,7 @@
                                         var badgeColor = loan.GetStatus() switch
                                         {
                                             LoanStatus.OPEN => "bg-warning text-dark",
-                                            LoanStatus.ON_LOAN => "bg-primary",
+                                            LoanStatus.ON_LOAN => "bg-info text-dark",
                                             LoanStatus.RETURNED => "bg-success",
                                             _ => "bg-secondary"
                                         };
