@@ -235,18 +235,18 @@ namespace ProRental.Domain.Control
                     cmd.ExecuteNonQuery();
                 }
                 // 6. INSERT into TransactionLog (parent)
-int transactionLogId;
+                int transactionLogId;
 
-using (var cmd = new NpgsqlCommand(@"
+                using (var cmd = new NpgsqlCommand(@"
     INSERT INTO transactionlog (logtype)
     VALUES ('PURCHASE_ORDER'::log_type_enum)
     RETURNING transactionlogid;", conn, tx))
-{
-    transactionLogId = Convert.ToInt32(cmd.ExecuteScalar());
-}
+                {
+                    transactionLogId = Convert.ToInt32(cmd.ExecuteScalar());
+                }
 
-// 7. INSERT into PurchaseOrderLog (child)
-using (var cmd = new NpgsqlCommand(@"
+                // 7. INSERT into PurchaseOrderLog (child)
+                using (var cmd = new NpgsqlCommand(@"
     INSERT INTO purchaseorderlog (
         purchaseorderlogid,
         poid,
@@ -268,30 +268,30 @@ using (var cmd = new NpgsqlCommand(@"
         @totalAmount,
         @detailsJson
     );", conn, tx))
-{
-    cmd.Parameters.AddWithValue("@logId", transactionLogId);
-    cmd.Parameters.AddWithValue("@poId", poId);
-    cmd.Parameters.AddWithValue("@supplierId", supplierId);
-    cmd.Parameters.AddWithValue("@totalAmount", totalAmount);
+                {
+                    cmd.Parameters.AddWithValue("@logId", transactionLogId);
+                    cmd.Parameters.AddWithValue("@poId", poId);
+                    cmd.Parameters.AddWithValue("@supplierId", supplierId);
+                    cmd.Parameters.AddWithValue("@totalAmount", totalAmount);
 
-    cmd.Parameters.AddWithValue(
-        "@expectedDeliveryDate",
-        expectedDeliveryDate.HasValue
-            ? expectedDeliveryDate.Value.ToDateTime(TimeOnly.MinValue)
-            : DBNull.Value
-    );
+                    cmd.Parameters.AddWithValue(
+                        "@expectedDeliveryDate",
+                        expectedDeliveryDate.HasValue
+                            ? expectedDeliveryDate.Value.ToDateTime(TimeOnly.MinValue)
+                            : DBNull.Value
+                    );
 
-    string detailsJson = $@"{{
+                    string detailsJson = $@"{{
         ""poId"": {poId},
         ""supplierId"": {supplierId},
         ""totalAmount"": {totalAmount},
         ""status"": ""CONFIRMED""
     }}";
 
-    cmd.Parameters.AddWithValue("@detailsJson", detailsJson);
+                    cmd.Parameters.AddWithValue("@detailsJson", detailsJson);
 
-    cmd.ExecuteNonQuery();
-}
+                    cmd.ExecuteNonQuery();
+                }
 
                 tx.Commit();
                 return poId;
@@ -365,7 +365,7 @@ using (var cmd = new NpgsqlCommand(@"
                 throw;
             }
         }
-        
+
         public void CancelPurchaseOrder(int poId)
         {
             var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
