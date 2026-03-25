@@ -15,6 +15,9 @@ public class SupplierRegistryPageController : Controller
     private readonly ISupplierVettingGateway _supplierVettingGateway;
     private readonly IVerifiedSupplierRegistry _verifiedSupplierRegistry;
     private readonly SupplierCategoryChangeLogControl _categoryChangeLogControl;
+    // Injected directly so getLatestVettingNote() uses VettingControl's real
+    // implementation (which queries the DB), not SupplierControl's stub.
+    private readonly VettingControl _vettingControl;
     private string _currentPage = string.Empty;
     private Dictionary<string, string> _requestParams = new();
 
@@ -22,12 +25,14 @@ public class SupplierRegistryPageController : Controller
         ISupplier supplier,
         ISupplierVettingGateway supplierVettingGateway,
         IVerifiedSupplierRegistry verifiedSupplierRegistry,
-        SupplierCategoryChangeLogControl categoryChangeLogControl)
+        SupplierCategoryChangeLogControl categoryChangeLogControl,
+        VettingControl vettingControl)
     {
         _supplier = supplier;
         _supplierVettingGateway = supplierVettingGateway;
         _verifiedSupplierRegistry = verifiedSupplierRegistry;
         _categoryChangeLogControl = categoryChangeLogControl;
+        _vettingControl = vettingControl;
     }
 
     private SupplierControl supplierControl
@@ -61,6 +66,17 @@ public class SupplierRegistryPageController : Controller
             "unverified" => _supplierVettingGateway.getUnverifiedSuppliers(),
             _            => supplierControl.getAllSuppliers()
         };
+
+        // Build a lookup of supplierID → latest vetting note so the view
+        // can show the rejection/amendment reason to Trusted Supplier Registry staff.
+        // Uses _vettingControl directly — it has the real DB-backed implementation.
+        var vettingNotes = suppliers
+            .Where(s => s.VettingResult != ProRental.Domain.Enums.VettingDecision.PENDING)
+            .ToDictionary(
+                s => s.SupplierID,
+                s => _vettingControl.getLatestVettingNote(s.SupplierID) ?? string.Empty);
+        ViewData["VettingNotes"] = vettingNotes;
+
         return renderView("supplierList", suppliers);
     }
 

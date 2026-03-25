@@ -40,7 +40,11 @@ public class Supplier : ISupplierRegistryEntity
     public void verify(VettingDecision result)
     {
         VettingResult = result;
-        IsVerified = (result == VettingDecision.APPROVED);
+        // Mark as verified (i.e. vetting has been actioned) for both APPROVED and REJECTED,
+        // so the supplier no longer appears on the unverified dashboard.
+        // IsVerified == true means "vetting has been submitted", NOT "supplier is trusted".
+        // Use VettingResult to distinguish approved vs rejected.
+        IsVerified = (result == VettingDecision.APPROVED || result == VettingDecision.REJECTED);
     }
 
 

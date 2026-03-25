@@ -44,7 +44,11 @@ public class VettingRecordMapper : IVettingRecordMapper
 
     public List<Vettingrecord> FindBySupplierID(int supplierID)
     {
+        // AsEnumerable() brings records to the client before filtering on the
+        // domain wrapper properties (supplierid, vettedat), which EF cannot
+        // translate to SQL because it only knows the private scaffolded properties.
         return context.Vettingrecords
+            .AsEnumerable()
             .Where(v => v.supplierid == supplierID)
             .OrderByDescending(v => v.vettedat)
             .ToList();
@@ -52,7 +56,10 @@ public class VettingRecordMapper : IVettingRecordMapper
 
     public List<Vettingrecord> FindAllApproved()
     {
+        // Same reason: decision_public delegates to the private _decision field,
+        // which EF cannot translate — evaluate on the client.
         return context.Vettingrecords
+            .AsEnumerable()
             .Where(v => v.decision_public == VettingDecision.APPROVED)
             .ToList();
     }

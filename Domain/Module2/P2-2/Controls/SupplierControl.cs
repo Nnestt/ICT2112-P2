@@ -112,9 +112,14 @@ public class SupplierControl : ISupplier, IVerifiedSupplierRegistry, ISupplierVe
         return getVerifiedSuppliers();
     }
 
+    /// <summary>
+    /// Stub — SupplierControl has no access to vetting records.
+    /// VettingControl, which also implements IVerifiedSupplierRegistry, provides the real implementation.
+    /// </summary>
+    public string? getLatestVettingNote(int supplierID) => null;
+
     public List<Supplier> getUnverifiedSuppliers()
     {
         return _supplierMapper.findAll().Where(s => !s.IsVerified).ToList();
     }
 }
-

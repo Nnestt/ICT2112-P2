@@ -61,6 +61,14 @@ public class VettingControl : IVerifiedSupplierRegistry
         return new List<ProRental.Domain.Module2.P2_2.Entities.Supplier>();
     }
 
+    // Implements IVerifiedSupplierRegistry.getLatestVettingNote()
+    public string? getLatestVettingNote(int supplierID)
+    {
+        var history = vettingRecordMapper.FindBySupplierID(supplierID);
+        // FindBySupplierID already orders by vettedat descending
+        return history.FirstOrDefault()?.notes;
+    }
+
     public List<string> GetVerifiedSuppliers()
     {
         var approvedRecords = vettingRecordMapper.FindAllApproved();

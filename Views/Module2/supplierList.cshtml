@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Trusted Supplier Registry";
+    var vettingNotes = ViewData["VettingNotes"] as Dictionary<int, string> ?? new Dictionary<int, string>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -38,6 +39,7 @@
             <th>Category</th>
             <th>IsVerified</th>
             <th>VettingResult</th>
+            <th>Vetting Reason</th>
             <th class="text-end">Actions</th>
         </tr>
     </thead>
@@ -45,7 +47,7 @@
         @if (Model is null || Model.Count == 0)
         {
             <tr>
-                <td colspan="9" class="text-muted">No suppliers found.</td>
+                <td colspan="10" class="text-muted">No suppliers found.</td>
             </tr>
         }
         else
@@ -68,6 +70,9 @@
                     _ => "bg-secondary"
                 };
 
+                // Retrieve the latest vetting note for this supplier (populated for vetted suppliers)
+                vettingNotes.TryGetValue(supplier.SupplierID, out var latestNote);
+
                 <tr>
                     <td>@supplier.SupplierID</td>
                     <td>@supplier.Name</td>
@@ -78,10 +83,22 @@
                         <span class="badge @categoryBadge text-dark">@supplier.SupplierCategory</span>
                     </td>
                     <td>
-                        <span class="badge @verifiedBadge">@((supplier.IsVerified) ? "Verified" : "Unverified")</span>
+                        <span class="badge @verifiedBadge">@((supplier.IsVerified) ? "Vetted" : "Pending")</span>
                     </td>
                     <td>
                         <span class="badge @vettingBadge">@supplier.VettingResult</span>
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(latestNote))
+                        {
+                            <span class="text-muted" title="@latestNote">
+                                @(latestNote.Length > 60 ? latestNote.Substring(0, 60) + "…" : latestNote)
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted fst-italic">—</span>
+                        }
                     </td>
                     <td class="text-end">
                         <div class="btn-group" role="group">
@@ -100,4 +117,3 @@
         }
     </tbody>
 </table>
-
