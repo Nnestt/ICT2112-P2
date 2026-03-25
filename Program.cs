@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using ProRental.Data.Module3.P2_5.Gateways;
 using ProRental.Data.Module3.P2_5.Interfaces;
+using ProRental.Data.Services;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Module2.P2_3.Controls;
 using ProRental.Domain.Module2.P2_3.Mappers;
@@ -20,6 +21,7 @@ using ProRental.Domain.Controls;
 using ProRental.Interfaces.Domain;
 using ProRental.Interfaces.Data;
 // using ProRental.Controllers;
+using ProRental.Controllers.Module1;
 
 var builder = WebApplication.CreateBuilder(args);
 
