@@ -38,6 +38,11 @@ namespace ProRental.Data.Module3.P2_5.Gateways
 
         private IEnumerable<Catalog> BuildCatalogItems()
         {
+            var products = _dbContext.Products
+                .AsEnumerable()
+                .OrderBy(GetSku)
+                .ToList();
+
             var latestFootprints = _dbContext.Productfootprints
                 .AsEnumerable()
                 .GroupBy(GetProductId)
@@ -54,29 +59,41 @@ namespace ProRental.Data.Module3.P2_5.Gateways
                 .AsEnumerable()
                 .ToDictionary(GetBadgeId);
 
-            foreach (var footprint in latestFootprints)
+            var footprintsByProductId = latestFootprints
+                .ToDictionary(GetProductId);
+
+            foreach (var product in products)
             {
-                var productId = GetProductId(footprint);
-                var badgeId = GetBadgeId(footprint);
+                var productId = GetProductId(product);
+                detailsByProductId.TryGetValue(productId, out var detail);
+                footprintsByProductId.TryGetValue(productId, out var footprint);
 
-                if (!detailsByProductId.TryGetValue(productId, out var detail))
-                {
-                    continue;
-                }
-
-                var carbonScore = Convert.ToDecimal(GetTotalCo2(footprint));
+                var badgeId = footprint is null ? null : GetBadgeId(footprint);
+                var carbonScore = footprint is null
+                    ? 999m
+                    : Convert.ToDecimal(GetTotalCo2(footprint));
                 var ecoBadge = badgeId.HasValue && badgesById.TryGetValue(badgeId.Value, out var badge)
                     ? ReadMember<string>(badge, "Badgename", "_badgename")
                     : "Standard";
 
                 yield return new Catalog(
                     productId,
-                    ReadMember<string>(detail, "Name", "_name"),
-                    ReadNullableMember<string>(detail, "Description", "_description") ?? string.Empty,
-                    ReadMember<decimal>(detail, "Price", "_price"),
+                    GetSku(product),
+                    detail is null ? string.Empty : ReadNullableMember<string>(detail, "Description", "_description") ?? string.Empty,
+                    detail is null ? 0m : ReadMember<decimal>(detail, "Price", "_price"),
                     ecoBadge,
                     carbonScore);
             }
+        }
+
+        private static int GetProductId(Product product)
+        {
+            return ReadMember<int>(product, "Productid", "_productid");
+        }
+
+        private static string GetSku(Product product)
+        {
+            return ReadMember<string>(product, "Sku", "_sku");
         }
 
         private static int GetProductId(Productfootprint footprint)
