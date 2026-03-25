@@ -1,0 +1,269 @@
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.RequestId <= 0)
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white pb-0">
+            <ul class="nav nav-tabs card-header-tabs" id="poTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="replenishment-tab" data-bs-toggle="tab"
+                            data-bs-target="#replenishment-tab-pane" type="button" role="tab"
+                            aria-controls="replenishment-tab-pane" aria-selected="true">
+                        <i class="bi bi-box-seam me-2"></i>Replenishment Orders
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase-tab-pane"
+                            type="button" role="tab" aria-controls="purchase-tab-pane" aria-selected="false">
+                        <i class="bi bi-receipt me-2"></i>Purchase Orders
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card-body">
+            <div class="tab-content" id="poTabsContent">
+
+                <!-- Replenishment Orders Tab -->
+                <div class="tab-pane fade show active" id="replenishment-tab-pane" role="tabpanel"
+                     aria-labelledby="replenishment-tab" tabindex="0">
+
+                    <h5 class="mb-3">
+                        <i class="bi bi-table me-2"></i>Replenishment Requests
+                    </h5>
+
+                    @if (Model.Requests != null && Model.Requests.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Request ID</th>
+                                        <th>Requested By</th>
+                                        <th>Created At</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var request in Model.Requests)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@request.RequestId</td>
+                                            <td>@request.RequestedBy</td>
+                                            <td>@(request.CreatedAt?.ToString("dd MMM yyyy HH:mm") ?? "-")</td>
+                                            <td>
+                                                @if (request.Status == "APPROVED" || request.Status == "Approved")
+                                                {
+                                                    <span class="badge bg-success">@request.Status</span>
+                                                }
+                                                else if (request.Status == "REJECTED" || request.Status == "Rejected" || request.Status == "CANCELLED" || request.Status == "Cancelled")
+                                                {
+                                                    <span class="badge bg-danger">@request.Status</span>
+                                                }
+                                                else if (request.Status == "PENDING" || request.Status == "Pending" || request.Status == "SUBMITTED")
+                                                {
+                                                    <span class="badge bg-warning text-dark">@request.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@request.Status</span>
+                                                }
+                                            </td>
+                                            <td>@(string.IsNullOrWhiteSpace(request.Remarks) ? "-" : request.Remarks)</td>
+                                            <td class="text-center">
+                                                @{
+    var isDraftRequest = request.Status == "DRAFT" || request.Status == "Draft";
+    var isCancelled = request.Status == "CANCELLED" || request.Status == "Cancelled";
+    var isCompleted = request.Status == "COMPLETED" || request.Status == "Completed";
+}
+
+
+@if (isCancelled)
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Cancelled
+    </button>
+}
+else if (isCompleted)
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Completed
+    </button>
+}
+else
+{
+    <div class="d-flex justify-content-center gap-2">
+        <!-- View Button -->
+        <a asp-controller="PurchaseOrderPage"
+           asp-action="PurchaseOrderView"
+           asp-route-reqId="@request.RequestId"
+           class="btn btn-success btn-sm">
+            <i class="bi bi-eye me-1"></i>Create PO
+        </a>
+
+        <!-- 🔥 NEW Cancel Button -->
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelRequest" method="post">
+            <input type="hidden" name="reqId" value="@request.RequestId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+                                            </td>
+                                            
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-circle me-2"></i>No replenishment requests found.
+                        </div>
+                    }
+                </div>
+
+                <!-- Purchase Orders Tab -->
+                <div class="tab-pane fade" id="purchase-tab-pane" role="tabpanel" aria-labelledby="purchase-tab"
+                     tabindex="0">
+
+                    <h5 class="mb-3">
+                        <i class="bi bi-table me-2"></i>Purchase Orders
+                    </h5>
+
+                    @if (Model.PurchaseOrders != null && Model.PurchaseOrders.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>PO ID</th>
+                                        <th>Supplier ID</th>
+                                        <th>PO Date</th>
+                                        <th>Expected Delivery</th>
+                                        <th>Status</th>
+                                        <th>Total Amount</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var po in Model.PurchaseOrders)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@po.PoId</td>
+                                            <td>@po.SupplierId</td>
+                                            <td>@(po.PoDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                            <td>@(po.ExpectedDeliveryDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                            <td>
+                                                @if (po.Status == "APPROVED" || po.Status == "Approved")
+                                                {
+                                                    <span class="badge bg-success">@po.Status</span>
+                                                }
+                                                else if (po.Status == "REJECTED" || po.Status == "Rejected" || po.Status ==
+                                                           "CANCELLED")
+                                                {
+                                                    <span class="badge bg-danger">@po.Status</span>
+                                                }
+                                                else if (po.Status == "SUBMITTED" || po.Status == "CONFIRMED")
+                                                {
+                                                    <span class="badge bg-warning text-dark">@po.Status</span>
+                                                }
+                                                else if (po.Status == "COMPLETED")
+                                                {
+                                                    <span class="badge bg-primary">@po.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@po.Status</span>
+                                                }
+                                            </td>
+                                            <td>@(po.TotalAmount?.ToString("0.00") ?? "0.00")</td>
+                                            <td class="text-center">
+                                                
+                                                @if (po.Status == "CONFIRMED")
+{
+    <div class="d-flex justify-content-center gap-2">
+        <form asp-controller="PurchaseOrderPage" asp-action="ApprovePO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-check-circle me-1"></i>Approve
+            </button>
+        </form>
+
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelPO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+else if (po.Status == "APPROVED")
+{
+    <div class="d-flex justify-content-center gap-2">
+        
+        <form asp-controller="PurchaseOrderPage" asp-action="CancelPO" method="post">
+            <input type="hidden" name="poId" value="@po.PoId" />
+            <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+        </form>
+    </div>
+}
+else if (po.Status == "CANCELLED")
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Cancelled
+    </button>
+}
+else if (po.Status == "COMPLETED")
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Completed
+    </button>
+}
+else
+{
+    <button class="btn btn-secondary btn-sm" disabled>
+        <i class="bi bi-lock me-1"></i>Locked
+    </button>
+}
+                                                
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-circle me-2"></i>No purchase orders found.
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+}

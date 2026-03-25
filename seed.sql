@@ -1,7 +1,7 @@
 -- Clear tables and resetting the Identity counters 
 TRUNCATE 
     Category, "User", TransactionLog, Supplier, PurchaseOrder, 
-    transportation_hub, transport, pricing_rule,
+    transportation_hub, transport, pricing_rule, carbon_result, 
     product_return, Analytics, PackagingMaterial,
     "transaction", "Order", Checkout, Cart, CartItem,
     Session, Payment, Deposit, replenishmentrequest, LoanList, ReturnRequest, ClearanceBatch 
@@ -152,6 +152,12 @@ VALUES ('TRUCK', 1.5, TRUE, 0.50),
        ('SHIP', 0.5, TRUE, 0.10),
        ('PLANE', 3.0, TRUE, 1.50),
        ('TRAIN', 1.0, TRUE, 0.05);
+
+-- Insert carbon result records
+INSERT INTO carbon_result (total_carbon_kg, created_at, validation_passed)
+VALUES (250.50, NOW(), TRUE),
+       (180.75, NOW(), TRUE),
+       (420.30, NOW(), FALSE);
 
 -- Insert product returns
 INSERT INTO product_return (return_status, total_carbon, date_in, date_on)
@@ -817,3 +823,8 @@ VALUES (13, 2, 'Water Damage Emergency', '2026-03-20', 'ONGOING',
 -- LEFT JOIN clearancelog c ON c.clearancelogid = t.transactionlogid
 -- LEFT JOIN purchaseorderlog p ON p.purchaseorderlogid = t.transactionlogid
 -- ORDER BY t.transactionlogid;
+-- Staff query test
+SELECT u.userid, u.email, u.userrole, s.staffid, s.department
+FROM "User" u
+JOIN staff s ON s.userid = u.userid
+WHERE u.email = 'carol@test.com';

@@ -108,6 +108,11 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("clearance_status"); 
         });
 
+        modelBuilder.Entity<CustomerChoice>(entity =>
+        {
+            entity.Property("PreferenceType").HasField("_preferenceType").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("preferencetype").HasColumnType("preference_type");
+        });
 
         // ==========================================
         // D - L
@@ -124,11 +129,20 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("inventory_status");
         });
 
+        modelBuilder.Entity<LegCarbon>(entity =>
+        {
+            entity.Property("TransportMode").HasField("_transportMode").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("transportmode").HasColumnType("transport_mode");
+        });
 
         modelBuilder.Entity<Lineitem>(entity =>
         {
-            entity.Property("reason").HasField("_reason").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("reason").HasColumnType("reason_code_enum");
+            // Map CLR property directly to avoid shadow-property conflicts
+            entity.Property(e => e.Reason)
+                  .HasField("_reasoncode")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("reasoncode")
+                  .HasColumnType("reason_code_enum");
         });
 
         modelBuilder.Entity<Loanlist>(entity =>
@@ -188,7 +202,7 @@ public partial class AppDbContext
         modelBuilder.Entity<Purchaseorder>(entity =>
         {
             entity.Property("status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("status").HasColumnType("purchase_order_status_enum");
+                  .HasColumnName("status").HasColumnType("po_status_enum");
         });
 
         // ==========================================
@@ -210,7 +224,7 @@ public partial class AppDbContext
 
         modelBuilder.Entity<Replenishmentrequest>(entity =>
         {
-            entity.Property("status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
+            entity.Property("Status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
                   .HasColumnName("status").HasColumnType("replenishment_status_enum");
         });
 

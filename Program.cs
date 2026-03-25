@@ -20,6 +20,12 @@ using ProRental.Data.Services;
 // using ProRental.Interfaces.Domain;
 // using ProRental.Interfaces.Data;
 // using ProRental.Controllers;
+using ProRental.Interfaces;
+using ProRental.Domain.Control;
+using ProRental.Data.Interfaces;
+using ProRental.Data.Gateways;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -145,22 +151,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 
 //Team P2-2
+builder.Services.AddScoped<IPurchaseOrderMapper, PurchaseOrderMapper>();
+builder.Services.AddScoped<IPOLineItemMapper, POLineItemMapper>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderControl>();
 // Data source
-builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IVettingRecordMapper, 
-                           ProRental.Data.Module2.Gateways.VettingRecordMapper>();
- 
-builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReliabilityRatingMapper, 
-                           ProRental.Data.Module2.Gateways.ReliabilityRatingMapper>();
-
-builder.Services.AddScoped<ProRental.Interfaces.Module2.ISupplierVettingGateway,
-                           ProRental.Data.Module2.Gateways.SupplierVettingGateway>();
-
-// TODO: Register IAnalyticsData when AnalyticsDataGateway is ready
-// builder.Services.AddScoped<ProRental.Interfaces.Module2.IAnalyticsData,
-//                            ProRental.Data.Module2.Gateways.AnalyticsDataGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReplenishmentRequestMapper, ProRental.Data.Module2.Gateways.ReplenishmentRequestMapper>();
+builder.Services.AddScoped<ProRental.Interfaces.Module2.IReplenishmentRequestQuery, ProRental.Data.Module2.Gateways.ReplenishmentRequestMapper>();
 
 // Domain
-builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.VettingControl>();
+builder.Services.AddScoped<ProRental.Domain.Module2.P22.Controls.ReplenishmentRequestControl>();
 
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierScoringControl>();
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ISupplierMapper, ProRental.Data.Module2.Gateways.SupplierMapper>();
