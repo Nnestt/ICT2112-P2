@@ -76,29 +76,36 @@ public class RewardsControl : IRewardsControl
         return Math.Clamp(score, 0, 100);
     }
 
-    public Customerreward? DetermineReward(int orderId)
+public Customerreward? DetermineReward(int orderId)
+{
+    var data = _carbonGateway.FindByOrderId(orderId);
+    if (data is null) return null;
+
+    var existing = _rewardGateway.FindByOrderCarbonDataId(data.GetOrdercarbondataid());
+    if (existing is not null) return existing;
+
+    (string type, double value)? rewardInfo = data.GetImpactlevel() switch
     {
-        var data = _carbonGateway.FindByOrderId(orderId);
-        if (data is null) return null;
+        "Low"      => ("Voucher", 10.0),
+        "Moderate" => ("Voucher", 5.0),
+        _          => null
+    };
 
-        var existing = _rewardGateway.FindByOrderCarbonDataId(data.GetOrdercarbondataid());
-        if (existing is not null) return existing;
+    if (rewardInfo is null) return null;
 
-        (string type, double value)? rewardInfo = data.GetImpactlevel() switch
-        {
-            "Low"      => ("Voucher", 10.0),
-            "Moderate" => ("Voucher", 5.0),
-            _          => null
-        };
+    var order = _orderGateway.FindById(orderId);
+    if (order is null) return null;
 
-        if (rewardInfo is null) return null;
+    var reward = Customerreward.Create(
+        order.GetCustomerid(),
+        data.GetOrdercarbondataid(),
+        rewardInfo.Value.type,
+        rewardInfo.Value.value,
+        DateTime.UtcNow);
 
-        var reward = Customerreward.Create(1, data.GetOrdercarbondataid(),
-            rewardInfo.Value.type, rewardInfo.Value.value, DateTime.UtcNow);
-
-        _rewardGateway.Save(reward);
-        return reward;
-    }
+    _rewardGateway.Save(reward);
+    return reward;
+}
 
     public List<Order> GetAllOrders()        => _orderGateway.FindAll();
     public List<Ordercarbondatum> GetAllCarbonRecords() => _carbonGateway.FindAll();
