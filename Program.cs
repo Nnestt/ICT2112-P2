@@ -156,7 +156,10 @@ builder.Services.AddScoped<ProRental.Interfaces.Module2.IReplenishmentRequestQue
 // Domain
 builder.Services.AddScoped<ProRental.Domain.Module2.P22.Controls.ReplenishmentRequestControl>();
 
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReliabilityRatingMapper, ProRental.Data.Module2.Gateways.ReliabilityRatingMapper>();
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierScoringControl>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IVettingRecordMapper, ProRental.Data.Module2.Gateways.VettingRecordMapper>();
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.VettingControl>();
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ISupplierMapper, ProRental.Data.Module2.Gateways.SupplierMapper>();
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ICategoryChangeLogMapper, ProRental.Data.Module2.Gateways.CategoryChangeLogMapper>();
 
