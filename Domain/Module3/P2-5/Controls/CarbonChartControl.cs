@@ -6,7 +6,7 @@ using ProRental.Interfaces.Module3.P2_5;
 
 namespace ProRental.Domain.Module3.P2_5.Controls;
 
-public sealed class CarbonChartControl : ICarbonChartService
+public sealed class CarbonChartControl : ICarbonChartControl
 {
     private readonly IBuildingFootprintGateway _buildingFootprintGateway;
     private readonly IProductFootprintGateway _productFootprintGateway;

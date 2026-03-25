@@ -179,7 +179,7 @@ builder.Services.AddScoped<IPackagingProfileGateway, PackagingProfileGateway>();
 builder.Services.AddScoped<IPackagingConfigurationGateway, PackagingConfigurationGateway>();
 
 // Domain
-builder.Services.AddScoped<ICarbonChartService, CarbonChartControl>();
+builder.Services.AddScoped<ICarbonChartControl, CarbonChartControl>();
 builder.Services.AddScoped<IProductFootprintCalculatorService, ProductFootprintCalculatorControl>();
 builder.Services.AddScoped<IProductFootprintService, ProductFootprintService>();
 builder.Services.AddScoped<IRewardsControl, RewardsControl>();

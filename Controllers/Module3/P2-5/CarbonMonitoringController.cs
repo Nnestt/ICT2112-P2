@@ -5,9 +5,9 @@ namespace ProRental.Controllers.Module3.P2_5;
 
 public class CarbonMonitoringController : Controller
 {
-    private readonly ICarbonChartService _carbonChartService;
+    private readonly ICarbonChartControl _carbonChartService;
 
-    public CarbonMonitoringController(ICarbonChartService carbonChartService)
+    public CarbonMonitoringController(ICarbonChartControl carbonChartService)
     {
         _carbonChartService = carbonChartService;
     }
