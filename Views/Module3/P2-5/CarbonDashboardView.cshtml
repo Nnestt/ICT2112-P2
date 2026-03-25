@@ -10,10 +10,13 @@
     var staffTrendJson = JsonSerializer.Serialize(Model?.StaffTrendline ?? [], jsonOptions);
     var staffBarJson = JsonSerializer.Serialize(Model?.StaffBarChart ?? [], jsonOptions);
     var staffPieJson = JsonSerializer.Serialize(Model?.StaffPieChart ?? [], jsonOptions);
+    var packagingBarJson = JsonSerializer.Serialize(Model?.PackagingBarChart ?? [], jsonOptions);
+    var packagingPieJson = JsonSerializer.Serialize(Model?.PackagingPieChart ?? [], jsonOptions);
     var trendJson = JsonSerializer.Serialize(Model?.BuildingTrendline ?? [], jsonOptions);
     var barJson = JsonSerializer.Serialize(Model?.BuildingBarChart ?? [], jsonOptions);
     var pieJson = JsonSerializer.Serialize(Model?.BuildingPieChart ?? [], jsonOptions);
     var hotspotJson = JsonSerializer.Serialize(Model?.Hotspots ?? [], jsonOptions);
+    var hotspotThresholdsJson = JsonSerializer.Serialize(Model?.HotspotThresholds ?? [], jsonOptions);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -216,13 +219,24 @@
                 </div>
             </div>
 
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Packaging Carbon Charts</h2>
+                    <p class="text-muted mb-4">Footprint totals by packaging material across all orders.</p>
+                    <div class="row g-4">
+                        <div class="col-lg-8"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="packagingBarChart"></canvas></div></div>
+                        <div class="col-lg-4"><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="packagingPieChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card chart-card">
                 <div class="card-body p-4">
                     <h2 class="h4 mb-1">Carbon Hotspot Chart</h2>
-                    <p class="text-muted mb-4">Summary of total carbon footprint across product, building, and staff.</p>
+                    <p class="text-muted mb-4">Summary of total carbon footprint across product, building, staff, and packaging.</p>
                     @if (Model?.HotspotAlerts.Count > 0)
                     {
-                        <div id="hotspotThresholdAlert" class="alert alert-warning" role="alert">
+                        <div id="hotspotThresholdAlert" class="alert alert-danger" role="alert">
                             @foreach (var alert in Model.HotspotAlerts)
                             {
                                 <div>@alert</div>
@@ -319,10 +333,13 @@
         const staffTrendData = @Html.Raw(staffTrendJson);
         const staffBarData = @Html.Raw(staffBarJson);
         const staffPieData = @Html.Raw(staffPieJson);
+        const packagingBarData = @Html.Raw(packagingBarJson);
+        const packagingPieData = @Html.Raw(packagingPieJson);
         const trendData = @Html.Raw(trendJson);
         const barData = @Html.Raw(barJson);
         const pieData = @Html.Raw(pieJson);
         const hotspotData = @Html.Raw(hotspotJson);
+        const hotspotThresholds = @Html.Raw(hotspotThresholdsJson);
 
         const palette = ['#1a936f', '#2ec4b6', '#ff9f1c', '#5b8e7d', '#0f4c3a', '#7bc8a4'];
         const chartTextColor = '#35584a';
@@ -333,37 +350,80 @@
             id: 'piePercentagePlugin',
             afterDatasetsDraw(chart) {
                 if (chart.config.type !== 'doughnut') return;
-                const { ctx } = chart;
-                const dataset = chart.data.datasets[0];
-                const meta = chart.getDatasetMeta(0);
-                const total = dataset.data.reduce((sum, value) => sum + value, 0);
-                if (!total) return;
-                ctx.save();
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 14px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                meta.data.forEach((slice, index) => {
-                    const value = Number(dataset.data[index] ?? 0);
-                    if (!value) return;
-                    const percentage = ((value / total) * 100).toFixed(1) + '%';
-                    const { x, y } = slice.tooltipPosition();
-                    ctx.fillText(percentage, x, y);
-                });
-                ctx.restore();
+                // Intentionally empty: we show labels in the legend instead.
+            }
+        };
+
+        const pieLegendOptions = {
+            display: true,
+            position: 'bottom',
+            align: 'start',
+            labels: {
+                boxWidth: 12,
+                boxHeight: 12,
+                padding: 12,
+                color: chartTextColor,
+                font: { size: 11, weight: '600' },
+                generateLabels(chart) {
+                    const data = chart.data;
+                    const dataset = data.datasets[0] || { data: [] };
+                    const total = dataset.data.reduce((sum, value) => sum + Number(value), 0);
+                    return data.labels.map((label, i) => {
+                        const value = Number(dataset.data[i] ?? 0);
+                        const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                        return {
+                            text: `${label} ${percentage}%`,
+                            fillStyle: dataset.backgroundColor[i],
+                            strokeStyle: dataset.backgroundColor[i],
+                            lineWidth: 0,
+                            hidden: isNaN(value),
+                            index: i
+                        };
+                    });
+                }
             }
         };
 
         new Chart(document.getElementById('productTrendlineChart'), { type: 'line', data: { labels: productTrendData.map(item => item.label), datasets: [{ data: productTrendData.map(item => item.value), borderColor: '#ff9f1c', backgroundColor: 'rgba(255, 159, 28, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
         new Chart(document.getElementById('productBarChart'), { type: 'bar', data: { labels: productBarData.map(item => item.label), datasets: [{ data: productBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Product', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont, maxRotation: 0, minRotation: 0, callback(value) { const label = this.getLabelForValue(value); return typeof label === 'string' ? label.split(' ') : label; } }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
-        new Chart(document.getElementById('productPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: productPieData.map(item => item.label), datasets: [{ data: productPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('productPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: productPieData.map(item => item.label), datasets: [{ data: productPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
         new Chart(document.getElementById('buildingTrendlineChart'), { type: 'line', data: { labels: trendData.map(item => item.label), datasets: [{ label: 'Building CO2', data: trendData.map(item => item.value), borderColor: '#1a936f', backgroundColor: 'rgba(26, 147, 111, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
         new Chart(document.getElementById('buildingBarChart'), { type: 'bar', data: { labels: barData.map(item => item.label), datasets: [{ label: 'CO2 by Zone', data: barData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Zone', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
-        new Chart(document.getElementById('buildingPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: pieData.map(item => item.label), datasets: [{ data: pieData.map(item => item.value), backgroundColor: palette, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('buildingPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: pieData.map(item => item.label), datasets: [{ data: pieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
         new Chart(document.getElementById('staffTrendlineChart'), { type: 'line', data: { labels: staffTrendData.map(item => item.label), datasets: [{ data: staffTrendData.map(item => item.value), borderColor: '#5b8e7d', backgroundColor: 'rgba(91, 142, 125, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
         new Chart(document.getElementById('staffBarChart'), { type: 'bar', data: { labels: staffBarData.map(item => item.label), datasets: [{ data: staffBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Staff', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
-        new Chart(document.getElementById('staffPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: staffPieData.map(item => item.label), datasets: [{ data: staffPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
-        new Chart(document.getElementById('hotspotChart'), { type: 'bar', data: { labels: hotspotData.map(item => item.label), datasets: [{ data: hotspotData.map(item => item.value), backgroundColor: ['#ff9f1c', '#ffbf69', '#2ec4b6', '#5b8e7d', '#1a936f'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Total CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true }, y: { title: { display: true, text: 'Segment', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } } } } });
+        new Chart(document.getElementById('staffPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: staffPieData.map(item => item.label), datasets: [{ data: staffPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('packagingBarChart'), { type: 'bar', data: { labels: packagingBarData.map(item => item.label), datasets: [{ data: packagingBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10, categoryPercentage: 0.9, barPercentage: 0.9 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Material', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: { size: 8, weight: '600' }, autoSkip: false, maxRotation: 0, minRotation: 0, callback(value) { const label = this.getLabelForValue(value); return typeof label === 'string' ? label.split(' ') : label; } }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: { size: 9, weight: '600' } }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('packagingPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: packagingPieData.map(item => item.label), datasets: [{ data: packagingPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        const hotspotThresholdPlugin = {
+            id: 'hotspotThresholdPlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.canvas?.id !== 'hotspotChart') return;
+                const { ctx } = chart;
+                const meta = chart.getDatasetMeta(0);
+                const labels = chart.data.labels || [];
+                const thresholdMap = new Map(hotspotThresholds.map(item => [item.label, item.value]));
+
+                ctx.save();
+                ctx.fillStyle = '#35584a';
+                ctx.font = '600 11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+
+                meta.data.forEach((bar, i) => {
+                    const label = labels[i];
+                    if (!label || !thresholdMap.has(label)) return;
+                    const value = thresholdMap.get(label);
+                    const text = `Threshold: ${Number(value).toFixed(0)}`;
+                    const x = Math.min(bar.x + 8, chart.chartArea.right - 4);
+                    const y = bar.y;
+                    ctx.fillText(text, x, y);
+                });
+                ctx.restore();
+            }
+        };
+
+        new Chart(document.getElementById('hotspotChart'), { type: 'bar', plugins: [hotspotThresholdPlugin], data: { labels: hotspotData.map(item => item.label), datasets: [{ data: hotspotData.map(item => item.value), backgroundColor: ['#ff9f1c', '#ffbf69', '#2ec4b6', '#5b8e7d', '#1a936f', '#8ecae6'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Total CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true }, y: { title: { display: true, text: 'Segment', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } } } } });
 
         @if (Model?.HotspotAlerts.Count > 0)
         {
