@@ -56,7 +56,7 @@
                         </ul>
                     </li>
 
-                    @* Module 2 — Inventory Management *@
+                    @* Module 2 — Inventory Management (MERGED ROUTING HERE) *@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button"
                            data-bs-toggle="dropdown" aria-expanded="false">
@@ -64,13 +64,21 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" asp-controller="ProductCatalog" asp-action="Index"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" asp-controller="CategoryCatalog" asp-action="Index"><i class="bi bi-list me-2" style="color: #0d6efd;"></i>Category Catalogue</a></li>
+                            @* Updated with your team's StaffInventory routing *@
+                            <li><a class="dropdown-item" asp-controller="StaffInventory" asp-action="DisplayInventoryList"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+
+                            @* Your new Loan Management routing link! *@
+                            <li><a class="dropdown-item" asp-controller="LoanList" asp-action="Index"><i class="bi bi-clipboard-check me-2" style="color: #0d6efd;"></i>Loan Management</a></li>
+                            
+                            @* Updated with your team's ReturnProcessing routing *@
+                            <li><a class="dropdown-item" asp-controller="ReturnProcessing" asp-action="DisplayReturnRequests"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            
+                            @* Updated with your team's Clearance routing *@
+                            <li><a class="dropdown-item" asp-controller="Clearance" asp-action="Index"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
                             <li><a class="dropdown-item" asp-controller="ReplenishmentRequester" asp-action="List"><i class="bi bi-arrow-clockwise me-2" style="color: #0d6efd;"></i>Replenishment Requests</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
                             <li><a class="dropdown-item" href="/Analytics"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
                             <li><a class="dropdown-item" href="/PurchaseOrderPage"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Supplier Purchase Order</a></li>
                         </ul>
                     </li>
@@ -94,7 +102,7 @@
 
                 </ul>
 
-                @* Auth buttons *@
+                @* Auth buttons (Kept from main branch) *@
                 <div class="d-flex gap-2">
                     @if (HttpContextAccessor.HttpContext!.Session.GetInt32("SessionId") != null)
                     {
@@ -134,8 +142,6 @@
 
     @* ================================================================
        STAFF PORTAL BANNER
-       Dark strip — clearly separated from customer-facing sections.
-       The warning colour and lock icon signal restricted access.
        ================================================================ *@
     <section class="staff-banner py-4">
         <div class="container">

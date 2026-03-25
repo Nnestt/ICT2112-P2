@@ -1,0 +1,146 @@
+@model IReadOnlyList<ProRental.Domain.Entities.Alert>
+@inject ProRental.Interfaces.Domain.IProductQuery ProductQuery
+
+@{
+    ViewData["Title"] = "Inventory Alerts";
+    var filter = ViewData["Filter"]?.ToString() ?? "All Alerts";
+    var isHistory = filter.Contains("History");
+    var columnCount = isHistory ? 7 : 8;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-0">Inventory Alerts</h2>
+            <small class="text-muted">@filter</small>
+        </div>
+        <a asp-controller="StaffInventory" asp-action="DisplayInventoryList" class="btn btn-outline-secondary btn-sm">Back to Staff Inventory</a>
+    </div>
+
+    @if (TempData["Message"] is string message)
+    {
+        <div class="alert alert-info">@message</div>
+    }
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a asp-action="DisplayAlerts" class="btn btn-primary btn-sm">View All Alerts</a>
+        <a asp-action="DisplayAlertHistory" class="btn btn-outline-secondary btn-sm">Display Alert History</a>
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="#" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#filterModal">Filter by Product</a>
+            <a href="#" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#staffModal">View by Staff</a>
+        </div>
+    </div>
+
+    <!-- Filter Modal for Product -->
+    <div class="modal fade" id="filterModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Filter by Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productFilterForm">
+                        <div class="mb-3">
+                            <label for="productId" class="form-label">Product ID:</label>
+                            <input type="number" class="form-control" id="productId" name="productId" min="1" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Filter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Modal for Staff -->
+    <div class="modal fade" id="staffModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">View Alerts by Staff</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="staffFilterForm">
+                        <div class="mb-3">
+                            <label for="staffId" class="form-label">Staff ID:</label>
+                            <input type="number" class="form-control" id="staffId" name="staffId" min="1" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">View</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('productFilterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const productId = document.getElementById('productId').value;
+        window.location.href = '@Url.Action("DisplayAlertsByProduct")/' + productId;
+    });
+    
+    document.getElementById('staffFilterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const staffId = document.getElementById('staffId').value;
+        window.location.href = '@Url.Action("DisplayAlertsByStaff")/' + staffId;
+    });
+    </script>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Alert ID</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Threshold</th>
+                    <th>Status</th>
+                    <th>Message</th>
+                    <th>Created</th>
+                    @if (!isHistory)
+                    {
+                        <th>Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="@columnCount" class="text-center text-muted">No alerts found.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var alert in Model)
+                    {
+                        var product = ProductQuery.GetProductById(alert.GetProductId());
+                        var productName = product?.Productdetail?.GetName() ?? $"Product #{alert.GetProductId()}";
+                        
+                        <tr>
+                            <td>@alert.GetAlertId()</td>
+                            <td>@alert.GetProductId()</td>
+                            <td>@productName</td>
+                            <td>@alert.GetMinThreshold()</td>
+                            <td>@alert.GetAlertStatus()</td>
+                            <td>@alert.GetMessage()</td>
+                            <td>@alert.GetCreatedAt().ToString("yyyy-MM-dd HH:mm")</td>
+                            @if (!isHistory)
+                            {
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <form asp-action="AcknowledgeAlert" asp-route-alertId="@alert.GetAlertId()" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">Acknowledge</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

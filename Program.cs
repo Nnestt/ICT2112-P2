@@ -1,6 +1,5 @@
 using ProRental.Data.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using ProRental.Domain.Enums;
 using ProRental.Domain.Control;
@@ -10,13 +9,14 @@ using ProRental.Interfaces.Data;
 using ProRental.Data;
 using ProRental.Interfaces.Domain;
 using ProRental.Domain.Controls;
+using ProRental.Controllers;
 using ProRental.Controllers.Module1;
 using ProRental.Data.Services;
 
 // uncomment when ready to code
 // using ProRental.Data;
 // using ProRental.Domain.Controls;
-// //using ProRental.Domain.Entities;
+// using ProRental.Domain.Entities;
 // using ProRental.Interfaces.Domain;
 // using ProRental.Interfaces.Data;
 // using ProRental.Controllers;
@@ -31,6 +31,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
+{
+    options.ViewLocationFormats.Add("/Views/Module2/{1}/{0}.cshtml");
+    options.ViewLocationFormats.Add("/Views/Module2/Shared/{0}.cshtml");
+});
 
 // builder.Services.AddDbContext<AppDbContext>(options =>
 //     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -201,8 +207,81 @@ builder.Services.AddScoped<ProRental.Interfaces.IInventoryTransactionLogger>(sp 
 builder.Services.AddScoped<ProRental.Interfaces.ITransactionLoggingUI>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>());
 //Team P2-3
 // Data source
+builder.Services.AddScoped<IProductMapper, ProductMapper>();
+builder.Services.AddScoped<IAlertMapper, AlertMapper>();
+builder.Services.AddScoped<IInventoryItemMapper, InventoryItemMapper>();
+builder.Services.AddScoped<ICategoryMapper, CategoryMapper>();
+builder.Services.AddScoped<IReturnItemMapper, ReturnItemMapper>();
+builder.Services.AddScoped<IReturnRequestMapper, ReturnRequestMapper>();
+builder.Services.AddScoped<IDamageReportMapper, DamageReportMapper>();
+builder.Services.AddScoped<IClearanceItemMapper, ClearanceItemMapper>();
+builder.Services.AddScoped<IClearanceBatchMapper, ClearanceBatchMapper>();
+builder.Services.AddScoped<ILoanItemMapper, LoanItemMapper>();
+builder.Services.AddScoped<ILoanListMapper, LoanListMapper>();
 
-// Domain
+// Domain - Control Classes
+// category
+builder.Services.AddScoped<CategoryControl>();
+builder.Services.AddScoped<ICategoryCRUD>(sp => sp.GetRequiredService<CategoryControl>());
+builder.Services.AddScoped<ICategoryQuery>(sp => sp.GetRequiredService<CategoryControl>());
+
+//inventory
+builder.Services.AddScoped<InventoryManagementControl>();
+builder.Services.AddScoped<iInventoryCRUDControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iInventoryQueryControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iInventoryStatusControl>(sp => sp.GetRequiredService<InventoryManagementControl>());
+builder.Services.AddScoped<iStockSubject>(sp => sp.GetRequiredService<InventoryManagementControl>());
+
+builder.Services.AddScoped<LowStockAlertControl>();
+builder.Services.AddScoped<iAlertControl>(sp => sp.GetRequiredService<LowStockAlertControl>());
+builder.Services.AddScoped<iStockObserver>(sp => sp.GetRequiredService<LowStockAlertControl>());
+
+//product
+builder.Services.AddScoped<ProductCatalogControl>();
+builder.Services.AddScoped<IProductQuery>(sp => sp.GetRequiredService<ProductCatalogControl>());
+builder.Services.AddScoped<IProductCRUD>(sp => sp.GetRequiredService<ProductCatalogControl>());
+builder.Services.AddScoped<IProductBulkCommand>(sp => sp.GetRequiredService<ProductCatalogControl>());
+builder.Services.AddScoped<IProductStatusControl>(sp => sp.GetRequiredService<ProductCatalogControl>());
+
+//clearance
+builder.Services.AddScoped<ClearanceBatchControl>();
+builder.Services.AddScoped<iClearanceBatchControl>(sp => sp.GetRequiredService<ClearanceBatchControl>());
+builder.Services.AddScoped<iClearanceBatchQuery>(sp => sp.GetRequiredService<ClearanceBatchControl>());
+
+builder.Services.AddScoped<ClearanceItemControl>();
+builder.Services.AddScoped<iClearanceItemControl>(sp => sp.GetRequiredService<ClearanceItemControl>());
+builder.Services.AddScoped<iClearanceItemQuery>(sp => sp.GetRequiredService<ClearanceItemControl>());
+
+//return
+builder.Services.AddScoped<ReturnOrderControl>();
+builder.Services.AddScoped<iReturnOrderQuery>(sp => sp.GetRequiredService<ReturnOrderControl>());
+builder.Services.AddScoped<iReturnOrderCRUD>(sp => sp.GetRequiredService<ReturnOrderControl>());
+builder.Services.AddScoped<iReturnProcess>(sp => sp.GetRequiredService<ReturnOrderControl>());
+ 
+builder.Services.AddScoped<ReturnItemControl>();
+builder.Services.AddScoped<iReturnItemQuery>(sp => sp.GetRequiredService<ReturnItemControl>());
+builder.Services.AddScoped<iReturnItemCRUD>(sp => sp.GetRequiredService<ReturnItemControl>());
+ 
+builder.Services.AddScoped<DamageReportControl>();
+builder.Services.AddScoped<iDamageReportQuery>(sp => sp.GetRequiredService<DamageReportControl>());
+builder.Services.AddScoped<iDamageReportCRUD>(sp => sp.GetRequiredService<DamageReportControl>());
+
+//loan
+builder.Services.AddScoped<LoanItemControl>();
+builder.Services.AddScoped<ILoanItemCRUD>(sp => sp.GetRequiredService<LoanItemControl>());
+builder.Services.AddScoped<ILoanItemQuery>(sp => sp.GetRequiredService<LoanItemControl>());
+
+builder.Services.AddScoped<LoanListControl>();
+builder.Services.AddScoped<ILoanActions>(sp => sp.GetRequiredService<LoanListControl>());
+builder.Services.AddScoped<ILoanValidation>(sp => sp.GetRequiredService<LoanListControl>());
+builder.Services.AddScoped<ILoanListQuery>(sp => sp.GetRequiredService<LoanListControl>());
+builder.Services.AddScoped<ILoanListCRUD>(sp => sp.GetRequiredService<LoanListControl>());
+
+//inventory services
+builder.Services.AddScoped<InventoryService>();
+builder.Services.AddScoped<IInventoryQueryFacade>(sp => sp.GetRequiredService<InventoryService>());
+builder.Services.AddScoped<IResupplyService>(sp => sp.GetRequiredService<InventoryService>());
+builder.Services.AddScoped<IInventoryService>(sp => sp.GetRequiredService<InventoryService>());
 
 // Presentation/Controllers
 
@@ -259,7 +338,6 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<Module1Controller>();
 
 var app = builder.Build();
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
