@@ -96,6 +96,15 @@ public class ReturnProcessingController : Controller
 
             ViewBag.Request         = request;
             ViewBag.DamageReportMap = damageReportMap;
+
+            // Track which items are broken (RETURN_TO_INVENTORY + damage report has "Unable to repair")
+            var brokenItemIds = new HashSet<int>(
+                items.Where(i => i.GetStatus() == ReturnItemStatus.RETURN_TO_INVENTORY
+                    && damageReportMap.TryGetValue(i.GetReturnItemId(), out var dr) && dr != null
+                    && (dr!.GetDescription() ?? "").Contains("Unable to repair"))
+                .Select(i => i.GetReturnItemId()));
+            ViewBag.BrokenItemIds = brokenItemIds;
+
             return View("~/Views/Module2/ReturnProcess/ReturnItemDetail.cshtml", items);
         }
         catch (Exception ex)

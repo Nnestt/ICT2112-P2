@@ -7,6 +7,7 @@
     var request        = ViewBag.Request as Returnrequest;
     var damageReportMap = ViewBag.DamageReportMap as Dictionary<int, Damagereport?> 
                           ?? new Dictionary<int, Damagereport?>();
+    var brokenItemIds  = ViewBag.BrokenItemIds as HashSet<int> ?? new HashSet<int>();
 }
 
 <div class="container py-4">
@@ -62,7 +63,8 @@
             @foreach (var item in Model)
             {
                 var s = item.GetStatus();
-                var statusColor = s switch
+                bool isBrokenItem = brokenItemIds.Contains(item.GetReturnItemId());
+                var statusColor = isBrokenItem ? "dark" : s switch
                 {
                     ReturnItemStatus.DAMAGE_INSPECTION   => "warning",
                     ReturnItemStatus.REPAIRING           => "danger",
@@ -71,7 +73,7 @@
                     ReturnItemStatus.RETURN_TO_INVENTORY => "success",
                     _ => "secondary"
                 };
-                var statusLabel = s switch
+                var statusLabel = isBrokenItem ? "Broken" : s switch
                 {
                     ReturnItemStatus.DAMAGE_INSPECTION   => "Damage Inspection",
                     ReturnItemStatus.REPAIRING           => "Repairing",
