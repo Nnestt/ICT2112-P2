@@ -194,7 +194,7 @@ public partial class AppDbContext
         modelBuilder.Entity<Purchaseorder>(entity =>
         {
             entity.Property("status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("status").HasColumnType("purchase_order_status_enum");
+                  .HasColumnName("status").HasColumnType("po_status_enum");
         });
 
         // ==========================================

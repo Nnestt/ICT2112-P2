@@ -2,7 +2,7 @@ namespace ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 public partial class Purchaseorder
 {
-    private PurchaseOrderStatus _status;
-    private PurchaseOrderStatus status { get => _status; set => _status = value; }
-    public void UpdateStatus(PurchaseOrderStatus newValue) => _status = newValue;
+    private POStatus _status;
+    private POStatus status { get => _status; set => _status = value; }
+    public void UpdateStatus(POStatus newValue) => _status = newValue;
 }

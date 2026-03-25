@@ -1,95 +1,57 @@
-using System.Reflection;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using ProRental.Data.Interfaces;
+using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
+using ProRental.Controllers;
 
 namespace ProRental.Data.Gateways
 {
     public class POLineItemMapper : IPOLineItemMapper
     {
-        private readonly string _connectionString;
+        private readonly AppDbContext _context;
 
-        public POLineItemMapper(IConfiguration configuration)
+        public POLineItemMapper(AppDbContext context)
         {
-            _connectionString = configuration.GetConnectionString("Default")
-                ?? throw new InvalidOperationException("Default connection string not found.");
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public void InsertItems(int poId, List<Polineitem> items)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            conn.Open();
+            if (items == null)
+            {
+                throw new ArgumentNullException(nameof(items));
+            }
 
             foreach (var item in items)
             {
-                const string sql = @"
-                    INSERT INTO polineitem (poid, productid, qty, unitprice, linetotal)
-                    VALUES (@poid, @productid, @qty, @unitprice, @linetotal);
-                ";
-
-                using var cmd = new NpgsqlCommand(sql, conn);
-
-                var productId = GetPrivateFieldValue<int?>(item, "_productid");
-                var qty = GetPrivateFieldValue<int?>(item, "_qty");
-                var unitPrice = GetPrivateFieldValue<decimal?>(item, "_unitprice");
-                var lineTotal = GetPrivateFieldValue<decimal?>(item, "_linetotal");
-
-                cmd.Parameters.AddWithValue("@poid", poId);
-                cmd.Parameters.AddWithValue("@productid", (object?)productId ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@qty", (object?)qty ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@unitprice", (object?)unitPrice ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@linetotal", (object?)lineTotal ?? DBNull.Value);
-
-                cmd.ExecuteNonQuery();
+                _context.Entry(item).Property("Poid").CurrentValue = poId;
+                _context.Polineitems.Add(item);
             }
+
+            _context.SaveChanges();
         }
 
         public List<Polineitem> FindItemsByPO(int poId)
         {
-            var items = new List<Polineitem>();
-
-            using var conn = new NpgsqlConnection(_connectionString);
-            conn.Open();
-
-            const string sql = @"
-                SELECT polineitemid, poid, productid, qty, unitprice, linetotal
-                FROM polineitem
-                WHERE poid = @poid
-                ORDER BY polineitemid;
-            ";
-
-            using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@poid", poId);
-
-            using var reader = cmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                var item = new Polineitem();
-
-                SetPrivateField(item, "_polineitemid", reader.GetInt32(reader.GetOrdinal("polineitemid")));
-                SetPrivateField(item, "_poid", reader["poid"] == DBNull.Value ? null : Convert.ToInt32(reader["poid"]));
-                SetPrivateField(item, "_productid", reader["productid"] == DBNull.Value ? null : Convert.ToInt32(reader["productid"]));
-                SetPrivateField(item, "_qty", reader["qty"] == DBNull.Value ? null : Convert.ToInt32(reader["qty"]));
-                SetPrivateField(item, "_unitprice", reader["unitprice"] == DBNull.Value ? null : Convert.ToDecimal(reader["unitprice"]));
-                SetPrivateField(item, "_linetotal", reader["linetotal"] == DBNull.Value ? null : Convert.ToDecimal(reader["linetotal"]));
-
-                items.Add(item);
-            }
-
-            return items;
+            return _context.Polineitems
+                .Where(item => EF.Property<int?>(item, "Poid") == poId)
+                .OrderBy(item => EF.Property<int>(item, "Polineid"))
+                .ToList();
         }
 
         public void DeleteItemsByPO(int poId)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            conn.Open();
+            var items = _context.Polineitems
+                .Where(item => EF.Property<int?>(item, "Poid") == poId)
+                .ToList();
 
-            const string sql = @"DELETE FROM polineitem WHERE poid = @poid;";
+            if (items.Count == 0)
+            {
+                return;
+            }
 
-            using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@poid", poId);
-            cmd.ExecuteNonQuery();
+            _context.Polineitems.RemoveRange(items);
+            _context.SaveChanges();
         }
 
         public void ReplaceItems(int poId, List<Polineitem> items)
@@ -98,26 +60,77 @@ namespace ProRental.Data.Gateways
             InsertItems(poId, items);
         }
 
-        private static void SetPrivateField(object target, string fieldName, object? value)
+        public void InsertItemsFromReplenishmentRequest(int poId, int reqId)
         {
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            var sourceItems = (from li in _context.Lineitems
+                               join pd in _context.Productdetails
+                                   on EF.Property<int?>(li, "Productid") equals (int?)EF.Property<int>(pd, "Productid")
+                                   into pdGroup
+                               from pd in pdGroup.DefaultIfEmpty()
+                               where EF.Property<int?>(li, "Requestid") == reqId
+                               orderby EF.Property<int>(li, "Lineitemid")
+                               select new
+                               {
+                                   ProductId = EF.Property<int?>(li, "Productid"),
+                                   Qty = EF.Property<int?>(li, "Quantityrequest"),
+                                   UnitPrice = pd != null ? EF.Property<decimal>(pd, "Price") : 0m
+                               })
+                               .ToList();
 
-            if (field == null)
-                throw new InvalidOperationException(
-                    $"Field '{fieldName}' was not found on type '{target.GetType().Name}'.");
+            var poItems = sourceItems.Select(item => new Polineitem
+            {
+            }).ToList();
 
-            field.SetValue(target, value);
+            for (var i = 0; i < poItems.Count; i++)
+            {
+                var source = sourceItems[i];
+                var poItem = poItems[i];
+                var qty = source.Qty ?? 0;
+                var lineTotal = qty * source.UnitPrice;
+
+                _context.Entry(poItem).Property("Poid").CurrentValue = poId;
+                _context.Entry(poItem).Property("Productid").CurrentValue = source.ProductId;
+                _context.Entry(poItem).Property("Qty").CurrentValue = source.Qty;
+                _context.Entry(poItem).Property("Unitprice").CurrentValue = source.UnitPrice;
+                _context.Entry(poItem).Property("Linetotal").CurrentValue = lineTotal;
+            }
+
+            if (poItems.Count == 0)
+            {
+                return;
+            }
+
+            _context.Polineitems.AddRange(poItems);
+            _context.SaveChanges();
         }
 
-        private static T? GetPrivateFieldValue<T>(object target, string fieldName)
+        public decimal GetTotalAmountByPO(int poId)
         {
-            var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            var total = _context.Polineitems
+                .Where(item => EF.Property<int?>(item, "Poid") == poId)
+                .Sum(item => (decimal?)EF.Property<decimal?>(item, "Linetotal"));
 
-            if (field == null)
-                throw new InvalidOperationException(
-                    $"Field '{fieldName}' was not found on type '{target.GetType().Name}'.");
+            return total ?? 0m;
+        }
 
-            return (T?)field.GetValue(target);
+        public List<PurchaseOrderItemViewModel> GetRequestItemsWithProductName(int reqId)
+        {
+            return (from li in _context.Lineitems
+                    join pd in _context.Productdetails
+                        on EF.Property<int?>(li, "Productid") equals (int?)EF.Property<int>(pd, "Productid")
+                        into pdGroup
+                    from pd in pdGroup.DefaultIfEmpty()
+                    where EF.Property<int?>(li, "Requestid") == reqId
+                    orderby EF.Property<int>(li, "Lineitemid")
+                    select new PurchaseOrderItemViewModel
+                    {
+                        LineItemId = EF.Property<int>(li, "Lineitemid"),
+                        ProductId = EF.Property<int?>(li, "Productid") ?? 0,
+                        ProductName = pd != null ? (EF.Property<string?>(pd, "Name") ?? "Unknown Product") : "Unknown Product",
+                        Qty = EF.Property<int?>(li, "Quantityrequest") ?? 0,
+                        Remarks = EF.Property<string?>(li, "Remarks") ?? ""
+                    })
+                .ToList();
         }
     }
 }
