@@ -5,6 +5,8 @@ using ProRental.Interfaces.Domain;
 
 namespace ProRental.Controllers;
 
+[Route("module2/[controller]/[action]")]
+[StaffAuth]
 public class ClearanceController : Controller
 {
     private readonly iClearanceBatchControl _batchControl;

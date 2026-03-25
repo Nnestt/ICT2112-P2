@@ -9,6 +9,8 @@ using ProRental.Interfaces.Module2;
 
 namespace ProRental.Controllers.Module2;
 
+[Route("module2/[controller]/[action]")]
+[StaffAuth]
 public class SupplierRegistryPageController : Controller
 {
     private readonly ISupplier _supplier;

@@ -173,6 +173,7 @@ builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
 builder.Services.AddScoped<IAnalyticsMapper, AnalysisRecordMapper>();
 builder.Services.AddScoped<IReportExportMapper, ReportMapper>();
 builder.Services.AddScoped<ITransactionLogService, TransactionLogService>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IVettingRecordMapper, ProRental.Data.Module2.Gateways.VettingRecordMapper>();
 
 // Domain
 builder.Services.AddScoped<AnalyticsControl>();
@@ -186,10 +187,13 @@ builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ILoanLogGateway, Pr
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReturnLogGateway, ProRental.Data.Module2.Gateways.ReturnLogGateway>();
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IClearanceLogGateway, ProRental.Data.Module2.Gateways.ClearanceLogGateway>();
 builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IPurchaseOrderLogGateway, ProRental.Data.Module2.Gateways.PurchaseOrderLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReliabilityRatingMapper, ProRental.Data.Module2.Gateways.ReliabilityRatingMapper>();
 // Domain
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>();
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>();
 builder.Services.AddScoped<ProRental.Interfaces.IPurchaseOrderService, ProRental.Domain.Control.PurchaseOrderControl>();
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.VettingControl>();
+builder.Services.AddScoped<ProRental.Interfaces.Module2.IVerifiedSupplierRegistry>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.VettingControl>());
 // Presentation/Controllers
 builder.Services.AddScoped<ProRental.Interfaces.IRentalOrderLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
 builder.Services.AddScoped<ProRental.Interfaces.IInventoryTransactionLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
@@ -201,13 +205,31 @@ builder.Services.AddScoped<IProductMapper, ProductMapper>();
 builder.Services.AddScoped<IAlertMapper, AlertMapper>();
 builder.Services.AddScoped<IInventoryItemMapper, InventoryItemMapper>();
 builder.Services.AddScoped<ICategoryMapper, CategoryMapper>();
-builder.Services.AddScoped<IReturnItemMapper, ReturnItemMapper>();
-builder.Services.AddScoped<IReturnRequestMapper, ReturnRequestMapper>();
 builder.Services.AddScoped<IDamageReportMapper, DamageReportMapper>();
-builder.Services.AddScoped<IClearanceItemMapper, ClearanceItemMapper>();
-builder.Services.AddScoped<IClearanceBatchMapper, ClearanceBatchMapper>();
-builder.Services.AddScoped<ILoanItemMapper, LoanItemMapper>();
-builder.Services.AddScoped<ILoanListMapper, LoanListMapper>();
+
+// ── Core Mapper Implementations (Registered Once) ──
+builder.Services.AddScoped<LoanListMapper>();
+builder.Services.AddScoped<LoanItemMapper>();
+builder.Services.AddScoped<ReturnRequestMapper>();
+builder.Services.AddScoped<ReturnItemMapper>();
+builder.Services.AddScoped<ClearanceBatchMapper>();
+builder.Services.AddScoped<ClearanceItemMapper>();
+
+// ── Forwarding the Standard Interfaces ──
+builder.Services.AddScoped<ILoanListMapper>(sp => sp.GetRequiredService<LoanListMapper>());
+builder.Services.AddScoped<ILoanItemMapper>(sp => sp.GetRequiredService<LoanItemMapper>());
+builder.Services.AddScoped<IReturnRequestMapper>(sp => sp.GetRequiredService<ReturnRequestMapper>());
+builder.Services.AddScoped<IReturnItemMapper>(sp => sp.GetRequiredService<ReturnItemMapper>());
+builder.Services.AddScoped<IClearanceBatchMapper>(sp => sp.GetRequiredService<ClearanceBatchMapper>());
+builder.Services.AddScoped<IClearanceItemMapper>(sp => sp.GetRequiredService<ClearanceItemMapper>());
+
+// ── Forwarding the Read-Only Segregated Interfaces ──
+builder.Services.AddScoped<ILoanListRead>(sp => sp.GetRequiredService<LoanListMapper>());
+builder.Services.AddScoped<ILoanItemRead>(sp => sp.GetRequiredService<LoanItemMapper>());
+builder.Services.AddScoped<IReturnRequestRead>(sp => sp.GetRequiredService<ReturnRequestMapper>());
+builder.Services.AddScoped<IReturnItemRead>(sp => sp.GetRequiredService<ReturnItemMapper>());
+builder.Services.AddScoped<IClearanceBatchRead>(sp => sp.GetRequiredService<ClearanceBatchMapper>());
+builder.Services.AddScoped<IClearanceItemRead>(sp => sp.GetRequiredService<ClearanceItemMapper>());
 
 // Domain - Control Classes
 // category
@@ -272,6 +294,11 @@ builder.Services.AddScoped<InventoryService>();
 builder.Services.AddScoped<IInventoryQueryFacade>(sp => sp.GetRequiredService<InventoryService>());
 builder.Services.AddScoped<IResupplyService>(sp => sp.GetRequiredService<InventoryService>());
 builder.Services.AddScoped<IInventoryService>(sp => sp.GetRequiredService<InventoryService>());
+
+builder.Services.AddScoped<TransactionLogEnricher>();
+builder.Services.AddScoped<ILoanLogEnricher>(sp => sp.GetRequiredService<TransactionLogEnricher>());
+builder.Services.AddScoped<IReturnLogEnricher>(sp => sp.GetRequiredService<TransactionLogEnricher>());
+builder.Services.AddScoped<IClearanceLogEnricher>(sp => sp.GetRequiredService<TransactionLogEnricher>());
 
 // Presentation/Controllers
 

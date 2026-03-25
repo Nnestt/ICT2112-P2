@@ -8,6 +8,8 @@ using ProRental.Domain.Enums;
 using ProRental.Data.Module2.Interfaces;
 using System;
 
+[Route("module2/[controller]/[action]")]
+[StaffAuth]
 public class VettingPageController : Controller
 {
     private readonly VettingControl vettingControl;

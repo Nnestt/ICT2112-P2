@@ -6,6 +6,7 @@ using ProRental.Interfaces.Domain;
 
 namespace ProRental.Controllers;
 
+[StaffAuth]
 public class ProductCatalogController : Controller
 {
     private readonly IProductCRUD _productCRUD;

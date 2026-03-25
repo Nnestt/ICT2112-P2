@@ -7,6 +7,7 @@ using ProRental.Interfaces.Domain;
 namespace ProRental.Controllers;
 
 [Route("module2/[controller]")]
+[StaffAuth]
 public class ReturnProcessingController : Controller
 {
     private readonly iReturnOrderQuery   _returnOrderQuery;

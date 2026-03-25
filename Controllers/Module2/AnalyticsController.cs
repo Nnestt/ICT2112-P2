@@ -6,6 +6,9 @@ using System.Text;
 
 namespace ProRental.Controllers;
 
+[Route("module2/[controller]/[action]")]
+[StaffAuth]
+
 public class AnalyticsController : Controller
 {
     private readonly AnalyticsControl    _analyticsControl;

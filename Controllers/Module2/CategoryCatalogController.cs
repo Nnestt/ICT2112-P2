@@ -4,7 +4,8 @@ using ProRental.Interfaces.Domain;
 
 namespace ProRental.Controllers;
 
-[Route("CategoryCatalog")]
+[Route("module2/[controller]")]
+[StaffAuth]
 public class CategoryCatalogController : Controller
 {
     private readonly ICategoryCRUD _categoryCRUD;

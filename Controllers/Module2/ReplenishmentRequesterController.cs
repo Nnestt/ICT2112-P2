@@ -7,6 +7,7 @@ namespace ProRental.Controllers.Module2;
 
 // Page Controller for Replenishment Request feature
 // Based on Team 2-2 Class Diagram specification
+[StaffAuth]
 public class ReplenishmentRequesterController : Controller
 {
     private readonly ReplenishmentRequestControl _control;

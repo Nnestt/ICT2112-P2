@@ -3,6 +3,7 @@ using ProRental.Interfaces;
 
 namespace ProRental.Controllers
 {
+    [StaffAuth]
     public class PurchaseOrderPageController : Controller
     {
         private readonly IPurchaseOrderService _purchaseOrderService;

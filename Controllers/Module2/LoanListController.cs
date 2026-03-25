@@ -26,7 +26,7 @@ public class StaffAuthAttribute : ActionFilterAttribute
     }
 }
 // ──────────────────────────────────────────────────────────────────────────
-
+[Route("module2/[controller]")]
 [StaffAuth] // <-- This single line protects the ENTIRE controller!
 public class LoanListController : Controller
 {

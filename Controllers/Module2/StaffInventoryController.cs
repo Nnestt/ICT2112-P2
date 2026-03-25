@@ -6,6 +6,7 @@ using ProRental.Interfaces.Domain;
 namespace ProRental.Controllers;
 
 [Route("module2/[controller]")]
+[StaffAuth]
 public class StaffInventoryController : Controller
 {
     private readonly iInventoryCRUDControl _crudControl;

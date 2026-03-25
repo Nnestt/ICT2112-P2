@@ -9,13 +9,16 @@ public class ClearanceBatchControl : iClearanceBatchQuery, iClearanceBatchContro
 {
     private readonly IClearanceBatchMapper _batchMapper;
     private readonly IClearanceItemMapper _itemMapper;
+    private readonly IClearanceLogEnricher _logEnricher;
 
     public ClearanceBatchControl(
         IClearanceBatchMapper batchMapper,
-        IClearanceItemMapper itemMapper)
+        IClearanceItemMapper itemMapper,
+        IClearanceLogEnricher logEnricher)
     {
         _batchMapper = batchMapper;
         _itemMapper = itemMapper;
+        _logEnricher = logEnricher;
     }
 
     // ── Batch CRUD ─────────────────────────────────────────────────────────────
@@ -35,6 +38,7 @@ public class ClearanceBatchControl : iClearanceBatchQuery, iClearanceBatchContro
             clearanceBatch.SetCreatedDate(DateTime.UtcNow);
 
             _batchMapper.Insert(clearanceBatch);
+            _logEnricher.LogClearanceProcess(clearanceBatch.GetClearanceBatchId());
             return true;
         }
         catch
@@ -165,6 +169,7 @@ public class ClearanceBatchControl : iClearanceBatchQuery, iClearanceBatchContro
 
             batch.UpdateStatus(ClearanceBatchStatus.CLOSED);
             _batchMapper.Update(batch);
+            _logEnricher.LogClearanceProcess(clearanceBatchId);
             return true;
         }
         catch

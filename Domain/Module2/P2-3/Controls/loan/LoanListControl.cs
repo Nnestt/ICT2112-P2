@@ -1,5 +1,6 @@
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
+using ProRental.Interfaces;
 using ProRental.Interfaces.Data;
 using ProRental.Interfaces.Domain;
 
@@ -10,15 +11,18 @@ public class LoanListControl : ILoanListQuery, ILoanListCRUD, ILoanActions, ILoa
     private readonly ILoanListMapper _loanListMapper;
     private readonly ILoanItemCRUD _loanItemCRUD;
     private readonly ILoanItemQuery _loanItemQuery;
+    private readonly ILoanLogEnricher _logger;
 
     public LoanListControl(
         ILoanListMapper loanListMapper, 
         ILoanItemCRUD loanItemCRUD, 
-        ILoanItemQuery loanItemQuery)
+        ILoanItemQuery loanItemQuery,
+        ILoanLogEnricher logger)
     {
         _loanListMapper = loanListMapper;
         _loanItemCRUD = loanItemCRUD;
         _loanItemQuery = loanItemQuery;
+        _logger = logger;
     }
 
     // ── Pre-Flight Validation (ILoanValidation) ──────────────────────────────
@@ -141,6 +145,8 @@ public class LoanListControl : ILoanListQuery, ILoanListCRUD, ILoanActions, ILoa
         newLoanList.ProcessLoan();
         _loanListMapper.Update(newLoanList);
 
+        _logger.LogLoanProcess(newLoanList.GetLoanListId(), orderId);
+
         return true;
     }
 
@@ -155,6 +161,8 @@ public class LoanListControl : ILoanListQuery, ILoanListCRUD, ILoanActions, ILoa
             loanList.ProcessReturn();
 
             _loanListMapper.Update(loanList);
+
+            _logger.LogLoanProcess(loanList.GetLoanListId(), orderId);
             return true;
         }
         catch

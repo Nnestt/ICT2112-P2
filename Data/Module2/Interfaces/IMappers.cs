@@ -65,7 +65,7 @@ public interface ICategoryMapper
 	public void Delete(Category category);
 }
 
-public interface IReturnItemMapper
+public interface IReturnItemRead
 {
 	public Returnitem? FindById(int itemId);
 
@@ -74,7 +74,10 @@ public interface IReturnItemMapper
 	public ICollection<Returnitem>? FindByReturnRequest(int requestId);
 
 	public ICollection<Returnitem>? FindByStatus(ReturnItemStatus status);
+}
 
+public interface IReturnItemWrite
+{
 	public void Insert(Returnitem item);
 
 	public void Update(Returnitem item);
@@ -82,7 +85,9 @@ public interface IReturnItemMapper
 	public void Delete(Returnitem item);
 }
 
-public interface IReturnRequestMapper
+public interface IReturnItemMapper : IReturnItemRead, IReturnItemWrite {}
+
+public interface IReturnRequestRead
 {
 	public Returnrequest? FindById(int requestId);
 
@@ -93,13 +98,18 @@ public interface IReturnRequestMapper
 	public ICollection<Returnrequest>? FindByCustomerId(int customerId);
 
 	public ICollection<Returnrequest>? FindByStatus(ReturnRequestStatus status);
+}
 
+public interface IReturnRequestWrite
+{
 	public void Insert(Returnrequest request);
 
 	public void Update(Returnrequest request);
 
 	public void Delete(Returnrequest request);
 }
+
+public interface IReturnRequestMapper : IReturnRequestRead, IReturnRequestWrite {}
 
 public interface IDamageReportMapper
 {
@@ -116,14 +126,17 @@ public interface IDamageReportMapper
 	public void Delete(Damagereport damageReport);
 }
 
-public interface IClearanceBatchMapper
+public interface IClearanceBatchRead
 {
 	public Clearancebatch? FindById(int batchId);
 
 	public ICollection<Clearancebatch>? FindAll();
 
 	public ICollection<Clearancebatch>? FindByStatus(ClearanceBatchStatus status);
+}
 
+public interface IClearanceBatchWrite
+{
 	public void Insert(Clearancebatch batch);
 
 	public void Update(Clearancebatch batch);
@@ -131,7 +144,9 @@ public interface IClearanceBatchMapper
 	public void Delete(Clearancebatch batch);
 }
 
-public interface IClearanceItemMapper
+public interface IClearanceBatchMapper : IClearanceBatchRead, IClearanceBatchWrite {}
+
+public interface IClearanceItemRead
 {
 	public Clearanceitem? FindById(int itemId);
 
@@ -142,7 +157,10 @@ public interface IClearanceItemMapper
 	public ICollection<Clearanceitem>? FindByStatus(ClearanceStatus status);
 
 	public ICollection<Clearanceitem>? FindAll();
+}
 
+public interface IClearanceItemWrite
+{
 	public void Insert(Clearanceitem item);
 
 	public void Update(Clearanceitem item);
@@ -150,22 +168,28 @@ public interface IClearanceItemMapper
 	public void Delete(Clearanceitem item);
 }
 
-public interface ILoanItemMapper
+public interface IClearanceItemMapper : IClearanceItemRead, IClearanceItemWrite {}
+
+public interface ILoanItemRead
 {
 	public Loanitem? FindById(int itemId);
 
 	public ICollection<Loanitem>? FindByLoanListId(int listId);
 
 	public ICollection<Loanitem>? FindAll();
+}
 
+public interface ILoanItemWrite
+{
 	public void Insert(Loanitem item);
 
 	public void Update(Loanitem item);
 
 	public void Delete(Loanitem item);
 }
+public interface ILoanItemMapper : ILoanItemRead, ILoanItemWrite {}
 
-public interface ILoanListMapper
+public interface ILoanListRead
 {
 	public Loanlist? FindById(int listId);
 
@@ -178,10 +202,15 @@ public interface ILoanListMapper
 	public ICollection<Loanlist>? FindByDate(DateTime loanDate);
 
 	public ICollection<Loanlist>? FindByStatus(LoanStatus status);
+}
 
+public interface ILoanListWrite
+{
 	public void Insert(Loanlist list);
 
 	public void Update(Loanlist list);
 
 	public void Delete(Loanlist list);
 }
+
+public interface ILoanListMapper : ILoanListRead, ILoanListWrite {}

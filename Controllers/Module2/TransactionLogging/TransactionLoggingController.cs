@@ -9,6 +9,9 @@ namespace ProRental.Controllers;
 /// Controller for the Transaction Logging feature.
 /// Displays all transaction logs with filtering and inline detail expansion.
 /// </summary>
+/// 
+[Route("module2/[controller]/[action]")]
+[StaffAuth]
 public class TransactionLoggingController : Controller
 {
     private readonly ITransactionLoggingUI _loggingUI;

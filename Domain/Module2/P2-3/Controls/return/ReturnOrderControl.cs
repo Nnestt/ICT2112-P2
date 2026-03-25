@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
 using ProRental.Interfaces.Data;
@@ -9,13 +10,16 @@ public class ReturnOrderControl : iReturnOrderCRUD, iReturnOrderQuery, iReturnPr
 {
     private readonly IReturnRequestMapper _returnRequestMapper;
     private readonly iReturnItemCRUD      _returnItemCRUD;
+    private readonly IReturnLogEnricher _returnLogEnricher;
 
     public ReturnOrderControl(
         IReturnRequestMapper returnRequestMapper,
-        iReturnItemCRUD      returnItemCRUD)
+        iReturnItemCRUD      returnItemCRUD,
+        IReturnLogEnricher returnLogEnricher)
     {
         _returnRequestMapper = returnRequestMapper ?? throw new ArgumentNullException(nameof(returnRequestMapper));
         _returnItemCRUD      = returnItemCRUD      ?? throw new ArgumentNullException(nameof(returnItemCRUD));
+        _returnLogEnricher = returnLogEnricher ?? throw new ArgumentNullException(nameof(returnLogEnricher));
     }
 
     // -- iReturnOrderQuery ------------------------------------------------
@@ -55,7 +59,11 @@ public class ReturnOrderControl : iReturnOrderCRUD, iReturnOrderQuery, iReturnPr
         var fresh = _returnRequestMapper.FindById(returnRequestId);
         if (fresh is null) return false;
         fresh.CompleteReturn();
-        try { _returnRequestMapper.Update(fresh); return true; }
+        try { 
+            _returnRequestMapper.Update(fresh);
+            _returnLogEnricher.LogReturnProcess(returnRequestId, fresh.GetOrderId());
+            return true;
+        }
         catch { return false; }
     }
 
@@ -132,6 +140,8 @@ public class ReturnOrderControl : iReturnOrderCRUD, iReturnOrderQuery, iReturnPr
                 returnItem.SetStatus(ReturnItemStatus.DAMAGE_INSPECTION);
                 _returnItemCRUD.CreateReturnItem(returnItem);
             }
+
+            _returnLogEnricher.LogReturnProcess(inserted.GetReturnRequestId(), orderId);
 
             return true;
         }
