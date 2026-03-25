@@ -66,10 +66,18 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("alert_status");
         });
 
+      //   modelBuilder.Entity<Analytic>(entity => // Commented out
+      //   {
+      //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("type").HasColumnType("analytics_type_enum");
+      //   });
+
         modelBuilder.Entity<Analytic>(entity =>
         {
-            entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("type").HasColumnType("analytics_type_enum");
+            entity.Property<AnalyticsType>("_analyticsType")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("analyticstype")
+                  .HasColumnType("analytics_type_enum");
         });
 
         modelBuilder.Entity<Cart>(entity =>
@@ -206,13 +214,26 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("replenishment_status_enum");
         });
 
+      //   modelBuilder.Entity<Reportexport>(entity => // Commented out
+      //   {
+      //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("type").HasColumnType("visual_type_enum");
+
+      //       entity.Property("format").HasField("_format").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("format").HasColumnType("file_format_enum");
+      //   });
+
         modelBuilder.Entity<Reportexport>(entity =>
         {
-            entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("type").HasColumnType("visual_type_enum");
+            entity.Property<VisualType>("_visualType")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("visualtype")
+                  .HasColumnType("visual_type_enum");
 
-            entity.Property("format").HasField("_format").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("format").HasColumnType("file_format_enum");
+            entity.Property<FileFormat>("_fileFormat")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("fileformat")
+                  .HasColumnType("file_format_enum");
         });
 
         modelBuilder.Entity<Returnitem>(entity =>
@@ -308,6 +329,12 @@ public partial class AppDbContext
             entity.Property("Status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
                   .HasColumnName("status").HasColumnType("transaction_status_enum");
         });
+
+            modelBuilder.Entity<Transactionlog>(entity =>
+            {
+            entity.Property("Logtype").HasField("_logtype").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("logtype").HasColumnType("log_type_enum");
+            });
 
         modelBuilder.Entity<Transport>(entity =>
         {

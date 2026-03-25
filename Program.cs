@@ -3,14 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using ProRental.Domain.Enums;
-using ProRental.Domain.Entities;
+using ProRental.Domain.Control;
+using ProRental.Data.Gateways;
+using ProRental.Interfaces;
 using ProRental.Interfaces.Data;
 using ProRental.Data;
 using ProRental.Interfaces.Domain;
 using ProRental.Domain.Controls;
 using ProRental.Controllers.Module1;
 using ProRental.Data.Services;
-
 
 // uncomment when ready to code
 // using ProRental.Data;
@@ -174,9 +175,31 @@ builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.SupplierCatego
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Factories.SupplierRegistryFactory>();
 
 
+builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
+builder.Services.AddScoped<IAnalyticsMapper, AnalysisRecordMapper>();
+builder.Services.AddScoped<IReportExportMapper, ReportMapper>();
+builder.Services.AddScoped<ITransactionLogService, TransactionLogService>();
 
+// Domain
+builder.Services.AddScoped<AnalyticsControl>();
+builder.Services.AddScoped<ReportExportControl>();
+builder.Services.AddScoped<AnalyticsFactory>();
+builder.Services.AddScoped<IAnalyticsData, AnalyticsControl>();
+
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ITransactionLogGateway, ProRental.Data.Module2.Gateways.TransactionLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IRentalOrderLogGateway, ProRental.Data.Module2.Gateways.RentalOrderLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.ILoanLogGateway, ProRental.Data.Module2.Gateways.LoanLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IReturnLogGateway, ProRental.Data.Module2.Gateways.ReturnLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IClearanceLogGateway, ProRental.Data.Module2.Gateways.ClearanceLogGateway>();
+builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IPurchaseOrderLogGateway, ProRental.Data.Module2.Gateways.PurchaseOrderLogGateway>();
+// Domain
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>();
+builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>();
+builder.Services.AddScoped<ProRental.Interfaces.IPurchaseOrderService, ProRental.Domain.Module2.P2_2.Controls.StubPurchaseOrderService>();
 // Presentation/Controllers
-
+builder.Services.AddScoped<ProRental.Interfaces.IRentalOrderLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
+builder.Services.AddScoped<ProRental.Interfaces.IInventoryTransactionLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
+builder.Services.AddScoped<ProRental.Interfaces.ITransactionLoggingUI>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>());
 //Team P2-3
 // Data source
 
