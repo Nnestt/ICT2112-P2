@@ -114,8 +114,24 @@ public class ReturnProcessingController : Controller
             var item = _returnItemQuery.GetReturnItem(itemId);
             if (item is null) return NotFound();
 
-            // Pass existing damage report (if any) to pre-fill the modal
             ViewBag.DamageReport = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+
+            // Detect broken path: RETURN_TO_INVENTORY + damage report exists + description contains "Unable to repair"
+            var damageReport = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+            ViewBag.IsBroken = item.GetStatus() == ReturnItemStatus.RETURN_TO_INVENTORY
+                && damageReport != null
+                && (damageReport.GetDescription() ?? "").Contains("Unable to repair");
+
+            // For repairing phase — pre-calculate updated repair cost (previous + product price)
+            if (item.GetStatus() == ReturnItemStatus.REPAIRING)
+            {
+                var productPrice = _returnItemControl.GetProductPriceForItem(item.GetInventoryItemId());
+                var existing     = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+                var previousCost = existing?.GetRepairCost() ?? 0m;
+                ViewBag.ProductPrice      = productPrice;
+                ViewBag.UpdatedRepairCost = previousCost + productPrice;
+            }
+
             return View("~/Views/Module2/ReturnProcess/ReturnItemDamageReport.cshtml", item);
         }
         catch (Exception ex)
@@ -130,8 +146,8 @@ public class ReturnProcessingController : Controller
     // damage report modal in the view. It is NOT stored in the database.
     [HttpPost("SaveDamageReport/{returnItemId:int}")]
     [ValidateAntiForgeryToken]
-    public IActionResult SaveDamageReport(int returnItemId,
-        string? description, string? severity, decimal? repairCost, string? images)
+    public async Task<IActionResult> SaveDamageReport(int returnItemId,
+        string? description, string? severity, decimal? repairCost, IFormFile? imageFile)
     {
         try
         {
@@ -150,8 +166,24 @@ public class ReturnProcessingController : Controller
             report.SetDescription(description ?? string.Empty);
             report.SetSeverity(severity ?? string.Empty);
             report.SetRepairCost(repairCost ?? 0m);
-            report.SetImages(images ?? string.Empty);
             report.SetReportDate(DateTime.UtcNow);
+
+            // Handle image upload if provided
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "damage");
+                Directory.CreateDirectory(uploadsFolder);
+                var fileName = $"dmg_{returnItemId}_{DateTime.UtcNow:yyyyMMddHHmmss}{Path.GetExtension(imageFile.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                    await imageFile.CopyToAsync(stream);
+                report.SetImages($"/uploads/damage/{fileName}");
+            }
+            else if (existing != null)
+            {
+                // Keep existing image if no new one uploaded
+                report.SetImages(existing.GetImages() ?? string.Empty);
+            }
 
             TempData["Message"] = _damageReportCRUD.SubmitDamageReport(returnItemId, report)
                 ? "Damage report saved."
@@ -200,10 +232,11 @@ public class ReturnProcessingController : Controller
         }
     }
 
-    // ── Submit Phase 2: Repairing → Servicing ────────────────────────────
+    // ── Submit Phase 2: Repairing ─────────────────────────────────────────
+    // isFixed: true → Servicing, false → update repair cost + set BROKEN
     [HttpPost("SubmitRepairing/{itemId:int}")]
     [ValidateAntiForgeryToken]
-    public IActionResult SubmitRepairing(int itemId)
+    public IActionResult SubmitRepairing(int itemId, bool isFixed)
     {
         try
         {
@@ -216,11 +249,52 @@ public class ReturnProcessingController : Controller
                 return RedirectToAction(nameof(ReturnForm), new { itemId });
             }
 
-            item.ConductServicing();
+            if (isFixed)
+            {
+                // Repair fixed → append total price note to damage report description, then proceed to Servicing
+                var report = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+                if (report != null)
+                {
+                    var repairCost   = report.GetRepairCost() ?? 0m;
+                    var originalDesc = report.GetDescription() ?? string.Empty;
+                    report.SetDescription(originalDesc + $"\n\nTotal price for repair is ${repairCost:F2}.");
+                    _damageReportCRUD.SubmitDamageReport(itemId, report);
+                }
 
-            TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
-                ? "Repair complete. Status set to Servicing."
-                : "Failed to submit repair.";
+                item.ConductServicing();
+                TempData["Message"] = _returnItemCRUD.UpdateReturnItem(item)
+                    ? "Repair complete. Status set to Servicing."
+                    : "Failed to submit repair.";
+            }
+            else
+            {
+                // Repair NOT fixed → mark broken, update repair cost, skip to end
+                var report = _damageReportQuery.GetDamageReportByReturnItem(itemId);
+                if (report is null)
+                {
+                    TempData["Message"] = "No damage report found. Cannot mark as broken.";
+                    return RedirectToAction(nameof(ReturnForm), new { itemId });
+                }
+
+                bool broken = _returnItemControl.MarkItemBroken(itemId, report);
+                if (broken)
+                {
+                    // Save updated damage report with new repair cost + description
+                    _damageReportCRUD.SubmitDamageReport(itemId, report);
+
+                    // Close return request if all items done
+                    var allItems = _returnItemQuery.GetReturnItemByRequestId(item.GetReturnRequestId());
+                    if (allItems.All(i => i.GetStatus() == ReturnItemStatus.RETURN_TO_INVENTORY))
+                        _returnOrderControl.CompleteReturnProcess(item.GetReturnRequestId());
+
+                    TempData["Message"] = "Item marked as broken. Inventory status updated to BROKEN successfully.";
+                    return RedirectToAction(nameof(ShowReturnDetails), new { requestId = item.GetReturnRequestId() });
+                }
+                else
+                {
+                    TempData["Message"] = "Failed to mark item as broken.";
+                }
+            }
 
             return RedirectToAction(nameof(ReturnForm), new { itemId });
         }
@@ -293,8 +367,8 @@ public class ReturnProcessingController : Controller
                 _returnOrderControl.CompleteReturnProcess(item.GetReturnRequestId());
             }
 
-            TempData["Message"] = "Cleaning complete. Item returned to inventory.";
-            return RedirectToAction(nameof(ReturnForm), new { itemId });
+            TempData["Message"] = "Cleaning complete. Inventory status updated to AVAILABLE successfully.";
+            return RedirectToAction(nameof(ShowReturnDetails), new { requestId = item.GetReturnRequestId() });
         }
         catch (Exception ex)
         {
@@ -302,7 +376,6 @@ public class ReturnProcessingController : Controller
             return RedirectToAction(nameof(ReturnForm), new { itemId });
         }
     }
-
     // ── Export damage report as PDF ───────────────────────────────────────
     [HttpGet("ExportDamageReport/{itemId:int}")]
     public IActionResult ExportDamageReport(int itemId)
