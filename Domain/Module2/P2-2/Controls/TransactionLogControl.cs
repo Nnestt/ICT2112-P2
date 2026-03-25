@@ -202,7 +202,7 @@ public class TransactionLogControl : IRentalOrderLogger, IInventoryTransactionLo
                     supplier_id = po.SupplierId,
                     expected_deliverydate = po.ExpectedDeliveryDate,
                     total_amount = po.TotalAmount,
-                    details_json = po.DetailsJson
+                    details_json = $"{{\"status\":\"{po.Status}\"}}"
                 };
 
                 _purchaseOrderLogGateway.Insert(poLog);

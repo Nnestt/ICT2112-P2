@@ -2,6 +2,7 @@ using ProRental.Controllers;
 using ProRental.Interfaces;
 using ProRental.Interfaces.Module2;
 using ProRental.Data.Interfaces;
+using System.Text.Json;
 
 namespace ProRental.Domain.Control
 {
@@ -70,14 +71,26 @@ namespace ProRental.Domain.Control
             _purchaseOrderMapper.UpdatePurchaseOrderTotalAmount(poId, totalAmount);
             _purchaseOrderMapper.UpdateReplenishmentRequestStatusToSubmitted(reqId);
 
+            var supplierName = _purchaseOrderMapper.GetVerifiedSuppliers()
+                .FirstOrDefault(s => s.SupplierId == supplierId)?.SupplierName ?? $"Supplier #{supplierId}";
+
+            var lineItems = _poLineItemMapper.GetPOLineItemsWithDetails(poId);
+
             var logId = _purchaseOrderMapper.InsertTransactionLogForPurchaseOrder();
-            string detailsJson = $@"{{
-        ""reqId"": {reqId},
-        ""poId"": {poId},
-        ""supplierId"": {supplierId},
-        ""totalAmount"": {totalAmount},
-        ""status"": ""CONFIRMED""
-    }}";
+            string detailsJson = JsonSerializer.Serialize(new
+            {
+                reqId,
+                status = "CONFIRMED",
+                supplierName,
+                lineItems = lineItems.Select(li => new
+                {
+                    productId = li.ProductId,
+                    productName = li.ProductName,
+                    qty = li.Qty,
+                    unitPrice = li.UnitPrice,
+                    lineTotal = li.LineTotal
+                })
+            });
 
             _purchaseOrderMapper.InsertPurchaseOrderLog(
                 logId,

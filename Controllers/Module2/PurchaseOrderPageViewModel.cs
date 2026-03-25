@@ -54,4 +54,13 @@ namespace ProRental.Controllers
         public string Status { get; set; } = "";
         public decimal? TotalAmount { get; set; }
     }
+
+    public class POLineItemDetailViewModel
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = "";
+        public int Qty { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal LineTotal { get; set; }
+    }
 }

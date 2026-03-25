@@ -147,8 +147,13 @@
         <div class="card-body">
 
             @{
+                // reqId is an internal linking field for purchase order logs — not shown in UI
+                var poInternalFields = Model.Purchaseorderlog != null
+                    ? new HashSet<string> { "reqId" }
+                    : new HashSet<string>();
+
                 var topLevelFields = root.EnumerateObject()
-                    .Where(p => p.Value.ValueKind != JsonValueKind.Array && p.Value.ValueKind != JsonValueKind.Object)
+                    .Where(p => p.Value.ValueKind != JsonValueKind.Array && p.Value.ValueKind != JsonValueKind.Object && !poInternalFields.Contains(p.Name))
                     .ToList();
             }
             @if (topLevelFields.Any())

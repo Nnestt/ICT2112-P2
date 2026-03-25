@@ -194,7 +194,7 @@ builder.Services.AddScoped<ProRental.Data.Module2.Interfaces.IPurchaseOrderLogGa
 // Domain
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>();
 builder.Services.AddScoped<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>();
-builder.Services.AddScoped<ProRental.Interfaces.IPurchaseOrderService, ProRental.Domain.Module2.P2_2.Controls.StubPurchaseOrderService>();
+builder.Services.AddScoped<ProRental.Interfaces.IPurchaseOrderService, ProRental.Domain.Control.PurchaseOrderControl>();
 // Presentation/Controllers
 builder.Services.AddScoped<ProRental.Interfaces.IRentalOrderLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
 builder.Services.AddScoped<ProRental.Interfaces.IInventoryTransactionLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());

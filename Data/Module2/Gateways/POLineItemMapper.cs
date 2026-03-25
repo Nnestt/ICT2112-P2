@@ -113,6 +113,26 @@ namespace ProRental.Data.Gateways
             return total ?? 0m;
         }
 
+        public List<POLineItemDetailViewModel> GetPOLineItemsWithDetails(int poId)
+        {
+            return (from pli in _context.Polineitems
+                    join pd in _context.Productdetails
+                        on EF.Property<int?>(pli, "Productid") equals (int?)EF.Property<int>(pd, "Productid")
+                        into pdGroup
+                    from pd in pdGroup.DefaultIfEmpty()
+                    where EF.Property<int?>(pli, "Poid") == poId
+                    orderby EF.Property<int>(pli, "Polineid")
+                    select new POLineItemDetailViewModel
+                    {
+                        ProductId = EF.Property<int?>(pli, "Productid") ?? 0,
+                        ProductName = pd != null ? (EF.Property<string?>(pd, "Name") ?? "Unknown") : "Unknown",
+                        Qty = EF.Property<int?>(pli, "Qty") ?? 0,
+                        UnitPrice = EF.Property<decimal?>(pli, "Unitprice") ?? 0m,
+                        LineTotal = EF.Property<decimal?>(pli, "Linetotal") ?? 0m
+                    })
+                .ToList();
+        }
+
         public List<PurchaseOrderItemViewModel> GetRequestItemsWithProductName(int reqId)
         {
             return (from li in _context.Lineitems

@@ -12,5 +12,6 @@ namespace ProRental.Data.Interfaces
         void InsertItemsFromReplenishmentRequest(int poId, int reqId);
         decimal GetTotalAmountByPO(int poId);
         List<PurchaseOrderItemViewModel> GetRequestItemsWithProductName(int reqId);
+        List<POLineItemDetailViewModel> GetPOLineItemsWithDetails(int poId);
     }
 }
