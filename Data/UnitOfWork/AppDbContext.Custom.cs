@@ -66,10 +66,18 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("alert_status");
         });
 
+      //   modelBuilder.Entity<Analytic>(entity => // Commented out
+      //   {
+      //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("type").HasColumnType("analytics_type_enum");
+      //   });
+
         modelBuilder.Entity<Analytic>(entity =>
         {
-            entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("type").HasColumnType("analytics_type_enum");
+            entity.Property<AnalyticsType>("_analyticsType")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("analyticstype")
+                  .HasColumnType("analytics_type_enum");
         });
 
         modelBuilder.Entity<Cart>(entity =>
@@ -100,6 +108,11 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("clearance_status"); 
         });
 
+        modelBuilder.Entity<CustomerChoice>(entity =>
+        {
+            entity.Property("PreferenceType").HasField("_preferenceType").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("preferencetype").HasColumnType("preference_type");
+        });
 
         // ==========================================
         // D - L
@@ -116,11 +129,20 @@ public partial class AppDbContext
                   .HasColumnName("status").HasColumnType("inventory_status");
         });
 
+        modelBuilder.Entity<LegCarbon>(entity =>
+        {
+            entity.Property("TransportMode").HasField("_transportMode").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("transportmode").HasColumnType("transport_mode");
+        });
 
         modelBuilder.Entity<Lineitem>(entity =>
         {
-            entity.Property("reason").HasField("_reason").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("reason").HasColumnType("reason_code_enum");
+            // Map CLR property directly to avoid shadow-property conflicts
+            entity.Property(e => e.Reason)
+                  .HasField("_reasoncode")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("reasoncode")
+                  .HasColumnType("reason_code_enum");
         });
 
         modelBuilder.Entity<Loanlist>(entity =>
@@ -180,7 +202,7 @@ public partial class AppDbContext
         modelBuilder.Entity<Purchaseorder>(entity =>
         {
             entity.Property("status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("status").HasColumnType("purchase_order_status_enum");
+                  .HasColumnName("status").HasColumnType("po_status_enum");
         });
 
         // ==========================================
@@ -188,23 +210,44 @@ public partial class AppDbContext
         // ==========================================
         modelBuilder.Entity<Reliabilityrating>(entity =>
         {
-            entity.Property("rating").HasField("_rating").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("rating").HasColumnType("rating_band_enum");
+            entity.Property<RatingBand?>("Ratingband")
+                  .HasColumnName("ratingband")
+                  .HasColumnType("rating_band_enum");
+
+            entity.Ignore("ratingid");
+            entity.Ignore("supplierid");
+            entity.Ignore("score");
+            entity.Ignore("rationale");
+            entity.Ignore("calculatedbyuserid");
+            entity.Ignore("calculatedat");
         });
 
         modelBuilder.Entity<Replenishmentrequest>(entity =>
         {
-            entity.Property("status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
+            entity.Property("Status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
                   .HasColumnName("status").HasColumnType("replenishment_status_enum");
         });
 
+      //   modelBuilder.Entity<Reportexport>(entity => // Commented out
+      //   {
+      //       entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("type").HasColumnType("visual_type_enum");
+
+      //       entity.Property("format").HasField("_format").UsePropertyAccessMode(PropertyAccessMode.Field)
+      //             .HasColumnName("format").HasColumnType("file_format_enum");
+      //   });
+
         modelBuilder.Entity<Reportexport>(entity =>
         {
-            entity.Property("type").HasField("_type").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("type").HasColumnType("visual_type_enum");
+            entity.Property<VisualType>("_visualType")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("visualtype")
+                  .HasColumnType("visual_type_enum");
 
-            entity.Property("format").HasField("_format").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("format").HasColumnType("file_format_enum");
+            entity.Property<FileFormat>("_fileFormat")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("fileformat")
+                  .HasColumnType("file_format_enum");
         });
 
         modelBuilder.Entity<Returnitem>(entity =>
@@ -252,19 +295,41 @@ public partial class AppDbContext
                   .HasColumnName("eventtype").HasColumnType("access_event_type");
         });
 
-        modelBuilder.Entity<Supplier>(entity =>
-        {
-            entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("category").HasColumnType("supplier_category_enum");
+            //   modelBuilder.Entity<Supplier>(entity =>
+            //   {
+            //       entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("category").HasColumnType("supplier_category_enum");
 
-            entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            //       entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            //   });
+      
+      modelBuilder.Entity<Supplier>(entity =>
+        {
+            entity.Property<SupplierCategory?>("Suppliercategory")
+                  .HasColumnName("suppliercategory")
+                  .HasColumnType("supplier_category_enum");
+ 
+            entity.Property<VettingResult?>("Vettingresult")
+                  .HasColumnName("vettingresult")
+                  .HasColumnType("vetting_result_enum");
         });
 
-        modelBuilder.Entity<Suppliercategorychangelog>(entity =>
+            //   modelBuilder.Entity<Suppliercategorychangelog>(entity =>
+            //   {
+            //       entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
+            //             .HasColumnName("category").HasColumnType("supplier_category_enum");
+            //   });
+      
+      modelBuilder.Entity<Suppliercategorychangelog>(entity =>
         {
-            entity.Property("category").HasField("_category").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("category").HasColumnType("supplier_category_enum");
+            entity.Property<SupplierCategory?>("Previouscategory")
+                  .HasColumnName("previouscategory")
+                  .HasColumnType("supplier_category_enum");
+ 
+            entity.Property<SupplierCategory?>("Newcategory")
+                  .HasColumnName("newcategory")
+                  .HasColumnType("supplier_category_enum");
         });
 
         modelBuilder.Entity<Transaction>(entity =>
@@ -278,6 +343,12 @@ public partial class AppDbContext
             entity.Property("Status").HasField("_status").UsePropertyAccessMode(PropertyAccessMode.Field)
                   .HasColumnName("status").HasColumnType("transaction_status_enum");
         });
+
+            modelBuilder.Entity<Transactionlog>(entity =>
+            {
+            entity.Property("Logtype").HasField("_logtype").UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("logtype").HasColumnType("log_type_enum");
+            });
 
         modelBuilder.Entity<Transport>(entity =>
         {
@@ -299,8 +370,18 @@ public partial class AppDbContext
 
         modelBuilder.Entity<Vettingrecord>(entity =>
         {
-            entity.Property("decision").HasField("_decision").UsePropertyAccessMode(PropertyAccessMode.Field)
-                  .HasColumnName("decision").HasColumnType("vetting_decision_enum");
+            entity.Property("decision")
+                  .HasField("_decision")
+                  .UsePropertyAccessMode(PropertyAccessMode.Field)
+                  .HasColumnName("decision")
+                  .HasColumnType("vetting_decision_enum");
+
+            entity.Ignore("vettingid");
+            entity.Ignore("supplierid");
+            entity.Ignore("vettedbyuserid");
+            entity.Ignore("vettedat");
+            entity.Ignore("notes");
+            entity.Ignore("decision_public");
         });
     }
 }

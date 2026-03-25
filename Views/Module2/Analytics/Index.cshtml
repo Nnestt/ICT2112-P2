@@ -1,0 +1,123 @@
+@model ProRental.Controllers.AnalyticsIndexViewModel
+@{
+    ViewData["Title"] = "Analytics";
+    var today    = DateTime.Now.ToString("yyyy-MM-dd");
+    var startVal = Model.FilterStart?.ToString("yyyy-MM-dd") ?? today;
+    var endVal   = Model.FilterEnd?.ToString("yyyy-MM-dd")   ?? today;
+    var selAll = (Model.FilterType == null || Model.FilterType == "ALL") ? "selected" : "";
+    var selD   = Model.FilterType == "DAILY"     ? "selected" : "";
+    var selS   = Model.FilterType == "SUPTREND"  ? "selected" : "";
+    var selP   = Model.FilterType == "PRODTREND" ? "selected" : "";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-bar-chart-line me-2" style="color:#0d6efd;"></i>Analytics</h2>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>New Analytics
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ExportNote"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show">
+            @TempData["ExportNote"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3" id="filterForm">
+
+                <!-- Type -->
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">Type</label>
+                    <select name="type" class="form-select">
+                        <option value="ALL"       selected="@selAll">All Types</option>
+                        <option value="DAILY"     selected="@selD">Daily</option>
+                        <option value="SUPTREND"  selected="@selS">Supplier Trend</option>
+                        <option value="PRODTREND" selected="@selP">Product Trend</option>
+                    </select>
+                </div>
+
+                <!-- Date range -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Date Range</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" name="start" class="form-control" value="@startVal" />
+                        <input type="date" name="end"   class="form-control" value="@endVal" />
+                    </div>
+                </div>
+
+                <!-- Name search -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Search by Name</label>
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Supplier, product, or any name..."
+                           value="@Model.FilterSearch" />
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th><th>Type</th><th>Start</th><th>End</th>
+                        <th>Loans</th><th>Returns</th><th>Name</th><th>Value</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Analytics)
+                    {
+                        var typeBadge = item.GetAnalyticsType() switch {
+                            "DAILY"     => "bg-info",
+                            "SUPTREND"  => "bg-warning text-dark",
+                            "PRODTREND" => "bg-success",
+                            _           => "bg-secondary"
+                        };
+                        var dispStart = item.GetStartDate()?.AddHours(8);
+                        var dispEnd   = item.GetEndDate()?.AddHours(8);
+                        <tr>
+                            <td class="align-middle">@item.GetID()</td>
+                            <td class="align-middle">
+                                <span class="badge @typeBadge">@item.GetAnalyticsType()</span>
+                            </td>
+                            <td class="align-middle">@dispStart?.ToString("yyyy-MM-dd")</td>
+                            <td class="align-middle">@dispEnd?.ToString("yyyy-MM-dd")</td>
+                            <td class="align-middle">@item.GetLoanAmt()</td>
+                            <td class="align-middle">@item.GetReturnAmt()</td>
+                            <td class="align-middle">@item.GetRefPrimaryName()</td>
+                            <td class="align-middle">
+                                @if (item.GetAnalyticsType() == "DAILY")
+                                { <span class="text-muted">—</span> }
+                                else
+                                { @item.GetRefValue()?.ToString("0.00") }
+                            </td>
+                            <td class="align-middle">
+                                <a asp-action="Details" asp-route-id="@item.GetID()"
+                                   class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Analytics.Any())
+                    {
+                        <tr><td colspan="9" class="text-center text-muted py-4">No analytics records found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
