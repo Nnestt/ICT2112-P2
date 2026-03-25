@@ -1,6 +1,7 @@
 using ProRental.Data.Module2.Interfaces;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Enums;
+using ProRental.Interfaces.Domain;
 
 namespace ProRental.Domain.Module2.P22.Controls;
 
@@ -11,6 +12,7 @@ namespace ProRental.Domain.Module2.P22.Controls;
 public class ReplenishmentRequestControl
 {
     private readonly IReplenishmentRequestMapper _mapper;
+    // private readonly IResupplyService _resupplyService;
 
     public ReplenishmentRequestControl(IReplenishmentRequestMapper mapper)
     {

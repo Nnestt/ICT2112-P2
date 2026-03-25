@@ -12,18 +12,7 @@ using ProRental.Domain.Controls;
 using ProRental.Controllers;
 using ProRental.Controllers.Module1;
 using ProRental.Data.Services;
-
-// uncomment when ready to code
-// using ProRental.Data;
-// using ProRental.Domain.Controls;
-// using ProRental.Domain.Entities;
-// using ProRental.Interfaces.Domain;
-// using ProRental.Interfaces.Data;
-// using ProRental.Controllers;
-using ProRental.Interfaces;
-using ProRental.Domain.Control;
 using ProRental.Data.Interfaces;
-using ProRental.Data.Gateways;
 
 
 
@@ -205,6 +194,7 @@ builder.Services.AddScoped<ProRental.Interfaces.IPurchaseOrderService, ProRental
 builder.Services.AddScoped<ProRental.Interfaces.IRentalOrderLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
 builder.Services.AddScoped<ProRental.Interfaces.IInventoryTransactionLogger>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionLogControl>());
 builder.Services.AddScoped<ProRental.Interfaces.ITransactionLoggingUI>(sp => sp.GetRequiredService<ProRental.Domain.Module2.P2_2.Controls.TransactionFilterControl>());
+
 //Team P2-3
 // Data source
 builder.Services.AddScoped<IProductMapper, ProductMapper>();
