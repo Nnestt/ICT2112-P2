@@ -187,9 +187,26 @@
 
                     @if (Model.CarbonFootprint.HasValue)
                     {
+                        var selectedProductName = Model.ProductOptions?.FirstOrDefault(item => item.Value == Model.ProductId?.ToString())?.Text ?? "Unknown product";
+                        var isEcoFriendly = Model.CarbonFootprint.Value < 250;
+
                         <div class="alert alert-success mt-4 mb-0">
                             <div class="fw-semibold mb-1">Calculation saved successfully.</div>
+                            <div>Product Name: <strong>@selectedProductName</strong></div>
                             <div>Calculated product carbon footprint: <strong>@Model.CarbonFootprint.Value.ToString("0.00") g CO2e</strong></div>
+
+                            @if (isEcoFriendly)
+                            {
+                                <div class="text-success mt-2">
+                                    <i class="bi bi-check-circle-fill me-1"></i> This product is eco friendly
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-danger mt-2">
+                                    <i class="bi bi-x-circle-fill me-1"></i> This product is not eco friendly
+                                </div>
+                            }
                         </div>
                     }
                 </div>
