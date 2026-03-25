@@ -1,4 +1,5 @@
 @model List<ProRental.Domain.Entities.Transactionlog>
+@using System.Text.Json
 
 @{
     ViewData["Title"] = "Transaction Logging";
@@ -228,14 +229,14 @@
                         <label class="form-label fw-semibold small mb-1">Filter By</label>
                         <select id="poFilterType" class="form-select form-select-sm">
                             <option value="">— No Filter —</option>
-                            <option value="supplier">Supplier ID</option>
+                            <option value="supplier">Supplier Name</option>
                             <option value="poid">PO ID</option>
                             <option value="daterange">Date Range</option>
                         </select>
                     </div>
                     <div class="col-md-3" id="poValueGroup">
                         <label class="form-label fw-semibold small mb-1">Value</label>
-                        <input type="text" id="poFilterValue" class="form-control form-control-sm" placeholder="Enter ID..." />
+                        <input type="text" id="poFilterValue" class="form-control form-control-sm" placeholder="Enter supplier name..." />
                     </div>
                     <div class="col-md-2 d-none" id="poStartGroup">
                         <label class="form-label fw-semibold small mb-1">Start</label>
@@ -269,7 +270,7 @@
                                 <tr>
                                     <th>Log ID</th>
                                     <th>PO ID</th>
-                                    <th>Supplier ID</th>
+                                    <th>Supplier</th>
                                     <th>PO Date</th>
                                     <th>Total Amount</th>
                                     <th>Created At</th>
@@ -280,10 +281,22 @@
                                 @foreach (var log in purchaseOrderLogs)
                                 {
                                     var po = log.Purchaseorderlog;
-                                    <tr data-supplier="@po?.supplier_id" data-poid="@po?.po_id" data-date="@log.created_at?.ToString("yyyy-MM-dd")">
+                                    string? poSupplierName = null;
+                                    if (!string.IsNullOrWhiteSpace(po?.details_json))
+                                    {
+                                        try
+                                        {
+                                            var poDoc = JsonDocument.Parse(po.details_json);
+                                            if (poDoc.RootElement.TryGetProperty("supplierName", out var snEl))
+                                                poSupplierName = snEl.GetString();
+                                        }
+                                        catch { }
+                                    }
+                                    var supplierDisplay = poSupplierName ?? (po?.supplier_id != null ? $"#{po.supplier_id}" : "—");
+                                    <tr data-supplier="@supplierDisplay.ToLower()" data-poid="@po?.po_id" data-date="@log.created_at?.ToString("yyyy-MM-dd")">
                                         <td class="fw-semibold">@log.transaction_logid</td>
                                         <td>@(po?.po_id.ToString() ?? "—")</td>
-                                        <td>@(po?.supplier_id?.ToString() ?? "—")</td>
+                                        <td>@supplierDisplay</td>
                                         <td>@(po?.po_date?.ToString("yyyy-MM-dd") ?? "—")</td>
                                         <td>@(po?.total_amount != null ? "$" + po.total_amount : "—")</td>
                                         <td><small class="text-muted">@(log.created_at?.ToString("yyyy-MM-dd HH:mm") ?? "—")</small></td>
@@ -388,6 +401,17 @@
                                     var custId = log.Rentalorderlog?.customer_id?.ToString() ?? log.Returnlog?.customer_id ?? "";
                                     var suppId = log.Purchaseorderlog?.supplier_id?.ToString() ?? "";
                                     var ordId = log.Rentalorderlog?.order_id?.ToString() ?? "";
+                                    string? allTabSupplierName = null;
+                                    if (!string.IsNullOrWhiteSpace(log.Purchaseorderlog?.details_json))
+                                    {
+                                        try
+                                        {
+                                            var allDoc = JsonDocument.Parse(log.Purchaseorderlog.details_json);
+                                            if (allDoc.RootElement.TryGetProperty("supplierName", out var snEl2))
+                                                allTabSupplierName = snEl2.GetString();
+                                        }
+                                        catch { }
+                                    }
 
                                     <tr data-customer="@custId" data-supplier="@suppId" data-order="@ordId" data-date="@log.created_at?.ToString("yyyy-MM-dd")">
                                         <td class="fw-semibold">@log.transaction_logid</td>
@@ -412,7 +436,8 @@
                                             }
                                             else if (log.Purchaseorderlog != null)
                                             {
-                                                <small>PO @log.Purchaseorderlog.po_id — Supplier @log.Purchaseorderlog.supplier_id — $@log.Purchaseorderlog.total_amount</small>
+                                                var allSupplierDisplay = allTabSupplierName ?? $"#{log.Purchaseorderlog.supplier_id}";
+                                                <small>PO @log.Purchaseorderlog.po_id — @allSupplierDisplay — $@log.Purchaseorderlog.total_amount</small>
                                             }
                                             else
                                             {
@@ -485,7 +510,7 @@
                 if (filterType === 'customer') {
                     show = row.getAttribute('data-customer') === filterValue;
                 } else if (filterType === 'supplier') {
-                    show = row.getAttribute('data-supplier') === filterValue;
+                    show = (row.getAttribute('data-supplier') || '').includes(filterValue.toLowerCase());
                 } else if (filterType === 'order') {
                     show = row.getAttribute('data-order') === filterValue;
                 } else if (filterType === 'batch') {
