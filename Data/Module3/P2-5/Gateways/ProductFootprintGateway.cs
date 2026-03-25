@@ -30,12 +30,28 @@ public sealed class ProductFootprintGateway : IProductFootprintGateway
 
     public List<ChartData> GetProductGraphData()
     {
+        var namesById = _dbContext.Productdetails
+            .Select(detail => new
+            {
+                Id = EF.Property<int>(detail, "Productid"),
+                Name = EF.Property<string>(detail, "Name")
+            })
+            .ToDictionary(entry => entry.Id, entry => entry.Name);
+
         return _dbContext.Productfootprints
             .AsEnumerable()
             .GroupBy(GetProductId)
-            .Select(group => new ChartData(
-                $"Product {group.Key}",
-                Math.Round(group.Sum(GetTotalCo2), 2)))
+            .Select(group =>
+            {
+                var productId = group.Key;
+                var name = namesById.TryGetValue(productId, out var productName)
+                    ? productName
+                    : $"Product {productId}";
+
+                return new ChartData(
+                    name,
+                    Math.Round(group.Sum(GetTotalCo2), 2));
+            })
             .OrderByDescending(graph => graph.Value)
             .ThenBy(graph => graph.Label)
             .ToList();
@@ -43,12 +59,28 @@ public sealed class ProductFootprintGateway : IProductFootprintGateway
 
     public List<ChartData> GetHotspotData(int top = 5)
     {
+        var namesById = _dbContext.Productdetails
+            .Select(detail => new
+            {
+                Id = EF.Property<int>(detail, "Productid"),
+                Name = EF.Property<string>(detail, "Name")
+            })
+            .ToDictionary(entry => entry.Id, entry => entry.Name);
+
         return _dbContext.Productfootprints
             .AsEnumerable()
             .GroupBy(GetProductId)
-            .Select(group => new ChartData(
-                $"Product {group.Key}",
-                Math.Round(group.Average(GetTotalCo2), 2)))
+            .Select(group =>
+            {
+                var productId = group.Key;
+                var name = namesById.TryGetValue(productId, out var productName)
+                    ? productName
+                    : $"Product {productId}";
+
+                return new ChartData(
+                    name,
+                    Math.Round(group.Average(GetTotalCo2), 2));
+            })
             .OrderByDescending(hotspot => hotspot.Value)
             .ThenBy(hotspot => hotspot.Label)
             .Take(top)

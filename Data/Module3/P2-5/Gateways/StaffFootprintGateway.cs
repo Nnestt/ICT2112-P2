@@ -30,12 +30,31 @@ public sealed class StaffFootprintGateway : IStaffFootprintGateway
 
     public List<ChartData> GetStaffGraphData()
     {
+        var namesById = _dbContext.Staff
+            .Join(_dbContext.Users,
+                staff => EF.Property<int>(staff, "Userid"),
+                user => EF.Property<int>(user, "Userid"),
+                (staff, user) => new
+                {
+                    StaffId = EF.Property<int>(staff, "Staffid"),
+                    Name = EF.Property<string>(user, "Name")
+                })
+            .ToDictionary(entry => entry.StaffId, entry => entry.Name);
+
         return _dbContext.Stafffootprints
             .AsEnumerable()
             .GroupBy(GetStaffId)
-            .Select(group => new ChartData(
-                $"Staff {group.Key}",
-                Math.Round(group.Sum(GetTotalStaffCo2), 2)))
+            .Select(group =>
+            {
+                var staffId = group.Key;
+                var name = namesById.TryGetValue(staffId, out var staffName)
+                    ? staffName
+                    : $"Staff {staffId}";
+
+                return new ChartData(
+                    name,
+                    Math.Round(group.Sum(GetTotalStaffCo2), 2));
+            })
             .OrderByDescending(graph => graph.Value)
             .ThenBy(graph => graph.Label)
             .ToList();
@@ -43,12 +62,31 @@ public sealed class StaffFootprintGateway : IStaffFootprintGateway
 
     public List<ChartData> GetHotspotData(int top = 5)
     {
+        var namesById = _dbContext.Staff
+            .Join(_dbContext.Users,
+                staff => EF.Property<int>(staff, "Userid"),
+                user => EF.Property<int>(user, "Userid"),
+                (staff, user) => new
+                {
+                    StaffId = EF.Property<int>(staff, "Staffid"),
+                    Name = EF.Property<string>(user, "Name")
+                })
+            .ToDictionary(entry => entry.StaffId, entry => entry.Name);
+
         return _dbContext.Stafffootprints
             .AsEnumerable()
             .GroupBy(GetStaffId)
-            .Select(group => new ChartData(
-                $"Staff {group.Key}",
-                Math.Round(group.Average(GetTotalStaffCo2), 2)))
+            .Select(group =>
+            {
+                var staffId = group.Key;
+                var name = namesById.TryGetValue(staffId, out var staffName)
+                    ? staffName
+                    : $"Staff {staffId}";
+
+                return new ChartData(
+                    name,
+                    Math.Round(group.Average(GetTotalStaffCo2), 2));
+            })
             .OrderByDescending(hotspot => hotspot.Value)
             .ThenBy(hotspot => hotspot.Label)
             .Take(top)

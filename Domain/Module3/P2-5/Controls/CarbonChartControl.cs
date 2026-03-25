@@ -1,11 +1,12 @@
 using ProRental.Data.Module3.P2_5.Interfaces;
+using ProRental.Domain.Module3.P2_5;
 using ProRental.Domain.Module3.P2_5.Entities;
 using ProRental.Domain.Module3.P2_5.Observers;
 using ProRental.Interfaces.Module3.P2_5;
 
 namespace ProRental.Domain.Module3.P2_5.Controls;
 
-public sealed class CarbonChartControl : ICarbonChartService
+public sealed class CarbonChartControl : ICarbonChartControl
 {
     private readonly IBuildingFootprintGateway _buildingFootprintGateway;
     private readonly IProductFootprintGateway _productFootprintGateway;
@@ -43,7 +44,7 @@ public sealed class CarbonChartControl : ICarbonChartService
         return Hotspots;
     }
 
-    public CarbonDashboardViewModel BuildDashboardViewModel()
+    public CarbonDashboardDto BuildDashboardDto()
     {
         var productGraphData = _productFootprintGateway.GetProductGraphData();
         var buildingGraphData = CreateGraphs();
@@ -67,7 +68,7 @@ public sealed class CarbonChartControl : ICarbonChartService
         subject.AttachObserver(observer);
         subject.Evaluate();
 
-        return new CarbonDashboardViewModel
+        return new CarbonDashboardDto
         {
             ProductTrendline = _productFootprintGateway.GetHourlyChartData(),
             ProductBarChart = productGraphData,
