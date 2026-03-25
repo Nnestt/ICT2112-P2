@@ -58,9 +58,9 @@ public sealed class CarbonChartControl : ICarbonChartControl
 
         var hotspotThresholds = new List<ChartData>
         {
-            new("Product", 500.0),
-            new("Building", 650.0),
-            new("Staff", 40.0)
+            new("Product", 1500.0),
+            new("Building", 2000.0),
+            new("Staff", 80.0)
         };
 
         var subject = new Subject(Hotspots, hotspotThresholds);
