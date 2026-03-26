@@ -10,31 +10,49 @@ public partial class Alert
 
     private DateTime? _resolvedat;
 
+    // Factory Method
+    public static Alert Create(int productId, int minThreshold, AlertStatus status, string message, int currentStock)
+    {
+        var alert = new Alert();
+        alert.SetAlertId(0); // Will be assigned by database
+        alert.SetProductId(productId);
+        alert.SetMinThreshold(minThreshold);
+        alert.SetAlertStatus(status);
+        alert.SetCreatedAt(DateTime.UtcNow);
+        alert.SetCurrentStock(currentStock);
+        alert.SetMessage(message);
+        return alert;
+    }
+
+    // Business Methods
+    public void UpdateStatus(AlertStatus newStatus)
+    {
+        _status = newStatus;
+        if (newStatus == AlertStatus.RESOLVED)
+        {
+            _resolvedat = DateTime.UtcNow;
+        }
+    }
+
+    // Getters
     public int GetAlertId() => _alertid;
-    public void SetAlertId(int alertId) => _alertid = alertId;
-
     public int GetProductId() => _productid;
-    public void SetProductId(int productId) => _productid = productId;
-
     public AlertStatus GetAlertStatus() => _status;
-    public void SetAlertStatus(AlertStatus status) => _status = status;
-    public void UpdateStatus(AlertStatus newValue) => _status = newValue;
-
     public int GetMinThreshold() => _minthreshold;
-    public void SetMinThreshold(int minThreshold) => _minthreshold = minThreshold;
-
     public int GetCurrentStock() => _currentstock;
-    public void SetCurrentStock(int currentStock) => _currentstock = currentStock;
-
     public string GetMessage() => _message;
-    public void SetMessage(string message) => _message = message;
-
     public int? GetStaffId() => _staffid;
-    public void SetStaffId(int? staffId) => _staffid = staffId;
-
     public DateTime GetCreatedAt() => _createdat;
-    public void SetCreatedAt(DateTime createdAt) => _createdat = createdAt;
-
     public DateTime? GetResolvedAt() => _resolvedat;
-    public void SetResolvedAt(DateTime? resolvedAt) => _resolvedat = resolvedAt;
+
+    // Setters (Private)
+    private void SetAlertId(int alertId) => _alertid = alertId;
+    private void SetProductId(int productId) => _productid = productId;
+    private void SetAlertStatus(AlertStatus status) => _status = status;
+    private void SetMinThreshold(int minThreshold) => _minthreshold = minThreshold;
+    private void SetCurrentStock(int currentStock) => _currentstock = currentStock;
+    private void SetMessage(string message) => _message = message;
+    public void SetStaffId(int? staffId) => _staffid = staffId;
+    private void SetCreatedAt(DateTime createdAt) => _createdat = createdAt;
+    private void SetResolvedAt(DateTime? resolvedAt) => _resolvedat = resolvedAt;
 }

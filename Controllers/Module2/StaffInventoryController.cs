@@ -101,7 +101,7 @@ public class StaffInventoryController : Controller
 
             if (failedCount > 0)
             {
-                TempData["Message"] = $"Updated {updatedCount} item(s) to {parsedStatus}. {failedCount} item(s) failed to update.";
+                TempData["Message"] = $"Updated {updatedCount} item(s) to {parsedStatus}. {failedCount} item(s) failed to update. Items with temporary serial numbers (containing 'TEMP') must have their serial numbers changed first.";
             }
             else
             {
@@ -254,6 +254,13 @@ public class StaffInventoryController : Controller
             {
                 TempData["Message"] = "Inventory item not found.";
                 return RedirectToAction(nameof(DisplayInventoryList));
+            }
+
+            // Prevent status changes on items with temporary serial numbers
+            if (existingItem.GetSerialNumber().Contains("TEMP") && status.HasValue && status.Value != existingItem.GetStatus())
+            {
+                TempData["Message"] = $"Cannot change status for items with temporary serial numbers. Items with temporary serial numbers (containing 'TEMP') must have their serial numbers changed first.";
+                return RedirectToAction(nameof(ShowProductDetails), new { inventoryItemId });
             }
 
             if (productId <= 0)
