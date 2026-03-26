@@ -62,14 +62,23 @@ public sealed class ProductFootprintGateway : IProductFootprintGateway
                 _dbContext.Products,
                 footprint => EF.Property<int>(footprint, "Productid"),
                 product => EF.Property<int>(product, "Productid"),
-                (footprint, product) => new ProductFootprintListItem(
-                    EF.Property<int>(footprint, "Productcarbonfootprintid"),
-                    EF.Property<int>(footprint, "Productid"),
-                    EF.Property<string>(product, "Sku"),
-                    EF.Property<int>(footprint, "Badgeid"),
-                    EF.Property<double?>(footprint, "Producttoxicpercentage"),
-                    EF.Property<double>(footprint, "Totalco2"),
-                    EF.Property<DateTime>(footprint, "Calculatedat")))
+                (footprint, product) => new
+                {
+                    Footprint = footprint,
+                    Product = product
+                })
+            .Join(
+                _dbContext.Ecobadges,
+                item => EF.Property<int>(item.Footprint, "Badgeid"),
+                badge => EF.Property<int>(badge, "Badgeid"),
+                (item, badge) => new ProductFootprintListItem(
+                    EF.Property<int>(item.Footprint, "Productcarbonfootprintid"),
+                    EF.Property<int>(item.Footprint, "Productid"),
+                    EF.Property<string>(item.Product, "Sku"),
+                    EF.Property<string>(badge, "Badgename"),
+                    EF.Property<double?>(item.Footprint, "Producttoxicpercentage"),
+                    EF.Property<double>(item.Footprint, "Totalco2"),
+                    EF.Property<DateTime>(item.Footprint, "Calculatedat")))
             .AsEnumerable()
             .OrderByDescending(footprint => footprint.CalculatedAt)
             .ThenBy(footprint => footprint.ProductName)
@@ -93,12 +102,22 @@ public sealed class ProductFootprintGateway : IProductFootprintGateway
 
     public ProductFootprintCalculationResult SaveCalculatedFootprint(int productId, double toxicPercentage, double totalCo2)
     {
-        // productfootprint.badgeid is required by the current schema,
-        // so persist with the first available badge without exposing badge logic in the feature flow.
+        // Match the calculated footprint to the first EcoBadge threshold that can contain it.
+        // If the footprint exceeds all configured thresholds, use the highest-threshold badge.
         var badgeId = _dbContext.Ecobadges
+            .Where(badge => EF.Property<double>(badge, "Maxcarbong") >= totalCo2)
+            .OrderBy(badge => EF.Property<double>(badge, "Maxcarbong"))
             .Select(badge => EF.Property<int>(badge, "Badgeid"))
-            .OrderBy(id => id)
             .FirstOrDefault();
+
+        if (badgeId == 0)
+        {
+            badgeId = _dbContext.Ecobadges
+                .OrderByDescending(badge => EF.Property<double>(badge, "Maxcarbong"))
+                .Select(badge => EF.Property<int>(badge, "Badgeid"))
+                .FirstOrDefault();
+        }
+
         if (badgeId == 0)
         {
             throw new InvalidOperationException("Unable to save product footprint because no EcoBadge records exist.");

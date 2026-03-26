@@ -4,7 +4,7 @@ public sealed record ProductFootprintListItem(
     int ProductCarbonFootprintId,
     int ProductId,
     string ProductName,
-    int BadgeId,
+    string BadgeName,
     double? ToxicPercentage,
     double TotalCo2,
     DateTime CalculatedAt);

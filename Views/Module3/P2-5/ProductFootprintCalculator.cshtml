@@ -233,8 +233,7 @@
                                         <tr>
                                             <th>Footprint ID</th>
                                             <th>Product</th>
-                                            <th>Product ID</th>
-                                            <th>Badge ID</th>
+                                            <th>Badge</th>
                                             <th>Toxic %</th>
                                             <th>Total CO2</th>
                                             <th>Calculated At</th>
@@ -247,8 +246,7 @@
                                             <tr>
                                                 <td>@footprint.ProductCarbonFootprintId</td>
                                                 <td>@footprint.ProductName</td>
-                                                <td>@footprint.ProductId</td>
-                                                <td>@footprint.BadgeId</td>
+                                                <td>@footprint.BadgeName</td>
                                                 <td>@(footprint.ToxicPercentage?.ToString("0.00") ?? "N/A")</td>
                                                 <td>@footprint.TotalCo2.ToString("0.00") g CO2e</td>
                                                 <td>@footprint.CalculatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
