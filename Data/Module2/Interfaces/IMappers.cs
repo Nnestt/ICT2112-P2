@@ -3,7 +3,7 @@ using ProRental.Domain.Enums;
 
 namespace ProRental.Interfaces.Data;
 
-public interface IProductMapper
+public interface IProductRead
 {
 	public Product? FindById(int productId);
 
@@ -12,13 +12,18 @@ public interface IProductMapper
 	public ICollection<Product>? FindByCategoryId(int categoryId);
 
 	public ICollection<Product>? FindByStatus(ProductStatus status);
+}
 
+public interface IProductWrite
+{
 	public void Insert(Product product);
 
 	public void Update(Product product);
 
 	public void Delete(Product product);
 }
+
+public interface IProductMapper : IProductRead, IProductWrite {}
 
 public interface IAlertMapper
 {

@@ -204,13 +204,13 @@ builder.Services.AddScoped<ProRental.Interfaces.ITransactionLoggingUI>(sp => sp.
 
 //Team P2-3
 // Data source
-builder.Services.AddScoped<IProductMapper, ProductMapper>();
 builder.Services.AddScoped<IAlertMapper, AlertMapper>();
 builder.Services.AddScoped<IInventoryItemMapper, InventoryItemMapper>();
 builder.Services.AddScoped<ICategoryMapper, CategoryMapper>();
 builder.Services.AddScoped<IDamageReportMapper, DamageReportMapper>();
 
 // ── Core Mapper Implementations (Registered Once) ──
+builder.Services.AddScoped<ProductMapper>();
 builder.Services.AddScoped<LoanListMapper>();
 builder.Services.AddScoped<LoanItemMapper>();
 builder.Services.AddScoped<ReturnRequestMapper>();
@@ -219,6 +219,7 @@ builder.Services.AddScoped<ClearanceBatchMapper>();
 builder.Services.AddScoped<ClearanceItemMapper>();
 
 // ── Forwarding the Standard Interfaces ──
+builder.Services.AddScoped<IProductMapper>(sp => sp.GetRequiredService<ProductMapper>());
 builder.Services.AddScoped<ILoanListMapper>(sp => sp.GetRequiredService<LoanListMapper>());
 builder.Services.AddScoped<ILoanItemMapper>(sp => sp.GetRequiredService<LoanItemMapper>());
 builder.Services.AddScoped<IReturnRequestMapper>(sp => sp.GetRequiredService<ReturnRequestMapper>());
@@ -227,6 +228,7 @@ builder.Services.AddScoped<IClearanceBatchMapper>(sp => sp.GetRequiredService<Cl
 builder.Services.AddScoped<IClearanceItemMapper>(sp => sp.GetRequiredService<ClearanceItemMapper>());
 
 // ── Forwarding the Read-Only Segregated Interfaces ──
+builder.Services.AddScoped<IProductRead>(sp => sp.GetRequiredService<ProductMapper>());
 builder.Services.AddScoped<ILoanListRead>(sp => sp.GetRequiredService<LoanListMapper>());
 builder.Services.AddScoped<ILoanItemRead>(sp => sp.GetRequiredService<LoanItemMapper>());
 builder.Services.AddScoped<IReturnRequestRead>(sp => sp.GetRequiredService<ReturnRequestMapper>());
