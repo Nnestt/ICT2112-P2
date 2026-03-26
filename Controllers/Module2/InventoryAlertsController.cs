@@ -69,7 +69,7 @@ public class InventoryAlertsController : Controller
         var allAlerts = _alertControl.GetAllAlerts();
         var resolvedAlerts = allAlerts?
             .Where(a => a.GetAlertStatus() == AlertStatus.RESOLVED)
-            .OrderByDescending(a => a.GetResolvedAt())
+            .OrderByDescending(a => a.GetUpdatedAt())
             .ToList() ?? new List<Alert>();
         
         ViewData["Filter"] = "Alert History (Resolved)";

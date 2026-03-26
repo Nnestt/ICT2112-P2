@@ -4,11 +4,8 @@ namespace ProRental.Domain.Entities;
 
 public partial class Alert
 {
-    private int? _staffid;
     private AlertStatus _status;
     private AlertStatus Status { get => _status; set => _status = value; }
-
-    private DateTime? _resolvedat;
 
     // Factory Method
     public static Alert Create(int productId, int minThreshold, AlertStatus status, string message, int currentStock)
@@ -19,6 +16,7 @@ public partial class Alert
         alert.SetMinThreshold(minThreshold);
         alert.SetAlertStatus(status);
         alert.SetCreatedAt(DateTime.UtcNow);
+        alert.SetUpdatedAt(DateTime.UtcNow);
         alert.SetCurrentStock(currentStock);
         alert.SetMessage(message);
         return alert;
@@ -30,7 +28,7 @@ public partial class Alert
         _status = newStatus;
         if (newStatus == AlertStatus.RESOLVED)
         {
-            _resolvedat = DateTime.UtcNow;
+            SetUpdatedAt(DateTime.UtcNow);
         }
     }
 
@@ -41,9 +39,8 @@ public partial class Alert
     public int GetMinThreshold() => _minthreshold;
     public int GetCurrentStock() => _currentstock;
     public string GetMessage() => _message;
-    public int? GetStaffId() => _staffid;
     public DateTime GetCreatedAt() => _createdat;
-    public DateTime? GetResolvedAt() => _resolvedat;
+    public DateTime GetUpdatedAt() => _updatedat == default ? _createdat : _updatedat;
 
     // Setters (Private)
     private void SetAlertId(int alertId) => _alertid = alertId;
@@ -52,7 +49,6 @@ public partial class Alert
     private void SetMinThreshold(int minThreshold) => _minthreshold = minThreshold;
     private void SetCurrentStock(int currentStock) => _currentstock = currentStock;
     private void SetMessage(string message) => _message = message;
-    public void SetStaffId(int? staffId) => _staffid = staffId;
     private void SetCreatedAt(DateTime createdAt) => _createdat = createdAt;
-    private void SetResolvedAt(DateTime? resolvedAt) => _resolvedat = resolvedAt;
+    private void SetUpdatedAt(DateTime updatedAt) => _updatedat = updatedAt;
 }

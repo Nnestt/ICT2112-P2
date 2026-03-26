@@ -37,7 +37,7 @@
                     <th>Threshold</th>
                     <th>Status</th>
                     <th>Message</th>
-                    <th>Created</th>
+                    <th>@(isHistory ? "Resolved At" : "Created At")</th>
                     @if (!isHistory)
                     {
                         <th>Actions</th>
@@ -65,7 +65,20 @@
                             <td>@alert.GetMinThreshold()</td>
                             <td>@alert.GetAlertStatus()</td>
                             <td>@alert.GetMessage()</td>
-                            <td>@alert.GetCreatedAt().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                @{
+                                    var displayTime = "";
+                                    if (isHistory)
+                                    {
+                                        displayTime = alert.GetUpdatedAt().ToString("yyyy-MM-dd HH:mm");
+                                    }
+                                    else
+                                    {
+                                        displayTime = alert.GetCreatedAt().ToString("yyyy-MM-dd HH:mm");
+                                    }
+                                }
+                                @displayTime
+                            </td>
                             @if (!isHistory)
                             {
                                 <td>

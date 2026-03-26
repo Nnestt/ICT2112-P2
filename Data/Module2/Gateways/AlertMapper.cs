@@ -67,7 +67,6 @@ public class AlertMapper : IAlertMapper
 
         // Automatically map all scalar properties from incoming to existing
         _context.Entry(existing).CurrentValues.SetValues(alert);
-        _context.Entry(existing).Property("Updatedat").CurrentValue = DateTime.UtcNow;
 
         _context.SaveChanges();
     }

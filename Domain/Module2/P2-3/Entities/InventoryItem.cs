@@ -33,8 +33,6 @@ public partial class Inventoryitem
     }
 
     // Business Methods
-    public void UpdateStatus(InventoryStatus newValue) => _status = newValue;
-
     public void UpdateStatusAndDate(InventoryStatus status)
     {
         _status = status;
