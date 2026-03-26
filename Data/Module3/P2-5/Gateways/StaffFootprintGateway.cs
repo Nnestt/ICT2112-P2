@@ -119,6 +119,23 @@ public sealed class StaffFootprintGateway : IStaffFootprintGateway
         return Task.FromResult(items);
     }
 
+    public Task<List<StaffFootprintListItem>> GetStaffFootprintsAsync()
+    {
+        var items = _dbContext.Stafffootprints
+            .AsEnumerable()
+            .Select(footprint => new StaffFootprintListItem(
+                ReadMember<int>(footprint, "Staffcarbonfootprintid", "_staffcarbonfootprintid"),
+                GetStaffId(footprint),
+                GetTime(footprint),
+                ReadMember<double>(footprint, "Hoursworked", "_hoursworked"),
+                GetTotalStaffCo2(footprint)))
+            .OrderByDescending(item => item.Time)
+            .ThenByDescending(item => item.StaffCarbonFootprintId)
+            .ToList();
+
+        return Task.FromResult(items);
+    }
+
     public async Task<Stafffootprint> CreateStaffFootprintAsync(int staffId, DateTime time, double hoursWorked, double totalStaffCo2)
     {
         var footprint = new Stafffootprint();
@@ -130,6 +147,40 @@ public sealed class StaffFootprintGateway : IStaffFootprintGateway
         _dbContext.Stafffootprints.Add(footprint);
         await _dbContext.SaveChangesAsync();
         return footprint;
+    }
+
+    public async Task<Stafffootprint?> UpdateStaffFootprintAsync(int staffCarbonFootprintId, int staffId, DateTime time, double hoursWorked, double totalStaffCo2)
+    {
+        var footprint = await _dbContext.Stafffootprints
+            .FirstOrDefaultAsync(item => EF.Property<int>(item, "Staffcarbonfootprintid") == staffCarbonFootprintId);
+
+        if (footprint == null)
+        {
+            return null;
+        }
+
+        WriteMember(footprint, "Staffid", "_staffid", staffId);
+        WriteMember(footprint, "Time", "_time", time);
+        WriteMember(footprint, "Hoursworked", "_hoursworked", hoursWorked);
+        WriteMember(footprint, "Totalstaffco2", "_totalstaffco2", totalStaffCo2);
+
+        await _dbContext.SaveChangesAsync();
+        return footprint;
+    }
+
+    public async Task<bool> DeleteStaffFootprintAsync(int staffCarbonFootprintId)
+    {
+        var footprint = await _dbContext.Stafffootprints
+            .FirstOrDefaultAsync(item => EF.Property<int>(item, "Staffcarbonfootprintid") == staffCarbonFootprintId);
+
+        if (footprint == null)
+        {
+            return false;
+        }
+
+        _dbContext.Stafffootprints.Remove(footprint);
+        await _dbContext.SaveChangesAsync();
+        return true;
     }
 
     private static DateTime GetTime(Stafffootprint footprint)

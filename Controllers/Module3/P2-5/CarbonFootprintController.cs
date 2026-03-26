@@ -138,6 +138,117 @@ public class CarbonFootprintController : Controller
         }
     }
 
+    [HttpGet]
+    [Route("api/building-footprint")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetBuildingFootprints()
+    {
+        var footprints = await _buildingGateway.GetBuildingFootprintsAsync();
+
+        var response = footprints.Select(item => new
+        {
+            buildingCarbonFootprintId = item.BuildingCarbonFootprintId,
+            timehourly = item.Timehourly,
+            zone = item.Zone,
+            block = item.Block,
+            floor = item.Floor,
+            room = item.Room,
+            totalRoomCo2 = item.TotalRoomCo2
+        });
+
+        return Ok(response);
+    }
+
+    [HttpPut]
+    [Route("api/building-footprint/{buildingCarbonFootprintId:int}")]
+    [ProducesResponseType(typeof(Buildingfootprint), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateBuildingFootprint(int buildingCarbonFootprintId, [FromBody] BuildingFootprintRequest request)
+    {
+        if (buildingCarbonFootprintId <= 0)
+            return BadRequest(new { error = "buildingCarbonFootprintId must be a positive integer." });
+
+        if (request.RoomSize <= 0)
+            return BadRequest(new { error = "roomSize must be a positive number." });
+
+        if (request.Co2Level <= 0)
+            return BadRequest(new { error = "co2Level must be a positive number." });
+
+        var zoneWeights = new Dictionary<string, double>
+        {
+            { "North", 1.00 },
+            { "South", 1.25 },
+            { "East", 1.10 },
+            { "West", 1.15 },
+            { "Central", 1.35 }
+        };
+
+        var floorWeights = new Dictionary<string, double>
+        {
+            { "Level 1", 1.00 },
+            { "Level 2", 1.20 },
+            { "Level 3", 1.45 },
+            { "Level 4", 1.60 },
+            { "Level 5", 1.75 }
+        };
+
+        if (string.IsNullOrWhiteSpace(request.Zone) || !zoneWeights.ContainsKey(request.Zone))
+            return BadRequest(new { error = "zone must be one of: North, South, East, West, Central." });
+
+        if (string.IsNullOrWhiteSpace(request.Floor) || !floorWeights.ContainsKey(request.Floor))
+            return BadRequest(new { error = "floor must be one of: Level 1, Level 2, Level 3, Level 4, Level 5." });
+
+        if (string.IsNullOrWhiteSpace(request.Block))
+            return BadRequest(new { error = "block cannot be empty." });
+
+        if (string.IsNullOrWhiteSpace(request.Room))
+            return BadRequest(new { error = "room cannot be empty." });
+
+        try
+        {
+            const double CalibrationConstant = 0.000729;
+
+            var totalRoomCo2 = request.RoomSize * request.Co2Level * zoneWeights[request.Zone] * floorWeights[request.Floor] * CalibrationConstant;
+            totalRoomCo2 = Math.Round(totalRoomCo2, 2);
+
+            var updated = await _buildingGateway.UpdateBuildingFootprintAsync(
+                buildingCarbonFootprintId,
+                DateTime.UtcNow,
+                request.Zone,
+                request.Block,
+                request.Floor,
+                request.Room,
+                totalRoomCo2);
+
+            if (updated == null)
+            {
+                return NotFound(new { error = "Building footprint record not found." });
+            }
+
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpDelete]
+    [Route("api/building-footprint/{buildingCarbonFootprintId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBuildingFootprint(int buildingCarbonFootprintId)
+    {
+        var wasDeleted = await _buildingGateway.DeleteBuildingFootprintAsync(buildingCarbonFootprintId);
+        if (!wasDeleted)
+        {
+            return NotFound(new { error = "Building footprint record not found." });
+        }
+
+        return NoContent();
+    }
+
     /// <summary>
     /// Calculate and create a staff footprint record.
     /// Formula (seed-calibrated): totalStaffCo2 = hoursWorked × emissionRatePerHour
@@ -188,6 +299,105 @@ public class CarbonFootprintController : Controller
         {
             return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
         }
+    }
+
+    [HttpGet]
+    [Route("api/staff-footprint")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStaffFootprints()
+    {
+        var footprints = await _staffGateway.GetStaffFootprintsAsync();
+        var response = new List<object>(footprints.Count);
+
+        foreach (var item in footprints)
+        {
+            var department = await _staffGateway.GetDepartmentByStaffIdAsync(item.StaffId) ?? "Unknown";
+            var checkOutTime = item.Time;
+            var checkInTime = checkOutTime.AddHours(-item.HoursWorked);
+
+            response.Add(new
+            {
+                staffCarbonFootprintId = item.StaffCarbonFootprintId,
+                staffId = item.StaffId,
+                department,
+                checkInTime,
+                checkOutTime,
+                hoursWorked = Math.Round(item.HoursWorked, 2),
+                totalStaffCo2 = Math.Round(item.TotalStaffCo2, 2)
+            });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPut]
+    [Route("api/staff-footprint/{staffCarbonFootprintId:int}")]
+    [ProducesResponseType(typeof(Stafffootprint), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateStaffFootprint(int staffCarbonFootprintId, [FromBody] StaffFootprintRequest request)
+    {
+        if (staffCarbonFootprintId <= 0)
+            return BadRequest(new { error = "staffCarbonFootprintId must be a positive integer." });
+
+        if (request.StaffId <= 0)
+            return BadRequest(new { error = "staffId must be a positive integer." });
+
+        if (request.CheckOutTime <= request.CheckInTime)
+            return BadRequest(new { error = "checkOutTime must be later than checkInTime." });
+
+        if (!await _staffGateway.StaffExistsAsync(request.StaffId))
+            return BadRequest(new { error = "staffId does not exist." });
+
+        var department = await _staffGateway.GetDepartmentByStaffIdAsync(request.StaffId);
+        if (string.IsNullOrWhiteSpace(department))
+            return BadRequest(new { error = "Unable to determine department for this staffId." });
+
+        var hoursWorked = (request.CheckOutTime - request.CheckInTime).TotalHours;
+        if (hoursWorked <= 0)
+            return BadRequest(new { error = "hoursWorked must be a positive number." });
+
+        const double EmissionRatePerHour = 3.53;
+        var departmentWeight = GetDepartmentWeight(department);
+
+        var roundedHoursWorked = Math.Round(hoursWorked, 2);
+        var totalStaffCo2 = Math.Round(roundedHoursWorked * EmissionRatePerHour * departmentWeight, 2);
+
+        try
+        {
+            var updated = await _staffGateway.UpdateStaffFootprintAsync(
+                staffCarbonFootprintId,
+                request.StaffId,
+                request.CheckOutTime,
+                roundedHoursWorked,
+                totalStaffCo2);
+
+            if (updated == null)
+            {
+                return NotFound(new { error = "Staff footprint record not found." });
+            }
+
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpDelete]
+    [Route("api/staff-footprint/{staffCarbonFootprintId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteStaffFootprint(int staffCarbonFootprintId)
+    {
+        var wasDeleted = await _staffGateway.DeleteStaffFootprintAsync(staffCarbonFootprintId);
+        if (!wasDeleted)
+        {
+            return NotFound(new { error = "Staff footprint record not found." });
+        }
+
+        return NoContent();
     }
 
     [HttpGet]

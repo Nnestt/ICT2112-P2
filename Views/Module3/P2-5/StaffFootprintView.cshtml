@@ -212,9 +212,14 @@
                         </div>
 
                         <div class="row g-2 mb-4">
-                            <div class="col">
+                            <div class="col-auto">
                                 <button type="submit" id="calculateBtn" class="btn btn-success">
                                     <i class="bi bi-calculator me-2"></i>Calculate & Save Footprint
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" id="cancelEditBtn" class="btn btn-outline-secondary" style="display:none;">
+                                    Cancel Edit
                                 </button>
                             </div>
                         </div>
@@ -238,6 +243,39 @@
                                     <div id="calcResults"></div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <div>
+                                <h4 class="text-success mb-1">Saved Staff Footprints</h4>
+                                <p class="text-muted mb-0">Create, update, and delete records on this same page.</p>
+                            </div>
+                            <button type="button" id="refreshStaffListBtn" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Staff ID</th>
+                                        <th>Department</th>
+                                        <th>Check-In</th>
+                                        <th>Check-Out</th>
+                                        <th>Hours</th>
+                                        <th>Total CO2</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffRecordsBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">Loading records...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -312,9 +350,10 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+        <script>
         const EMISSION_RATE_PER_HOUR = 3.53;
         let staffOptions = [];
+        let editingStaffFootprintId = null;
 
         const form = document.getElementById('staffFootprintForm');
         const feedbackBanner = document.getElementById('feedbackBanner');
@@ -323,6 +362,9 @@
         const totalResult = document.getElementById('totalResult');
         const departmentSelect = document.getElementById('department');
         const staffIdSelect = document.getElementById('staffId');
+        const staffRecordsBody = document.getElementById('staffRecordsBody');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const refreshStaffListBtn = document.getElementById('refreshStaffListBtn');
 
         function clearFieldError(fieldName) {
             const errorEl = document.getElementById(`${fieldName}Error`);
@@ -338,6 +380,13 @@
             if (!feedbackBanner) return;
             feedbackBanner.style.display = 'block';
             feedbackBanner.className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            feedbackBanner.textContent = message;
+        }
+
+        function setInfoFeedback(message) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = 'alert alert-info';
             feedbackBanner.textContent = message;
         }
 
@@ -365,6 +414,44 @@
         function formatDateTimeForDisplay(localDateTimeString) {
             const date = new Date(localDateTimeString);
             return date.toLocaleString();
+        }
+
+        function toLocalInputValue(dateTimeValue) {
+            const date = new Date(dateTimeValue);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function setCreateMode() {
+            editingStaffFootprintId = null;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-calculator me-2"></i>Calculate & Save Footprint';
+            cancelEditBtn.style.display = 'none';
+        }
+
+        function setEditMode(record) {
+            editingStaffFootprintId = record.staffCarbonFootprintId;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Update & Save Footprint';
+            cancelEditBtn.style.display = 'inline-block';
+
+            departmentSelect.value = record.department;
+            populateStaffOptionsForDepartment(record.department);
+            staffIdSelect.value = String(record.staffId);
+            document.getElementById('checkInTime').value = toLocalInputValue(record.checkInTime);
+            document.getElementById('checkOutTime').value = toLocalInputValue(record.checkOutTime);
+            hideCalculationBreakdown();
+            setInfoFeedback(`Editing record #${record.staffCarbonFootprintId}. Update values and save.`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         async function loadStaffOptions() {
@@ -501,6 +588,54 @@
             };
         }
 
+        function createEmptyRow(message) {
+            return `<tr><td colspan="8" class="text-center text-muted py-4">${message}</td></tr>`;
+        }
+
+        async function loadStaffRecords() {
+            try {
+                staffRecordsBody.innerHTML = createEmptyRow('Loading records...');
+                const response = await fetch('/api/staff-footprint');
+                if (!response.ok) {
+                    throw new Error('Unable to load staff footprint records');
+                }
+
+                const records = await response.json();
+                if (!Array.isArray(records) || records.length === 0) {
+                    staffRecordsBody.innerHTML = createEmptyRow('No staff footprint records yet.');
+                    return;
+                }
+
+                staffRecordsBody.innerHTML = records.map(record => `
+                    <tr>
+                        <td>${record.staffCarbonFootprintId}</td>
+                        <td>${record.staffId}</td>
+                        <td>${record.department ?? ''}</td>
+                        <td>${formatDateTimeForDisplay(record.checkInTime)}</td>
+                        <td>${formatDateTimeForDisplay(record.checkOutTime)}</td>
+                        <td>${Number(record.hoursWorked).toFixed(2)}</td>
+                        <td>${Number(record.totalStaffCo2).toFixed(2)} kg CO2</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-outline-primary btn-sm me-1 edit-staff-btn"
+                                data-id="${record.staffCarbonFootprintId}"
+                                data-staff-id="${record.staffId}"
+                                data-department="${record.department ?? ''}"
+                                data-check-in="${record.checkInTime}"
+                                data-check-out="${record.checkOutTime}">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-staff-btn"
+                                data-id="${record.staffCarbonFootprintId}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                staffRecordsBody.innerHTML = createEmptyRow(error.message || 'Unable to load records.');
+            }
+        }
+
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
             resetFeedback();
@@ -529,8 +664,13 @@
             btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
 
             try {
-                const response = await fetch('/api/staff-footprint', {
-                    method: 'POST',
+                const isEditing = editingStaffFootprintId !== null;
+                const endpoint = isEditing
+                    ? `/api/staff-footprint/${editingStaffFootprintId}`
+                    : '/api/staff-footprint';
+
+                const response = await fetch(endpoint, {
+                    method: isEditing ? 'PUT' : 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -543,13 +683,21 @@
                         const data = await response.json();
                         err = data.error || data.message || err;
                     } catch {
-                        // Ignore JSON parse errors
+                        // ignore JSON parse errors
                     }
                     throw new Error(err);
                 }
 
-                setFeedback(`Staff footprint saved - totalStaffCo2: ${computed.totalStaffCo2.toFixed(2)} kg CO2`, 'success');
+                setFeedback(
+                    isEditing
+                        ? `Staff footprint updated - totalStaffCo2: ${computed.totalStaffCo2.toFixed(2)} kg CO2`
+                        : `Staff footprint saved - totalStaffCo2: ${computed.totalStaffCo2.toFixed(2)} kg CO2`,
+                    'success');
                 document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+                form.reset();
+                populateStaffOptionsForDepartment('');
+                setCreateMode();
+                await loadStaffRecords();
             } catch (error) {
                 setFeedback(error.message || 'An unexpected error occurred.', 'error');
             } finally {
@@ -581,7 +729,81 @@
             hideCalculationBreakdown();
         });
 
-        loadStaffOptions();
+        cancelEditBtn.addEventListener('click', () => {
+            form.reset();
+            populateStaffOptionsForDepartment('');
+            setCreateMode();
+            resetFeedback();
+            hideCalculationBreakdown();
+            document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+        });
+
+        refreshStaffListBtn.addEventListener('click', () => {
+            loadStaffRecords();
+        });
+
+        staffRecordsBody.addEventListener('click', async (event) => {
+            const editBtn = event.target.closest('.edit-staff-btn');
+            const deleteBtn = event.target.closest('.delete-staff-btn');
+
+            if (editBtn) {
+                setEditMode({
+                    staffCarbonFootprintId: parseInt(editBtn.dataset.id, 10),
+                    staffId: parseInt(editBtn.dataset.staffId, 10),
+                    department: editBtn.dataset.department,
+                    checkInTime: editBtn.dataset.checkIn,
+                    checkOutTime: editBtn.dataset.checkOut
+                });
+                return;
+            }
+
+            if (!deleteBtn) {
+                return;
+            }
+
+            const id = parseInt(deleteBtn.dataset.id, 10);
+            if (!confirm(`Delete staff footprint record #${id}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/staff-footprint/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to delete record';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch {
+                        // ignore JSON parse errors
+                    }
+                    throw new Error(err);
+                }
+
+                if (editingStaffFootprintId === id) {
+                    form.reset();
+                    populateStaffOptionsForDepartment('');
+                    setCreateMode();
+                    hideCalculationBreakdown();
+                }
+
+                setFeedback(`Deleted staff footprint record #${id}.`, 'success');
+                await loadStaffRecords();
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            }
+        });
+
+        async function initializePage() {
+            setCreateMode();
+            await loadStaffOptions();
+            await loadStaffRecords();
+        }
+
+        initializePage();
     </script>
 </body>
 </html>
+

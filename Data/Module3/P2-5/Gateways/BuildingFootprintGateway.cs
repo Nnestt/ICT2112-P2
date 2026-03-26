@@ -2,6 +2,7 @@ using ProRental.Data.Module3.P2_5.Interfaces;
 using ProRental.Data.UnitOfWork;
 using ProRental.Domain.Entities;
 using ProRental.Domain.Module3.P2_5.Entities;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
 namespace ProRental.Data.Module3.P2_5.Gateways;
@@ -63,6 +64,68 @@ public sealed class BuildingFootprintGateway : IBuildingFootprintGateway
         return footprint;
     }
 
+    public Task<List<BuildingFootprintListItem>> GetBuildingFootprintsAsync()
+    {
+        var items = _dbContext.Buildingfootprints
+            .AsEnumerable()
+            .Select(footprint => new BuildingFootprintListItem(
+                ReadMember<int>(footprint, "Buildingcarbonfootprintid", "_buildingcarbonfootprintid"),
+                GetTimeHourly(footprint),
+                GetGroupValue(footprint, "Zone"),
+                GetGroupValue(footprint, "Block"),
+                GetGroupValue(footprint, "Floor"),
+                GetGroupValue(footprint, "Room"),
+                GetTotalRoomCo2(footprint)))
+            .OrderByDescending(item => item.Timehourly)
+            .ThenByDescending(item => item.BuildingCarbonFootprintId)
+            .ToList();
+
+        return Task.FromResult(items);
+    }
+
+    public async Task<Buildingfootprint?> UpdateBuildingFootprintAsync(
+        int buildingCarbonFootprintId,
+        DateTime timehourly,
+        string zone,
+        string block,
+        string floor,
+        string room,
+        double totalRoomCo2)
+    {
+        var footprint = await _dbContext.Buildingfootprints
+            .FirstOrDefaultAsync(item => EF.Property<int>(item, "Buildingcarbonfootprintid") == buildingCarbonFootprintId);
+
+        if (footprint == null)
+        {
+            return null;
+        }
+
+        WriteMember(footprint, "Timehourly", "_timehourly", timehourly);
+        WriteMember(footprint, "Zone", "_zone", zone);
+        WriteMember(footprint, "Block", "_block", block);
+        WriteMember(footprint, "Floor", "_floor", floor);
+        WriteMember(footprint, "Room", "_room", room);
+        WriteMember(footprint, "Totalroomco2", "_totalroomco2", totalRoomCo2);
+
+        await _dbContext.SaveChangesAsync();
+        return footprint;
+    }
+
+    public async Task<bool> DeleteBuildingFootprintAsync(int buildingCarbonFootprintId)
+    {
+        var footprint = await _dbContext.Buildingfootprints
+            .FirstOrDefaultAsync(item => EF.Property<int>(item, "Buildingcarbonfootprintid") == buildingCarbonFootprintId);
+
+        if (footprint == null)
+        {
+            return false;
+        }
+
+        _dbContext.Buildingfootprints.Remove(footprint);
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
     private static string NormalizeGroupBy(string groupBy)
     {
         return groupBy.Trim().ToLowerInvariant() switch
@@ -110,5 +173,26 @@ public sealed class BuildingFootprintGateway : IBuildingFootprintGateway
         }
 
         throw new InvalidOperationException($"Unable to read '{propertyName}' from {type.Name}.");
+    }
+
+    private static void WriteMember<T>(object target, string propertyName, string fieldName, T value)
+    {
+        var type = target.GetType();
+
+        var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        if (property != null)
+        {
+            property.SetValue(target, value);
+            return;
+        }
+
+        var field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field != null)
+        {
+            field.SetValue(target, value);
+            return;
+        }
+
+        throw new InvalidOperationException($"Unable to write '{propertyName}' on {type.Name}.");
     }
 }
