@@ -51,11 +51,7 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         {
             return false;
         }
-        alert.SetAlertStatus(status);
-        if (status == AlertStatus.RESOLVED)
-        {
-            alert.SetResolvedAt(DateTime.UtcNow);
-        }
+        alert.UpdateStatus(status);
 
         try
         {
@@ -68,32 +64,7 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         }
     }
 
-    public bool ResolveAlert(int alertId)
-    {
-        if (alertId <= 0)
-        {
-            return false;
-        }
 
-        var alert = _alertMapper.FindById(alertId);
-        if (alert is null)
-        {
-            return false;
-        }
-
-        alert.SetAlertStatus(AlertStatus.RESOLVED);
-        alert.SetResolvedAt(DateTime.UtcNow);
-
-        try
-        {
-            _alertMapper.Update(alert);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 
     public bool CheckLowStock(int productId, int availableCount)
     {
@@ -118,13 +89,13 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
             return false;
 
         // Build and create the alert
-        var alert = new Alert();
-        alert.SetProductId(productId);
-        alert.SetMinThreshold(minThreshold);
-        alert.SetAlertStatus(AlertStatus.OPEN);
-        alert.SetCreatedAt(DateTime.UtcNow);
-        alert.SetCurrentStock(availableCount);
-        alert.SetMessage($"Automatic Alert: Stock has fallen below the minimum threshold of {minThreshold}.");
+        var alert = Alert.Create(
+            productId,
+            minThreshold,
+            AlertStatus.OPEN,
+            $"Automatic Alert: Stock has fallen below the minimum threshold of {minThreshold}.",
+            availableCount
+        );
 
         return CreateAlert(alert);
     }
@@ -175,7 +146,7 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
             bool allResolved = true;
             foreach (var alert in alertsToResolve)
             {
-                if (!ResolveAlert(alert.GetAlertId()))
+                if (!UpdateAlertStatus(alert.GetAlertId(), AlertStatus.RESOLVED))
                 {
                     allResolved = false;
                 }

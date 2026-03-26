@@ -19,15 +19,15 @@ public class InventoryAlertsController : Controller
     [HttpGet("DisplayAllThresholds")]
     public IActionResult DisplayAllThresholds()
     {
-        // Redirect to product-based view since thresholds are now managed at the product level
-        return RedirectToAction(nameof(DisplayAlertsByProduct));
+        // Redirect to alerts view
+        return RedirectToAction(nameof(DisplayAlerts));
     }
 
     [HttpGet("DisplayThreshold/{threshold:int}")]
     public IActionResult DisplayThreshold(int threshold)
     {
         // This functionality is replaced by product-based and staff-based filtering
-        TempData["Message"] = "Use DisplayAlertsByProduct or DisplayAlertsByStaff filters instead.";
+        TempData["Message"] = "Use DisplayAlerts or other filters instead.";
         return RedirectToAction(nameof(DisplayAlerts));
     }
 
@@ -60,16 +60,7 @@ public class InventoryAlertsController : Controller
         return View("~/Views/Module2/Inventory/Alerts.cshtml", activeAlerts);
     }
 
-    [HttpGet("DisplayAlertsByProduct/{productId:int}")]
-    public IActionResult DisplayAlertsByProduct(int productId)
-    {
-        var alerts = _alertControl.GetAlertsByProduct(productId)?
-            .Where(a => a.GetAlertStatus() == AlertStatus.OPEN || a.GetAlertStatus() == AlertStatus.ACKNOWLEDGED)
-            .ToList() ?? new List<Alert>();
-        
-        ViewData["Filter"] = $"Active Alerts for Product #{productId}";
-        return View("~/Views/Module2/Inventory/Alerts.cshtml", alerts);
-    }
+
 
     [HttpGet("DisplayAlertHistory")]
     public IActionResult DisplayAlertHistory()
@@ -113,7 +104,7 @@ public class InventoryAlertsController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult ResolveAlert(int alertId)
     {
-        if (_alertControl.ResolveAlert(alertId))
+        if (_alertControl.UpdateAlertStatus(alertId, AlertStatus.RESOLVED))
         {
             TempData["Message"] = $"Alert #{alertId} resolved.";
         }

@@ -10,7 +10,6 @@ public interface iAlertControl
     List<Alert> GetAlertsByProduct(int productId);
     List<Alert> GetOpenAlerts();
     bool UpdateAlertStatus(int alertId, AlertStatus status);
-    bool ResolveAlert(int alertId);
     bool CheckLowStock(int productId, int threshold);
     bool AutoResolveAlertsIfStockAboveThreshold(int productId, int currentStock);
 }

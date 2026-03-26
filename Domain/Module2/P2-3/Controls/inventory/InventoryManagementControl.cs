@@ -26,13 +26,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
 
     public bool CreateInventoryItem(int productId, string serialNumber, InventoryStatus status, DateTime? expiryDate)
     {
-        var inventoryItem = new Inventoryitem();
-        inventoryItem.SetProductId(productId);
-        inventoryItem.SetSerialNumber(serialNumber);
-        inventoryItem.SetStatus(status);
-        inventoryItem.SetCreatedDate(DateTime.UtcNow);
-        inventoryItem.SetUpdatedDate(DateTime.UtcNow);
-        inventoryItem.SetExpiryDate(expiryDate);
+        var inventoryItem = Inventoryitem.Create(productId, serialNumber, status, expiryDate);
 
         if (!ValidateInventoryItem(inventoryItem) || !CheckInventoryConflicts(inventoryItem))
         {
@@ -69,14 +63,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
             
             for (int i = 0; i < quantity; i++)
             {
-                var inventoryItem = new Inventoryitem();
-                inventoryItem.SetProductId(productId);
-                // Use temp serial number with UUID to ensure uniqueness for bulk items
-                inventoryItem.SetSerialNumber($"TEMP-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}");
-                inventoryItem.SetStatus(InventoryStatus.RESERVED);  // Mark as reserved/incomplete
-                inventoryItem.SetCreatedDate(DateTime.UtcNow);
-                inventoryItem.SetUpdatedDate(DateTime.UtcNow);
-                inventoryItem.SetExpiryDate(null);
+                var inventoryItem = Inventoryitem.CreateReserved(productId);
 
                 try
                 {
@@ -129,11 +116,7 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
             return false;
         }
 
-        existingItem.SetProductId(productId);
-        existingItem.SetSerialNumber(serialNumber);
-        existingItem.SetStatus(status);
-        existingItem.SetExpiryDate(expiryDate);
-        existingItem.SetUpdatedDate(DateTime.UtcNow);
+        existingItem.Update(productId, serialNumber, status, expiryDate);
 
         if (!ValidateInventoryItem(existingItem) || !CheckInventoryConflicts(existingItem))
         {
@@ -250,8 +233,14 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
             return false;
         }
 
-        item.SetStatus(status);
-        item.SetUpdatedDate(DateTime.UtcNow);
+        // Prevent status updates on items with temporary serial numbers
+        if (item.GetSerialNumber().Contains("TEMP"))
+        {
+            Console.WriteLine($"UpdateInventoryStatus: Cannot update status for item {inventoryItemId}. Serial number '{item.GetSerialNumber()}' is temporary. Please change the serial number first.");
+            return false;
+        }
+
+        item.UpdateStatusAndDate(status);
 
         try
         {
