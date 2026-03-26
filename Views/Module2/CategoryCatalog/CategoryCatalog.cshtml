@@ -7,6 +7,16 @@
 <div class="container mt-4">
     <h1 class="display-6 mb-4">Category Management</h1>
 
+    @* Display the warning alert if deletion was blocked *@
+    @if (TempData["DeleteWarning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @TempData["DeleteWarning"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
     <div class="card shadow-sm mb-5">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0">Create New Category</h5>

@@ -6,7 +6,7 @@ public interface ICategoryCRUD
 {
     bool CreateCategory(Category category);
     bool UpdateCategory(Category category);
-    bool DeleteCategory(int categoryId);
+    bool DeleteCategory(int categoryId, out string categoryName);
     bool ValidateCategory(Category category);
     bool CheckCategoryConflicts(Category category);
     bool UpdateCategoryStatus(int categoryId);

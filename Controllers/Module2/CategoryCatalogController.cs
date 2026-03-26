@@ -71,8 +71,23 @@ public class CategoryCatalogController : Controller
     [Route("Delete")]
     [ValidateAntiForgeryToken]
     public IActionResult Delete(int id)
+{
+    // Use the updated interface method
+    bool isDeleted = _categoryCRUD.DeleteCategory(id, out string categoryName); 
+
+    if (!isDeleted)
     {
-        _categoryCRUD.DeleteCategory(id);
-        return RedirectToAction(nameof(Index));
+        if (!string.IsNullOrEmpty(categoryName))
+        {
+            // Dynamic message using the name of the chosen category
+            TempData["DeleteWarning"] = $"'{categoryName}' cannot be deleted as there are still products under it.";
+        }
+        else
+        {
+            TempData["DeleteWarning"] = "Category cannot be deleted as there are still products under it.";
+        }
     }
+
+    return RedirectToAction(nameof(Index));
+}
 }

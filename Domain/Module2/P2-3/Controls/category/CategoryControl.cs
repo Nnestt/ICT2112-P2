@@ -7,10 +7,12 @@ namespace ProRental.Domain.Controls;
 public class CategoryControl : ICategoryCRUD, ICategoryQuery
 {
     private readonly ICategoryMapper _categoryMapper;
+    private readonly IProductMapper _productMapper;
 
-    public CategoryControl(ICategoryMapper categoryMapper)
+    public CategoryControl(ICategoryMapper categoryMapper, IProductMapper productMapper)
     {
         _categoryMapper = categoryMapper;
+        _productMapper = productMapper;
     }
 
     // --- Query Implementation ---
@@ -42,16 +44,30 @@ public class CategoryControl : ICategoryCRUD, ICategoryQuery
         return true;
     }
 
-    public bool DeleteCategory(int id) 
+    public bool DeleteCategory(int id, out string categoryName) 
+{
+    categoryName = string.Empty;
+    
+    // Fetch the category to retrieve its name before checking constraints
+    var existing = GetCategoryById(id);
+    if (existing == null) return false;
+
+    categoryName = existing.GetName(); // Store the chosen category name
+
+    // Check if any products are linked to this category ID
+    var products = _productMapper.FindAll();
+    bool hasLinkedProducts = products != null && products.Any(p => p.GetCategoryId() == id);
+
+    if (hasLinkedProducts)
     {
-        var existing = GetCategoryById(id);
-        if (existing != null)
-        {
-            _categoryMapper.Delete(existing);
-            return true;
-        }
-        return false;
+        // Return false to block deletion, but categoryName is now available to the Controller
+        return false; 
     }
+
+    // Proceed with deletion as no products are linked
+    _categoryMapper.Delete(existing);
+    return true;
+}
     
     public bool ValidateCategory(Category c) => !string.IsNullOrEmpty(c.GetName());
     
