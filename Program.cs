@@ -182,7 +182,9 @@ builder.Services.AddScoped<IPackagingConfigurationGateway, PackagingConfiguratio
 
 // Domain
 builder.Services.AddScoped<ICarbonChartControl, CarbonChartControl>();
+builder.Services.AddScoped<IBuildingFootprintControl, BuildingFootprintControl>();
 builder.Services.AddScoped<IProductFootprintCalculatorService, ProductFootprintCalculatorControl>();
+builder.Services.AddScoped<IStaffFootprintControl, StaffFootprintControl>();
 builder.Services.AddScoped<IProductFootprintService, ProductFootprintService>();
 builder.Services.AddScoped<IRewardsControl, RewardsControl>();
 builder.Services.AddScoped<IPackagingProfilerControl, PackagingProfilerControl>();

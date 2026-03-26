@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using ProRental.Data.Module3.P2_5.Interfaces;
 using ProRental.Domain.Entities;
 using ProRental.Interfaces.Module3.P2_5;
 
@@ -7,14 +6,14 @@ namespace ProRental.Controllers.Module3.P2_5;
 
 public class CarbonFootprintController : Controller
 {
-    private readonly IBuildingFootprintGateway _buildingGateway;
-    private readonly IStaffFootprintGateway _staffGateway;
+    private readonly IBuildingFootprintControl _buildingControl;
+    private readonly IStaffFootprintControl _staffControl;
     private readonly IPackagingProfilerControl _packagingControl;
 
-    public CarbonFootprintController(IBuildingFootprintGateway buildingGateway, IStaffFootprintGateway staffGateway, IPackagingProfilerControl packagingControl)
+    public CarbonFootprintController(IBuildingFootprintControl buildingControl, IStaffFootprintControl staffControl, IPackagingProfilerControl packagingControl)
     {
-        _buildingGateway = buildingGateway;
-        _staffGateway = staffGateway;
+        _buildingControl = buildingControl;
+        _staffControl = staffControl;
         _packagingControl = packagingControl;
     }
 
@@ -70,67 +69,25 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CalculateBuildingFootprint([FromBody] BuildingFootprintRequest request)
     {
-        // Validate roomSize and co2Level are positive
-        if (request.RoomSize <= 0)
-            return BadRequest(new { error = "roomSize must be a positive number." });
-
-        if (request.Co2Level <= 0)
-            return BadRequest(new { error = "co2Level must be a positive number." });
-
-        var zoneWeights = new Dictionary<string, double>
-        {
-            { "North", 1.00 },
-            { "South", 1.25 },
-            { "East", 1.10 },
-            { "West", 1.15 },
-            { "Central", 1.35 }
-        };
-
-        var floorWeights = new Dictionary<string, double>
-        {
-            { "Level 1", 1.00 },
-            { "Level 2", 1.20 },
-            { "Level 3", 1.45 },
-            { "Level 4", 1.60 },
-            { "Level 5", 1.75 }
-        };
-
-        // Validate zone
-        if (string.IsNullOrWhiteSpace(request.Zone) || !zoneWeights.ContainsKey(request.Zone))
-            return BadRequest(new { error = "zone must be one of: North, South, East, West, Central." });
-
-        // Validate floor
-        if (string.IsNullOrWhiteSpace(request.Floor) || !floorWeights.ContainsKey(request.Floor))
-            return BadRequest(new { error = "floor must be one of: Level 1, Level 2, Level 3, Level 4, Level 5." });
-
-        // Validate block and room are not empty
-        if (string.IsNullOrWhiteSpace(request.Block))
-            return BadRequest(new { error = "block cannot be empty." });
-
-        if (string.IsNullOrWhiteSpace(request.Room))
-            return BadRequest(new { error = "room cannot be empty." });
-
         try
         {
-            const double CalibrationConstant = 0.000729;
-
-            // Calculate: Sr × Cr × Wz × Wf × k
-            double totalRoomCo2 = request.RoomSize * request.Co2Level * zoneWeights[request.Zone] * floorWeights[request.Floor] * CalibrationConstant;
-            totalRoomCo2 = Math.Round(totalRoomCo2, 2);
-
-            // Create the footprint record
-            var footprint = Buildingfootprint.Create(
-                DateTime.UtcNow,
+            var created = await _buildingControl.CreateBuildingFootprintAsync(
+                request.RoomSize,
+                request.Co2Level,
                 request.Zone,
                 request.Block,
                 request.Floor,
-                request.Room,
-                totalRoomCo2);
-
-            // Save to database
-            var created = await _buildingGateway.CreateBuildingFootprintAsync(footprint);
+                request.Room);
 
             return CreatedAtAction(nameof(CalculateBuildingFootprint), created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -143,7 +100,7 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBuildingFootprints()
     {
-        var footprints = await _buildingGateway.GetBuildingFootprintsAsync();
+        var footprints = await _buildingControl.GetBuildingFootprintsAsync();
 
         var response = footprints.Select(item => new
         {
@@ -166,60 +123,16 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateBuildingFootprint(int buildingCarbonFootprintId, [FromBody] BuildingFootprintRequest request)
     {
-        if (buildingCarbonFootprintId <= 0)
-            return BadRequest(new { error = "buildingCarbonFootprintId must be a positive integer." });
-
-        if (request.RoomSize <= 0)
-            return BadRequest(new { error = "roomSize must be a positive number." });
-
-        if (request.Co2Level <= 0)
-            return BadRequest(new { error = "co2Level must be a positive number." });
-
-        var zoneWeights = new Dictionary<string, double>
-        {
-            { "North", 1.00 },
-            { "South", 1.25 },
-            { "East", 1.10 },
-            { "West", 1.15 },
-            { "Central", 1.35 }
-        };
-
-        var floorWeights = new Dictionary<string, double>
-        {
-            { "Level 1", 1.00 },
-            { "Level 2", 1.20 },
-            { "Level 3", 1.45 },
-            { "Level 4", 1.60 },
-            { "Level 5", 1.75 }
-        };
-
-        if (string.IsNullOrWhiteSpace(request.Zone) || !zoneWeights.ContainsKey(request.Zone))
-            return BadRequest(new { error = "zone must be one of: North, South, East, West, Central." });
-
-        if (string.IsNullOrWhiteSpace(request.Floor) || !floorWeights.ContainsKey(request.Floor))
-            return BadRequest(new { error = "floor must be one of: Level 1, Level 2, Level 3, Level 4, Level 5." });
-
-        if (string.IsNullOrWhiteSpace(request.Block))
-            return BadRequest(new { error = "block cannot be empty." });
-
-        if (string.IsNullOrWhiteSpace(request.Room))
-            return BadRequest(new { error = "room cannot be empty." });
-
         try
         {
-            const double CalibrationConstant = 0.000729;
-
-            var totalRoomCo2 = request.RoomSize * request.Co2Level * zoneWeights[request.Zone] * floorWeights[request.Floor] * CalibrationConstant;
-            totalRoomCo2 = Math.Round(totalRoomCo2, 2);
-
-            var updated = await _buildingGateway.UpdateBuildingFootprintAsync(
+            var updated = await _buildingControl.UpdateBuildingFootprintAsync(
                 buildingCarbonFootprintId,
-                DateTime.UtcNow,
+                request.RoomSize,
+                request.Co2Level,
                 request.Zone,
                 request.Block,
                 request.Floor,
-                request.Room,
-                totalRoomCo2);
+                request.Room);
 
             if (updated == null)
             {
@@ -227,6 +140,14 @@ public class CarbonFootprintController : Controller
             }
 
             return Ok(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -240,13 +161,28 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteBuildingFootprint(int buildingCarbonFootprintId)
     {
-        var wasDeleted = await _buildingGateway.DeleteBuildingFootprintAsync(buildingCarbonFootprintId);
-        if (!wasDeleted)
+        try
         {
-            return NotFound(new { error = "Building footprint record not found." });
-        }
+            var wasDeleted = await _buildingControl.DeleteBuildingFootprintAsync(buildingCarbonFootprintId);
+            if (!wasDeleted)
+            {
+                return NotFound(new { error = "Building footprint record not found." });
+            }
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
+        }
     }
 
     /// <summary>
@@ -260,40 +196,22 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CalculateStaffFootprint([FromBody] StaffFootprintRequest request)
     {
-        if (request.StaffId <= 0)
-            return BadRequest(new { error = "staffId must be a positive integer." });
-
-        if (request.CheckOutTime <= request.CheckInTime)
-            return BadRequest(new { error = "checkOutTime must be later than checkInTime." });
-
-        if (!await _staffGateway.StaffExistsAsync(request.StaffId))
-            return BadRequest(new { error = "staffId does not exist." });
-
-        var department = await _staffGateway.GetDepartmentByStaffIdAsync(request.StaffId);
-        if (string.IsNullOrWhiteSpace(department))
-            return BadRequest(new { error = "Unable to determine department for this staffId." });
-
-        var hoursWorked = (request.CheckOutTime - request.CheckInTime).TotalHours;
-        if (hoursWorked <= 0)
-            return BadRequest(new { error = "hoursWorked must be a positive number." });
-
-        // Calibrated from seed data:
-        // (14.2/4.0 + 12.8/3.5 + 16.9/5.0) / 3 = 3.529... ≈ 3.53
-        const double EmissionRatePerHour = 3.53;
-        var departmentWeight = GetDepartmentWeight(department);
-
-        var roundedHoursWorked = Math.Round(hoursWorked, 2);
-        var totalStaffCo2 = Math.Round(roundedHoursWorked * EmissionRatePerHour * departmentWeight, 2);
-
         try
         {
-            var created = await _staffGateway.CreateStaffFootprintAsync(
+            var created = await _staffControl.CreateStaffFootprintAsync(
                 request.StaffId,
-                request.CheckOutTime,
-                roundedHoursWorked,
-                totalStaffCo2);
+                request.CheckInTime,
+                request.CheckOutTime);
 
             return CreatedAtAction(nameof(CalculateStaffFootprint), created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -306,12 +224,12 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffFootprints()
     {
-        var footprints = await _staffGateway.GetStaffFootprintsAsync();
+        var footprints = await _staffControl.GetStaffFootprintsAsync();
         var response = new List<object>(footprints.Count);
 
         foreach (var item in footprints)
         {
-            var department = await _staffGateway.GetDepartmentByStaffIdAsync(item.StaffId) ?? "Unknown";
+            var department = await _staffControl.GetDepartmentByStaffIdAsync(item.StaffId) ?? "Unknown";
             var checkOutTime = item.Time;
             var checkInTime = checkOutTime.AddHours(-item.HoursWorked);
 
@@ -337,40 +255,13 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStaffFootprint(int staffCarbonFootprintId, [FromBody] StaffFootprintRequest request)
     {
-        if (staffCarbonFootprintId <= 0)
-            return BadRequest(new { error = "staffCarbonFootprintId must be a positive integer." });
-
-        if (request.StaffId <= 0)
-            return BadRequest(new { error = "staffId must be a positive integer." });
-
-        if (request.CheckOutTime <= request.CheckInTime)
-            return BadRequest(new { error = "checkOutTime must be later than checkInTime." });
-
-        if (!await _staffGateway.StaffExistsAsync(request.StaffId))
-            return BadRequest(new { error = "staffId does not exist." });
-
-        var department = await _staffGateway.GetDepartmentByStaffIdAsync(request.StaffId);
-        if (string.IsNullOrWhiteSpace(department))
-            return BadRequest(new { error = "Unable to determine department for this staffId." });
-
-        var hoursWorked = (request.CheckOutTime - request.CheckInTime).TotalHours;
-        if (hoursWorked <= 0)
-            return BadRequest(new { error = "hoursWorked must be a positive number." });
-
-        const double EmissionRatePerHour = 3.53;
-        var departmentWeight = GetDepartmentWeight(department);
-
-        var roundedHoursWorked = Math.Round(hoursWorked, 2);
-        var totalStaffCo2 = Math.Round(roundedHoursWorked * EmissionRatePerHour * departmentWeight, 2);
-
         try
         {
-            var updated = await _staffGateway.UpdateStaffFootprintAsync(
+            var updated = await _staffControl.UpdateStaffFootprintAsync(
                 staffCarbonFootprintId,
                 request.StaffId,
-                request.CheckOutTime,
-                roundedHoursWorked,
-                totalStaffCo2);
+                request.CheckInTime,
+                request.CheckOutTime);
 
             if (updated == null)
             {
@@ -378,6 +269,14 @@ public class CarbonFootprintController : Controller
             }
 
             return Ok(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -391,13 +290,28 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteStaffFootprint(int staffCarbonFootprintId)
     {
-        var wasDeleted = await _staffGateway.DeleteStaffFootprintAsync(staffCarbonFootprintId);
-        if (!wasDeleted)
+        try
         {
-            return NotFound(new { error = "Staff footprint record not found." });
-        }
+            var wasDeleted = await _staffControl.DeleteStaffFootprintAsync(staffCarbonFootprintId);
+            if (!wasDeleted)
+            {
+                return NotFound(new { error = "Staff footprint record not found." });
+            }
 
-        return NoContent();
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = $"An error occurred: {ex.Message}" });
+        }
     }
 
     [HttpGet]
@@ -405,7 +319,7 @@ public class CarbonFootprintController : Controller
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStaffOptions()
     {
-        var staffItems = await _staffGateway.GetStaffLookupAsync();
+        var staffItems = await _staffControl.GetStaffLookupAsync();
 
         var options = staffItems
             .Select(item => new
@@ -459,3 +373,12 @@ public class CreateProfileRequest
     public float Volume { get; set; }
     public string FragilityLevel { get; set; } = "low";
 }
+
+
+
+
+
+
+
+
+
