@@ -64,8 +64,6 @@ public class LowStockAlertControl : iAlertControl, iStockObserver
         }
     }
 
-
-
     public bool CheckLowStock(int productId, int availableCount)
     {
         if (productId <= 0)

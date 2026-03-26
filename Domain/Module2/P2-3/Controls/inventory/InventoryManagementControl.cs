@@ -397,7 +397,21 @@ public class InventoryManagementControl : iInventoryCRUDControl, iInventoryQuery
         _observers.Remove(observer);
     }
 
-    public void NotifyObservers(int productId, int availableCount)
+    // ─────────────────────────────────────────────────────────────────────────────────
+    // Explicit Interface Implementation - NotifyObservers is protected internally
+    // ─────────────────────────────────────────────────────────────────────────────────
+
+    void iStockSubject.NotifyObservers(int productId, int availableCount)
+    {
+        NotifyObservers(productId, availableCount);
+    }
+
+    /// <summary>
+    /// Internal protected notification method for observers.
+    /// Uses explicit interface implementation to restrict direct access from InventoryManagementControl instances.
+    /// Can only be called directly from within this control class.
+    /// </summary>
+    protected void NotifyObservers(int productId, int availableCount)
     {
         foreach (var observer in _observers)
         {
