@@ -113,12 +113,16 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                            <li><a class="dropdown-item" asp-controller="ProductCatalog" asp-action="Index"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" asp-controller="CategoryCatalog"><i class="bi bi-list me-2" style="color: #0d6efd;"></i>Category Catalogue</a></li>
+                            <li><a class="dropdown-item" asp-controller="StaffInventory" asp-action="DisplayInventoryList"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+                            <li><a class="dropdown-item" asp-controller="ReturnProcessing" asp-action="DisplayReturnRequests"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" asp-controller="Clearance" asp-action="Index"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                            <li><a class="dropdown-item" asp-controller="SupplierRegistryPage" asp-action="Index"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
+                            <li><a class="dropdown-item" href="/Analytics"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
+                            <li><a class="dropdown-item" asp-controller="VettingPage" asp-action="Dashboard"><i class="bi bi-shield-check me-2" style="color: #0d6efd;"></i>Vetting Records</a></li>
+                            <li><a class="dropdown-item" asp-controller="ReplenishmentRequester" asp-action="List"><i class="bi bi-arrow-clockwise me-2" style="color: #0d6efd;"></i>Replenishment Requests</a></li>
+                            <li><a class="dropdown-item" href="/PurchaseOrderPage"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Supplier Purchase Order</a></li>
                         </ul>
                     </li>
 
@@ -269,17 +273,20 @@
                         </div>
                         <div class="card-body py-3">
                             <ul class="list-unstyled mb-0">
-                                <li class="mb-3"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Product Catalogue</a></li>
-                                <li class="mb-3"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Stock Management</a></li>
-                                <li class="mb-2"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Return Processing Pipeline</a></li>
+                                <li class="mb-3"><a asp-controller="ProductCatalog" asp-action="Index" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Product Catalogue</a></li>
+                                <li class="mb-3"><a asp-controller="CategoryCatalog" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Category Catalogue</a></li>
+                                <li class="mb-3"><a asp-controller="StaffInventory" asp-action="DisplayInventoryList" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Stock Management</a></li>
+                                <li class="mb-2"><a asp-controller="ReturnProcessing" asp-action="DisplayReturnRequests" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Return Processing Pipeline</a></li>
                                 <li class="mb-3 ps-4">
                                     <small class="text-muted" style="font-size: 0.72rem;">
                                         Damage Inspection &rarr; Repair &rarr; Servicing &rarr; Cleaning &rarr; Back to Inventory
                                     </small>
                                 </li>
-                                <li class="mb-3"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Trusted Supplier Registry</a></li>
-                                <li class="mb-3"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Analytics &amp; Reports</a></li>
-                                <li class="mb-0"><a href="#" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Product Clearance</a></li>
+                                </li>
+                                <li class="mb-0"><a asp-controller="Clearance" asp-action="Index" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Product Clearance</a></li>
+                                <li class="mb-3"><a asp-controller="SupplierRegistryPage" asp-action="Index" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Trusted Supplier Registry</a></li>
+                                <li class="mb-3"><a asp-controller="ReplenishmentRequester" asp-action="List" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Replenishment Requests</a></li>
+                                <li class="mb-0"><a asp-controller="VettingPage" asp-action="Dashboard" class="module-link-2 d-flex align-items-center"><i class="bi bi-chevron-right me-2"></i>Vetting Records</a></li>
                             </ul>
                         </div>
                         <div class="card-footer bg-white border-0 pb-3 px-3">

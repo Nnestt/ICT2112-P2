@@ -1,0 +1,225 @@
+@{
+    ViewData["Title"] = "Vet Supplier";
+}
+
+<div class="container mt-4">
+
+    @* ── Error state ── *@
+    @if (ViewBag.Error != null)
+    {
+        <h2>Vetting Error</h2>
+        <div class="alert alert-danger">
+            <strong>Error:</strong> @ViewBag.Error
+        </div>
+        <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-secondary">Back to Dashboard</a>
+    }
+
+    @* ── Post-submission result ── *@
+    else if (ViewBag.VettingRecord != null)
+    {
+        var record = ViewBag.VettingRecord;
+        var rating = ViewBag.ReliabilityRating;
+
+        <h2>Vetting Submitted</h2>
+
+        @* Reliability score card *@
+        @if (rating != null)
+        {
+            string bandClass = rating.GetRatingBand().ToString() switch
+            {
+                "HIGH"   => "success",
+                "MEDIUM" => "warning",
+                "LOW"    => "danger",
+                _        => "secondary"
+            };
+            <div class="card mb-3 border-@bandClass">
+                <div class="card-header bg-@bandClass text-white">
+                    <strong>Reliability Score</strong>
+                    &nbsp;&mdash;&nbsp;
+                    Strategy: @ViewBag.StrategyName
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <span style="font-size:2.5rem; font-weight:bold;">@rating.score?.ToString("F1")</span>
+                            <span class="text-muted">/ 100</span>
+                        </div>
+                        <div class="col">
+                            <span class="badge bg-@bandClass fs-6">@rating.GetRatingBand()</span>
+                            <div class="progress mt-2" style="height:12px;">
+                                <div class="progress-bar bg-@bandClass"
+                                     role="progressbar"
+                                     style="width:@rating.score?.ToString("F0")%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-2 mb-0 text-muted small">@rating.rationale</p>
+                </div>
+            </div>
+        }
+
+        @* Vetting decision card *@
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Vetting Decision</h5>
+                <p><strong>Supplier ID:</strong> @record.supplierid</p>
+                <p>
+                    <strong>Decision:</strong>
+                    @{
+                        string decBadge = record.decision_public == ProRental.Domain.Enums.VettingDecision.APPROVED
+                            ? "bg-success"
+                            : record.decision_public == ProRental.Domain.Enums.VettingDecision.REJECTED
+                                ? "bg-danger"
+                                : "bg-warning text-dark";
+                    }
+                    <span class="badge @decBadge fs-6">@record.decision_public</span>
+                </p>
+                <p><strong>Notes:</strong> @record.notes</p>
+                <p><strong>Vetted At:</strong> @record.vettedat</p>
+            </div>
+        </div>
+
+        <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-primary">Back to Dashboard</a>
+    }
+
+    @* ── Vetting form with scoring panel ── *@
+    else
+    {
+        <h2>Vet Supplier <small class="text-muted fs-5">(ID: @ViewBag.SupplierID)</small></h2>
+
+        @* Scoring error warning — non-blocking *@
+        @if (ViewBag.ScoringError != null)
+        {
+            <div class="alert alert-warning">
+                <strong>Scoring unavailable:</strong> @ViewBag.ScoringError
+                <br /><small>You can still submit a manual vetting decision below.</small>
+            </div>
+        }
+
+        @* Reliability score panel *@
+        @if (ViewBag.ReliabilityRating != null)
+        {
+            var rating = ViewBag.ReliabilityRating;
+            var recommendation = (ProRental.Domain.Enums.VettingDecision)ViewBag.Recommendation;
+
+            string bandClass = rating.GetRatingBand().ToString() switch
+            {
+                "HIGH"   => "success",
+                "MEDIUM" => "warning",
+                "LOW"    => "danger",
+                _        => "secondary"
+            };
+            string recBadge = recommendation == ProRental.Domain.Enums.VettingDecision.APPROVED
+                ? "bg-success"
+                : recommendation == ProRental.Domain.Enums.VettingDecision.REJECTED
+                    ? "bg-danger"
+                    : "bg-warning text-dark";
+            string recText = recommendation == ProRental.Domain.Enums.VettingDecision.APPROVED
+                ? "Approve"
+                : recommendation == ProRental.Domain.Enums.VettingDecision.REJECTED
+                    ? "Reject"
+                    : "Manual Review Required";
+
+            <div class="card mb-4 border-@bandClass">
+                <div class="card-header bg-@bandClass text-white d-flex justify-content-between align-items-center">
+                    <span><strong>Reliability Score</strong></span>
+                    <span class="small">Strategy: <em>@ViewBag.StrategyName</em></span>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-2">
+                        <div class="col-auto">
+                            <span style="font-size:3rem; font-weight:bold; line-height:1;">
+                                @rating.score?.ToString("F1")
+                            </span>
+                            <span class="text-muted">/ 100</span>
+                        </div>
+                        <div class="col">
+                            <div class="mb-1">
+                                <span class="badge bg-@bandClass fs-6">@rating.GetRatingBand() Rating</span>
+                            </div>
+                            <div class="progress" style="height:14px;">
+                                <div class="progress-bar bg-@bandClass"
+                                     role="progressbar"
+                                     style="width:@rating.score?.ToString("F0")%"
+                                     aria-valuenow="@rating.score?.ToString("F0")"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                <span>0 — Low</span>
+                                <span>50 — Medium</span>
+                                <span>80 — High</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-2">@rating.rationale</p>
+                    <div class="alert alert-light border mb-0 py-2">
+                        <strong>System Recommendation:</strong>
+                        <span class="badge @recBadge ms-1">@recText</span>
+                        <span class="text-muted small ms-2">— You may override this decision below.</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Vetting form *@
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Submit Vetting Decision</h5>
+                <form method="post" action="@Url.Action("SubmitVetting", "VettingPage")">
+                    <input type="hidden" name="supplierID" value="@ViewBag.SupplierID" />
+
+                    <div class="mb-3">
+                        <label for="userID" class="form-label">Staff User ID</label>
+                        <input type="number" class="form-control" id="userID" name="userID" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="decision" class="form-label">
+                            Decision
+                            @if (ViewBag.Recommendation != null)
+                            {
+                                <span class="text-muted small ms-1">(system recommends:
+                                    <strong>@ViewBag.Recommendation</strong>)
+                                </span>
+                            }
+                        </label>
+                        @{
+                            string selectedDecision = ViewBag.Recommendation != null
+                                ? ((ProRental.Domain.Enums.VettingDecision)ViewBag.Recommendation).ToString()
+                                : "";
+                        }
+                        <select class="form-select" id="decision" name="decision" required>
+                            <option value="">-- Select Decision --</option>
+                            @if (selectedDecision == "APPROVED") {
+                                <option value="APPROVED" selected>Approved</option>
+                            } else {
+                                <option value="APPROVED">Approved</option>
+                            }
+                            @if (selectedDecision == "REJECTED") {
+                                <option value="REJECTED" selected>Rejected</option>
+                            } else {
+                                <option value="REJECTED">Rejected</option>
+                            }
+                            @if (selectedDecision == "PENDING") {
+                                <option value="PENDING" selected>Pending (Manual Review)</option>
+                            } else {
+                                <option value="PENDING">Pending (Manual Review)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Vetting Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Submit Vetting</button>
+                    <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-secondary ms-2">Cancel</a>
+                </form>
+            </div>
+        </div>
+    }
+
+</div>

@@ -32,5 +32,7 @@ public partial class RouteLeg
     private bool _isLastMile;
     private bool IsLastMile { get => _isLastMile; set => _isLastMile = value; }
 
+    public virtual ICollection<LegCarbon> LegCarbons { get; private set; } = new List<LegCarbon>();
+
     public virtual DeliveryRoute Route { get; private set; } = null!;
 }

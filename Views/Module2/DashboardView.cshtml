@@ -1,0 +1,56 @@
+@model List<ProRental.Domain.Module2.P2_2.Entities.Supplier>
+
+@{
+    ViewData["Title"] = "Supplier Vetting Dashboard";
+}
+
+<div class="container mt-4">
+    <h2>Unverified Suppliers</h2>
+
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Supplier ID</th>
+                    <th>Supplier Name</th>
+                    <th>Category</th>
+                    <th>Verified Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var supplier in Model)
+                {
+                    <tr>
+                        <td>@supplier.SupplierID</td>
+                        <td>@supplier.Name</td>
+                        <td>@supplier.SupplierCategory</td>
+                        <td>
+                            @if (supplier.IsVerified == true)
+                            {
+                                <span class="badge bg-success">Verified</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Not Verified</span>
+                            }
+                        </td>
+                        <td>
+                            <a href="@Url.Action("VetSupplier", "VettingPage", new { supplierID = supplier.SupplierID })"
+                               class="btn btn-primary btn-sm">
+                                Vet Supplier
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            No unverified suppliers found.
+        </div>
+    }
+</div>

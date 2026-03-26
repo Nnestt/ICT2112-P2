@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Edit Vetting Notes";
+}
+
+<div class="container mt-4">
+    <h2>Edit Vetting Notes Result</h2>
+
+    @if (ViewBag.Success != null && ViewBag.Success)
+    {
+        <div class="alert alert-success">
+            <strong>Success!</strong> Vetting notes have been updated for Vetting ID: @ViewBag.VettingID
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <strong>Error!</strong> Failed to update vetting notes for Vetting ID: @ViewBag.VettingID
+        </div>
+    }
+
+    <div class="mt-3">
+        <a href="@Url.Action("Dashboard", "VettingPage")" class="btn btn-primary">
+            Back to Dashboard
+        </a>
+    </div>
+</div>

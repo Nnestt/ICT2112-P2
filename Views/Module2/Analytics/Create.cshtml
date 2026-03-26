@@ -1,0 +1,161 @@
+@model IEnumerable<ProRental.Interfaces.TransactionLogDto>
+@{
+    ViewData["Title"] = "New Analytics";
+    var today = DateTime.Now.ToString("yyyy-MM-dd");
+    var logs  = Model.ToList();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-plus-circle me-2" style="color:#0d6efd;"></i>New Analytics</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">← Back</a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="post" asp-action="Create">
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Analytics Type</label>
+                        <select name="analyticsType" id="analyticsType" class="form-select" onchange="onTypeChange()">
+                            <option value="DAILY">Daily</option>
+                            <option value="SUPTREND">Supplier Trend</option>
+                            <option value="PRODTREND">Product Trend</option>
+                        </select>
+                    </div>
+
+                    <!-- Daily: single date only -->
+                    <div class="col-md-4" id="singleDateBlock">
+                        <label class="form-label fw-semibold">Date</label>
+                        <input type="date" id="singleDate" class="form-control" value="@today"
+                               onchange="syncDates()" />
+                        <!-- Hidden fields always submitted -->
+                        <input type="hidden" name="startDate" id="startDate" value="@today" />
+                        <input type="hidden" name="endDate"   id="endDate"   value="@today" />
+                    </div>
+
+                    <!-- Trend: date range -->
+                    <div class="col-md-4 d-none" id="dateRangeBlock">
+                        <label class="form-label fw-semibold">Date Range</label>
+                        <div class="d-flex gap-2">
+                            <input type="date" id="rangeStart" class="form-control" value="@today"
+                                   onchange="syncDates()" />
+                            <input type="date" id="rangeEnd"   class="form-control" value="@today"
+                                   onchange="syncDates()" />
+                        </div>
+                    </div>
+
+                    <!-- Reference label — dynamic -->
+                    <div class="col-md-4" id="refBlock">
+                        <label class="form-label fw-semibold" id="refLabel">Reference Name</label>
+                        <input type="text" name="refPrimaryName" id="refPrimaryName"
+                               class="form-control" placeholder="e.g. Supplier ABC" />
+                    </div>
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-check-circle me-1"></i>Create Analytics
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Available logs -->
+    <div class="card shadow-sm">
+        <div class="card-header fw-semibold">
+            <i class="bi bi-list-ul me-2"></i>Available Transaction Logs (@logs.Count total)
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Log ID</th><th>Type</th><th>Created At</th><th>Summary</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in logs)
+                    {
+                        var badge = log.LogType switch {
+                            "LOAN"           => "bg-primary",
+                            "RETURN"         => "bg-warning text-dark",
+                            "PURCHASE_ORDER" => "bg-success",
+                            "RENTAL_ORDER"   => "bg-info text-dark",
+                            "CLEARANCE"      => "bg-secondary",
+                            _                => "bg-dark"
+                        };
+                        <tr>
+                            <td>#@log.LogID</td>
+                            <td><span class="badge @badge">@log.LogType</span></td>
+                            <td>@log.CreatedAt.AddHours(8).ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="text-muted small">@log.Summary</td>
+                        </tr>
+                    }
+                    @if (!logs.Any())
+                    {
+                        <tr><td colspan="4" class="text-center text-muted py-3">No transaction logs found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function onTypeChange() {
+    var type = document.getElementById('analyticsType').value;
+    var single    = document.getElementById('singleDateBlock');
+    var range     = document.getElementById('dateRangeBlock');
+    var refLabel  = document.getElementById('refLabel');
+    var refInput  = document.getElementById('refPrimaryName');
+
+    if (type === 'DAILY') {
+        single.classList.remove('d-none');
+        range.classList.add('d-none');
+        refLabel.textContent = 'Reference Name';
+        refInput.disabled = true;
+        refInput.placeholder = 'Daily (auto)';
+        refInput.value = '';
+    } else if (type === 'SUPTREND') {
+        single.classList.add('d-none');
+        range.classList.remove('d-none');
+        refLabel.textContent = 'Supplier Name';
+        refInput.disabled = false;
+        refInput.placeholder = 'e.g. Apple Inc.';
+        refInput.value = '';
+    } else {
+        single.classList.add('d-none');
+        range.classList.remove('d-none');
+        refLabel.textContent = 'Product Name';
+        refInput.disabled = false;
+        refInput.placeholder = 'e.g. Canon R5';
+        refInput.value = '';
+    }
+    syncDates();
+}
+
+function syncDates() {
+    var type = document.getElementById('analyticsType').value;
+    if (type === 'DAILY') {
+        var d = document.getElementById('singleDate').value;
+        document.getElementById('startDate').value = d;
+        document.getElementById('endDate').value   = d;
+    } else {
+        document.getElementById('startDate').value = document.getElementById('rangeStart').value;
+        document.getElementById('endDate').value   = document.getElementById('rangeEnd').value;
+    }
+}
+
+// Set Daily ref name before submit
+document.querySelector('form').addEventListener('submit', function() {
+    var type = document.getElementById('analyticsType').value;
+    var ref  = document.getElementById('refPrimaryName');
+    if (type === 'DAILY') {
+        ref.disabled = false;
+        var d = document.getElementById('singleDate').value;
+        ref.value = 'Daily — ' + d;
+    }
+});
+
+onTypeChange();
+</script>
