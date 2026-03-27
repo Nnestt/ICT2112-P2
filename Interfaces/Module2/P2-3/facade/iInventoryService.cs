@@ -54,5 +54,5 @@ public interface IResupplyService : IInventoryQueryFacade
 {
 	// User: Team P2-2 Purpose: When resupply is received, and staff clicks received resupply, the product quantity will automatically be updated and inventoryitems with productid but no serial numbers and expirdate will be created (with reserved status)
 	// Coordinates: IProductCRUD (AddToProduct method), IInventoryCRUD (BulkCreateInventoryItems method)
-    bool AddToProduct(int productId, int quantity);
+    bool ResupplyProduct(int productId, int quantity);
 }

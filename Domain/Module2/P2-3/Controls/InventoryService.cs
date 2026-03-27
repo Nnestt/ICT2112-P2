@@ -52,7 +52,7 @@ public class InventoryService : IInventoryService, IResupplyService
 
     // ── Business Coordination Logic ──────────────────────────────────────────
 
-    public bool AddToProduct(int productId, int quantity)
+    public bool ResupplyProduct(int productId, int quantity)
     {
         // 1. Update the parent Product quantity
         bool productUpdated = _productCRUD.AddToProduct(productId, quantity);
