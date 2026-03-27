@@ -1712,6 +1712,7 @@ public partial class AppDbContext : DbContext
         modelBuilder.Entity<Productfootprint>(entity =>
         {
             entity.HasKey("Productcarbonfootprintid").HasName("productfootprint_pkey");
+            entity.HasIndex("Productid").IsUnique();
 
             entity.ToTable("productfootprint");
 
@@ -1742,8 +1743,8 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey("Badgeid")
                 .HasConstraintName("fk_productfootprint_badge");
 
-            entity.HasOne(d => d.Product).WithMany(p => p.Productfootprints)
-                .HasForeignKey("Productid")
+            entity.HasOne(d => d.Product).WithOne(p => p.Productfootprint)
+                .HasForeignKey<Productfootprint>("Productid")
                 .HasConstraintName("fk_productfootprint_product");
         });
 

@@ -1,0 +1,920 @@
+@{
+    ViewData["Title"] = "Building Carbon Footprint — Pro Rentals";
+    Layout = null;
+}
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pro Rentals — Building Carbon Footprint</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+
+        .carbon-dashboard {
+            background:
+                radial-gradient(circle at top right, rgba(26, 147, 111, 0.18), transparent 28%),
+                linear-gradient(180deg, #f4fbf8 0%, #edf7f2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-hero {
+            background: linear-gradient(135deg, #113d2f 0%, #1a936f 55%, #2ec4b6 100%);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            content: "";
+            height: 18rem;
+            position: absolute;
+            right: -4rem;
+            top: -6rem;
+            width: 18rem;
+        }
+
+        .chart-card {
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(17, 61, 47, 0.08);
+        }
+
+        .chart-shell {
+            align-items: center;
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 2px dashed #b8d9c9;
+            border-radius: 1rem;
+            color: #4c6b5c;
+            display: flex;
+            flex-direction: column;
+            font-weight: 600;
+            gap: 0.5rem;
+            justify-content: center;
+            min-height: 240px;
+            text-align: center;
+        }
+
+        .chart-shell i {
+            color: #1a936f;
+            font-size: 2rem;
+        }
+
+        .chart-shell small {
+            max-width: 16rem;
+        }
+
+        .chart-shell-hotspot {
+            min-height: 320px;
+        }
+
+        .form-align-row .col-lg-6 {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-align-row .form-control,
+        .form-align-row .form-select {
+            min-height: 44px;
+        }
+
+        .form-align-row .mb-3 {
+            margin-bottom: 1rem;
+        }
+
+        .calc-line {
+            background: #f8fcfa;
+            border: 1px solid #d9ece2;
+            border-radius: 0.75rem;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 0.9rem;
+        }
+
+        .calc-step-label {
+            color: #1a936f;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .bf-total-card {
+            background: linear-gradient(135deg, #0f5f46 0%, #1a936f 100%);
+            border: 1px solid #0d6a4d;
+        }
+
+        .bf-total-card h6,
+        .bf-total-card h3,
+        .bf-total-card small {
+            color: #ffffff !important;
+        }
+
+        .bf-total-card small {
+            opacity: 0.92;
+        }
+
+        .table-action-controls {
+            align-items: flex-end;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .table-sort-control {
+            min-width: 220px;
+        }
+
+        .table-sort-control .form-select {
+            min-height: 38px;
+        }
+
+        @@media (max-width: 576px) {
+            .table-sort-control {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            @* Brand / Logo *@
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+
+            @* Mobile hamburger *@
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    @* Module 1 — Order Processing *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart3 me-1"></i>Order Processing
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #2d7a4f; font-size: 0.7rem;">Module 1</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-plus-circle me-2" style="color: #2d7a4f;"></i>Place Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-search me-2" style="color: #2d7a4f;"></i>Track Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck me-2" style="color: #2d7a4f;"></i>Manage Dispatch</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-return-left me-2" style="color: #2d7a4f;"></i>Handle Returns</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin me-2" style="color: #2d7a4f;"></i>Deposit Refunds</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2" style="color: #2d7a4f;"></i>Order Notifications</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 2 — Inventory Management *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-boxes me-1"></i>Inventory Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 3 — Carbon Footprint *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tree"></i>Carbon Footprint
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0a9396; font-size: 0.7rem;">Module 3</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck-flatbed me-2" style="color: #0a9396;"></i>Shipment Carbon Tracker</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-signpost-2 me-2" style="color: #0a9396;"></i>Route Distance Determination</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-recycle me-2" style="color: #0a9396;"></i>Return Process Carbon Lifecycle</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-collection me-2" style="color: #0a9396;"></i>Batch Delivery Consolidation</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/CarbonMonitoring/CarbonDashboardView"><i class="bi bi-graph-up-arrow me-2" style="color: #0a9396;"></i>Carbon Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/ProductFootprint"><i class="bi bi-calculator me-2" style="color: #0a9396;"></i>Product Carbon Calculator</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/StaffFootprintView"><i class="bi bi-person-badge me-2" style="color: #0a9396;"></i>Staff Footprint</a></li>
+                            <li><a class="dropdown-item active" href="/CarbonFootprint/BuildingFootprintView"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Building Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/PackagingFootprintView"><i class="bi bi-box2-heart me-2" style="color: #0a9396;"></i>Packaging Footprint</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/DisplayRewards"><i class="bi bi-gift me-2" style="color: #0a9396;"></i>Rewards Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-stars me-2" style="color: #0a9396;"></i>Eco Catalog</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/MyRewards"><i class="bi bi-award me-2" style="color: #0a9396;"></i>Eco Rewards</a></li>
+                        </ul>
+                    </li>
+
+                </ul>
+
+                @* Auth buttons *@
+                <div class="d-flex gap-2">
+                    @if (HttpContextAccessor.HttpContext!.Session.GetInt32("SessionId") != null)
+                    {
+                        <span class="navbar-text text-white-50 small me-1">
+                            <i class="bi bi-person-circle me-1"></i>@HttpContextAccessor.HttpContext!.Session.GetString("UserName")
+                            <span class="badge bg-secondary ms-1">@HttpContextAccessor.HttpContext!.Session.GetString("UserRole")</span>
+                            </span>
+                        <form asp-controller="Module1" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Module1/Login" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                        <a href="/Module1/Signup" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="carbon-dashboard py-5">
+        <div class="container">
+            <div class="dashboard-hero text-white p-4 p-lg-5 mb-4">
+                <div class="row align-items-center gy-4 position-relative">
+                    <div class="col-lg-8">
+                        <span class="badge rounded-pill text-bg-light text-success fw-semibold mb-3">Module 3 P2-5</span>
+                        <h1 class="display-6 fw-bold mb-3">Building Footprint Analysis</h1>
+                        <p class="lead mb-0 text-white-50">
+                            Detailed building carbon footprint metrics, trendlines, and environmental impact data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Formula: Building Footprint Calculation</h2>
+                    <p class="text-muted mb-4">
+                        <strong>BF = Σ(Sr × Cr × Wz × Wf)</strong><br/>
+                        <small>Where Sr = Room Size, Cr = CO₂ Level, Wz = Zone Weight, Wf = Floor Weight</small>
+                    </p>
+
+                    <form id="buildingFootprintForm">
+                        <div class="row g-3 mb-4 form-align-row">
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">Room Inputs</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="roomSize" class="form-label">Room Size (Sr) - m²</label>
+                                            <input type="text" class="form-control room-input" id="roomSize" placeholder="e.g., 50" required />
+                                            <div id="roomSizeError" class="text-danger small mt-1" aria-live="polite"></div>
+                                            <small class="text-muted">Bigger rooms → larger contribution</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="co2Level" class="form-label">CO₂ Level (Cr) - ppm</label>
+                                            <input type="text" class="form-control room-input" id="co2Level" placeholder="e.g., 400" required />
+                                            <div id="co2LevelError" class="text-danger small mt-1" aria-live="polite"></div>
+                                            <small class="text-muted">Higher CO₂ → more activity → high contribution</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">Location Inputs</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="zone" class="form-label">Zone</label>
+                                            <select class="form-select room-input" id="zone" required>
+                                                <option value="">-- Select Zone --</option>
+                                                <option value="North">North (1.00)</option>
+                                                <option value="South">South (1.25)</option>
+                                                <option value="East">East (1.10)</option>
+                                                <option value="West">West (1.15)</option>
+                                                <option value="Central">Central (1.35)</option>
+                                            </select>
+                                            <div id="zoneError" class="text-danger small mt-1" aria-live="polite"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="floor" class="form-label">Floor</label>
+                                            <select class="form-select room-input" id="floor" required>
+                                                <option value="">-- Select Floor --</option>
+                                                <option value="Level 1">Level 1 (1.00)</option>
+                                                <option value="Level 2">Level 2 (1.20)</option>
+                                                <option value="Level 3">Level 3 (1.45)</option>
+                                                <option value="Level 4">Level 4 (1.60)</option>
+                                                <option value="Level 5">Level 5 (1.75)</option>
+                                            </select>
+                                            <div id="floorError" class="text-danger small mt-1" aria-live="polite"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="block" class="form-label">Block</label>
+                                            <input type="text" class="form-control room-input" id="block" placeholder="e.g., A" required />
+                                            <div id="blockError" class="text-danger small mt-1" aria-live="polite"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label for="room" class="form-label">Room</label>
+                                            <input type="number" class="form-control room-input" id="room" placeholder="e.g., 101" min="1" step="1" inputmode="numeric" required />
+                                            <div id="roomError" class="text-danger small mt-1" aria-live="polite"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-auto">
+                                <button type="submit" id="calculateBtn" class="btn btn-success">
+                                    <i class="bi bi-calculator me-2"></i>Calculate & Save Footprint
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" id="cancelEditBtn" class="btn btn-outline-secondary" style="display:none;">
+                                    Cancel Edit
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="feedbackBanner" role="status" class="mb-3" style="display:none"></div>
+                    </form>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" style="display: none;" class="mt-4 pt-4 border-top">
+                        <h4 class="text-success mb-3">Calculation Results</h4>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-success bf-total-card">
+                                    <h6 class="text-white mb-2">Total Building Footprint (BF)</h6>
+                                    <h3 class="text-white mb-0" id="totalResult">0.00 kg CO2</h3>
+                                    <small class="text-white-50">Calculated value for this room submission</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-light border border-success">
+                                    <h6 class="text-success mb-2">How This Was Calculated</h6>
+                                    <div id="roomResults"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <div>
+                                <h4 class="text-success mb-1">Saved Building Footprints</h4>
+                                <p class="text-muted mb-0">Create, update, and delete records on this same page.</p>
+                            </div>
+                            <div class="table-action-controls">
+                                <div class="table-sort-control">
+                                    <label for="buildingSortBy" class="form-label mb-1 small text-muted">Order by</label>
+                                    <select id="buildingSortBy" class="form-select form-select-sm">
+                                        <option value="id" selected>ID</option>
+                                        <option value="zone">Zone (A-Z)</option>
+                                        <option value="block">Block (A-Z)</option>
+                                        <option value="floor">Floor</option>
+                                        <option value="savedAtOldest">Saved At (Oldest-Newest)</option>
+                                        <option value="savedAtNewest">Saved At (Newest-Oldest)</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="refreshBuildingListBtn" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Zone</th>
+                                        <th>Block</th>
+                                        <th>Floor</th>
+                                        <th>Room</th>
+                                        <th>Total CO2</th>
+                                        <th>Saved At</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="buildingRecordsBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">Loading records...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental
+                        operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/BuildingFootprintView" class="text-secondary text-decoration-none small">Building Footprint</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Track My Order</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Contact Us</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-cart3 me-1"></i>Order Processing</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-boxes me-1"></i>Inventory Management</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small"><i class="bi bi-leaf me-1"></i>Carbon Footprint</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-bar-chart me-1"></i>Analytics &amp; Reports</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-shield-lock me-1"></i>Staff Portal</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-telephone me-2"></i>+65 6123 4567
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-envelope me-2"></i>support@@prorentals.sg
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 - Pro Rentals Order Processing System v1.0 - 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+        const zoneWeights = {
+            'North': 1.00,
+            'South': 1.25,
+            'East': 1.10,
+            'West': 1.15,
+            'Central': 1.35
+        };
+
+        const floorWeights = {
+            'Level 1': 1.00,
+            'Level 2': 1.20,
+            'Level 3': 1.45,
+            'Level 4': 1.60,
+            'Level 5': 1.75
+        };
+
+        const form = document.getElementById('buildingFootprintForm');
+        const feedbackBanner = document.getElementById('feedbackBanner');
+        const resultsSection = document.getElementById('resultsSection');
+        const roomResults = document.getElementById('roomResults');
+        const totalResult = document.getElementById('totalResult');
+        const buildingRecordsBody = document.getElementById('buildingRecordsBody');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const refreshBuildingListBtn = document.getElementById('refreshBuildingListBtn');
+        const buildingSortBy = document.getElementById('buildingSortBy');
+        const CALIBRATION_CONSTANT = 0.000729;
+        let editingBuildingFootprintId = null;
+
+        function clearFieldError(fieldName) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = '';
+        }
+
+        function setFieldError(fieldName, message) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = message;
+        }
+
+        function setFeedback(message, type) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            feedbackBanner.textContent = message;
+        }
+
+        function setInfoFeedback(message) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = 'alert alert-info';
+            feedbackBanner.textContent = message;
+        }
+
+        function resetFeedback() {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'none';
+            feedbackBanner.textContent = '';
+        }
+
+        function sanitiseInput(value) {
+            return value.toString().trim();
+        }
+
+        function hideCalculationBreakdown() {
+            if (resultsSection) resultsSection.style.display = 'none';
+            if (roomResults) roomResults.innerHTML = '';
+            if (totalResult) totalResult.textContent = '0.00 kg CO2';
+        }
+
+        function setCreateMode() {
+            editingBuildingFootprintId = null;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-calculator me-2"></i>Calculate & Save Footprint';
+            cancelEditBtn.style.display = 'none';
+        }
+
+        function setEditMode(record) {
+            editingBuildingFootprintId = record.buildingCarbonFootprintId;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Update & Save Footprint';
+            cancelEditBtn.style.display = 'inline-block';
+
+            document.getElementById('zone').value = record.zone;
+            document.getElementById('floor').value = record.floor;
+            document.getElementById('block').value = record.block || '';
+            document.getElementById('room').value = record.room || '';
+            document.getElementById('roomSize').value = '';
+            document.getElementById('co2Level').value = '';
+            hideCalculationBreakdown();
+            setInfoFeedback(`Editing record #${record.buildingCarbonFootprintId}. Re-enter Room Size and CO2 Level, then update.`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderCalculationBreakdown(validation) {
+            const zoneWeight = zoneWeights[validation.zone];
+            const floorWeight = floorWeights[validation.floor];
+            const weightedProduct = validation.roomSize * validation.co2Level * zoneWeight * floorWeight;
+            const rawCo2 = weightedProduct * CALIBRATION_CONSTANT;
+            const roundedCo2 = parseFloat(rawCo2.toFixed(2));
+
+            roomResults.innerHTML = `
+                <p class="mb-2"><strong>Location:</strong> Block ${validation.block}, Room ${validation.room} (${validation.zone}, ${validation.floor})</p>
+                <div class="calc-line"><span class="calc-step-label">Formula</span>BF = Sr x Cr x Wz x Wf x k</div>
+                <div class="calc-line"><span class="calc-step-label">Substitute</span>= ${validation.roomSize} x ${validation.co2Level} x ${zoneWeight.toFixed(2)} x ${floorWeight.toFixed(2)} x ${CALIBRATION_CONSTANT}</div>
+                <div class="calc-line"><span class="calc-step-label">Step 1</span>${validation.roomSize} x ${validation.co2Level} x ${zoneWeight.toFixed(2)} x ${floorWeight.toFixed(2)} = ${weightedProduct.toFixed(4)}</div>
+                <div class="calc-line"><span class="calc-step-label">Step 2</span>${weightedProduct.toFixed(4)} x ${CALIBRATION_CONSTANT} = ${rawCo2.toFixed(6)}</div>
+                <div class="calc-line mb-0"><span class="calc-step-label">Final</span>Rounded to 2 d.p. = <strong>${roundedCo2.toFixed(2)} kg CO2</strong></div>
+            `;
+
+            totalResult.textContent = `${roundedCo2.toFixed(2)} kg CO2`;
+            resultsSection.style.display = 'block';
+
+            return roundedCo2;
+        }
+
+        function theValidate() {
+            let isValid = true;
+
+            const roomSizeRaw = sanitiseInput(document.getElementById('roomSize').value);
+            const co2LevelRaw = sanitiseInput(document.getElementById('co2Level').value);
+            const blockRaw = sanitiseInput(document.getElementById('block').value).toUpperCase();
+            const roomRaw = sanitiseInput(document.getElementById('room').value).replace(/\s+/g, '');
+            const zoneValue = document.getElementById('zone').value;
+            const floorValue = document.getElementById('floor').value;
+
+            clearFieldError('roomSize');
+            clearFieldError('co2Level');
+            clearFieldError('block');
+            clearFieldError('room');
+            clearFieldError('zone');
+            clearFieldError('floor');
+
+            const roomSize = parseFloat(roomSizeRaw);
+            if (isNaN(roomSize) || roomSize <= 0) {
+                setFieldError('roomSize', 'Room size must be a positive number');
+                isValid = false;
+            }
+
+            const co2Level = parseFloat(co2LevelRaw);
+            if (isNaN(co2Level) || co2Level <= 0) {
+                setFieldError('co2Level', 'CO2 level must be a positive number');
+                isValid = false;
+            }
+
+            if (!/^[A-Z]$/.test(blockRaw)) {
+                setFieldError('block', 'Block must be a single letter (A-Z)');
+                isValid = false;
+            }
+
+            if (!/^\d+$/.test(roomRaw) || parseInt(roomRaw, 10) <= 0) {
+                setFieldError('room', 'Room must contain numbers only');
+                isValid = false;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(zoneWeights, zoneValue)) {
+                setFieldError('zone', 'Please select a zone');
+                isValid = false;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(floorWeights, floorValue)) {
+                setFieldError('floor', 'Please select a floor');
+                isValid = false;
+            }
+
+            return {
+                isValid,
+                roomSize: roomSize,
+                co2Level: co2Level,
+                block: blockRaw,
+                room: roomRaw,
+                zone: zoneValue,
+                floor: floorValue
+            };
+        }
+
+        function formatSavedAt(dateValue) {
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function sortBuildingRecords(records) {
+            const selectedSort = buildingSortBy?.value || 'id';
+            const sorted = [...records];
+
+            sorted.sort((a, b) => {
+                if (selectedSort === 'zone') {
+                    return (a.zone || '').localeCompare(b.zone || '');
+                }
+                if (selectedSort === 'block') {
+                    return (a.block || '').localeCompare(b.block || '');
+                }
+                if (selectedSort === 'floor') {
+                    return (a.floor || '').localeCompare(b.floor || '');
+                }
+                if (selectedSort === 'savedAtOldest') {
+                    return new Date(a.timehourly).getTime() - new Date(b.timehourly).getTime();
+                }
+                if (selectedSort === 'savedAtNewest') {
+                    return new Date(b.timehourly).getTime() - new Date(a.timehourly).getTime();
+                }
+
+                return (a.buildingCarbonFootprintId || 0) - (b.buildingCarbonFootprintId || 0);
+            });
+
+            return sorted;
+        }
+
+        function createEmptyRow(message) {
+            return `<tr><td colspan="8" class="text-center text-muted py-4">${message}</td></tr>`;
+        }
+
+        async function loadBuildingRecords() {
+            try {
+                buildingRecordsBody.innerHTML = createEmptyRow('Loading records...');
+                const response = await fetch('/api/building-footprint');
+                if (!response.ok) {
+                    throw new Error('Unable to load building footprint records');
+                }
+
+                const records = await response.json();
+                if (!Array.isArray(records) || records.length === 0) {
+                    buildingRecordsBody.innerHTML = createEmptyRow('No building footprint records yet.');
+                    return;
+                }
+
+                const sortedRecords = sortBuildingRecords(records);
+                buildingRecordsBody.innerHTML = sortedRecords.map(record => `
+                    <tr>
+                        <td>${record.buildingCarbonFootprintId}</td>
+                        <td>${record.zone ?? ''}</td>
+                        <td>${record.block ?? ''}</td>
+                        <td>${record.floor ?? ''}</td>
+                        <td>${record.room ?? ''}</td>
+                        <td>${Number(record.totalRoomCo2).toFixed(2)} kg CO2</td>
+                        <td>${formatSavedAt(record.timehourly)}</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-outline-primary btn-sm me-1 edit-building-btn"
+                                data-id="${record.buildingCarbonFootprintId}"
+                                data-zone="${record.zone ?? ''}"
+                                data-block="${record.block ?? ''}"
+                                data-floor="${record.floor ?? ''}"
+                                data-room="${record.room ?? ''}">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-building-btn"
+                                data-id="${record.buildingCarbonFootprintId}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                buildingRecordsBody.innerHTML = createEmptyRow(error.message || 'Unable to load records.');
+            }
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            resetFeedback();
+
+            const validation = theValidate();
+
+            if (!validation.isValid) {
+                hideCalculationBreakdown();
+                setFeedback('Please fix the errors below and resubmit.', 'error');
+                return;
+            }
+
+            const totalRoomCo2 = renderCalculationBreakdown(validation);
+
+            const body = {
+                roomSize: validation.roomSize,
+                co2Level: validation.co2Level,
+                zone: validation.zone,
+                block: validation.block,
+                floor: validation.floor,
+                room: validation.room,
+                totalRoomCo2: totalRoomCo2
+            };
+
+            const btn = document.getElementById('calculateBtn');
+            const initialBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+
+            try {
+                const isEditing = editingBuildingFootprintId !== null;
+                const endpoint = isEditing
+                    ? `/api/building-footprint/${editingBuildingFootprintId}`
+                    : '/api/building-footprint';
+
+                const response = await fetch(endpoint, {
+                    method: isEditing ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to save footprint';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch {
+                        // ignore JSON parse errors
+                    }
+                    throw new Error(err);
+                }
+
+                setFeedback(
+                    isEditing
+                        ? `Footprint updated - totalRoomCo2: ${totalRoomCo2.toFixed(2)} kg CO2`
+                        : `Footprint saved - totalRoomCo2: ${totalRoomCo2.toFixed(2)} kg CO2`,
+                    'success');
+                document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+                form.reset();
+                setCreateMode();
+                await loadBuildingRecords();
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = initialBtnHtml;
+            }
+        });
+
+        document.querySelectorAll('#roomSize, #co2Level, #block, #room, #zone, #floor').forEach(input => {
+            input.addEventListener('input', () => {
+                clearFieldError(input.id);
+                resetFeedback();
+                hideCalculationBreakdown();
+            });
+        });
+
+        cancelEditBtn.addEventListener('click', () => {
+            form.reset();
+            setCreateMode();
+            resetFeedback();
+            hideCalculationBreakdown();
+            document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+        });
+
+        refreshBuildingListBtn.addEventListener('click', () => {
+            loadBuildingRecords();
+        });
+
+        buildingSortBy.addEventListener('change', () => {
+            loadBuildingRecords();
+        });
+
+        buildingRecordsBody.addEventListener('click', async (event) => {
+            const editBtn = event.target.closest('.edit-building-btn');
+            const deleteBtn = event.target.closest('.delete-building-btn');
+
+            if (editBtn) {
+                setEditMode({
+                    buildingCarbonFootprintId: parseInt(editBtn.dataset.id, 10),
+                    zone: editBtn.dataset.zone,
+                    block: editBtn.dataset.block,
+                    floor: editBtn.dataset.floor,
+                    room: editBtn.dataset.room
+                });
+                return;
+            }
+
+            if (!deleteBtn) {
+                return;
+            }
+
+            const id = parseInt(deleteBtn.dataset.id, 10);
+            if (!confirm(`Delete building footprint record #${id}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/building-footprint/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to delete record';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch {
+                        // ignore JSON parse errors
+                    }
+                    throw new Error(err);
+                }
+
+                if (editingBuildingFootprintId === id) {
+                    form.reset();
+                    setCreateMode();
+                    hideCalculationBreakdown();
+                }
+
+                setFeedback(`Deleted building footprint record #${id}.`, 'success');
+                await loadBuildingRecords();
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            }
+        });
+
+        setCreateMode();
+        loadBuildingRecords();
+    </script>
+</body>
+</html>
+
+

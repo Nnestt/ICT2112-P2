@@ -1,0 +1,471 @@
+@using System.Text.Json
+@model ProRental.Domain.Module3.P2_5.CarbonDashboardDto
+@{
+    ViewData["Title"] = "Carbon Dashboard — Pro Rentals";
+    Layout = null;
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var productTrendJson = JsonSerializer.Serialize(Model?.ProductTrendline ?? [], jsonOptions);
+    var productBarJson = JsonSerializer.Serialize(Model?.ProductBarChart ?? [], jsonOptions);
+    var productPieJson = JsonSerializer.Serialize(Model?.ProductPieChart ?? [], jsonOptions);
+    var staffTrendJson = JsonSerializer.Serialize(Model?.StaffTrendline ?? [], jsonOptions);
+    var staffBarJson = JsonSerializer.Serialize(Model?.StaffBarChart ?? [], jsonOptions);
+    var staffPieJson = JsonSerializer.Serialize(Model?.StaffPieChart ?? [], jsonOptions);
+    var packagingBarJson = JsonSerializer.Serialize(Model?.PackagingBarChart ?? [], jsonOptions);
+    var packagingPieJson = JsonSerializer.Serialize(Model?.PackagingPieChart ?? [], jsonOptions);
+    var trendJson = JsonSerializer.Serialize(Model?.BuildingTrendline ?? [], jsonOptions);
+    var barJson = JsonSerializer.Serialize(Model?.BuildingBarChart ?? [], jsonOptions);
+    var pieJson = JsonSerializer.Serialize(Model?.BuildingPieChart ?? [], jsonOptions);
+    var hotspotJson = JsonSerializer.Serialize(Model?.Hotspots ?? [], jsonOptions);
+    var hotspotThresholdsJson = JsonSerializer.Serialize(Model?.HotspotThresholds ?? [], jsonOptions);
+}
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pro Rentals — Carbon Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+
+        .carbon-dashboard {
+            background:
+                radial-gradient(circle at top right, rgba(26, 147, 111, 0.18), transparent 28%),
+                linear-gradient(180deg, #f4fbf8 0%, #edf7f2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-hero {
+            background: linear-gradient(135deg, #113d2f 0%, #1a936f 55%, #2ec4b6 100%);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            content: "";
+            height: 18rem;
+            position: absolute;
+            right: -4rem;
+            top: -6rem;
+            width: 18rem;
+        }
+
+        .chart-card {
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(17, 61, 47, 0.08);
+        }
+
+        .chart-canvas-wrap {
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 1px solid #d8ebe0;
+            border-radius: 1rem;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .chart-canvas-wrap canvas {
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .chart-canvas-wrap-lg {
+            min-height: 320px;
+        }
+
+        .chart-canvas-wrap-md {
+            min-height: 260px;
+        }
+
+        .chart-canvas-wrap-sm {
+            min-height: 200px;
+        }
+
+        .chart-canvas-wrap-hotspot {
+            min-height: 320px;
+        }
+
+        .hotspot-thresholds {
+            background: #f1f7f4;
+            border: 1px solid #d8ebe0;
+            border-radius: 0.9rem;
+            color: #2b5a4a;
+            font-size: 0.9rem;
+            min-width: 220px;
+            padding: 0.75rem 1rem;
+        }
+
+        .hotspot-thresholds .threshold-label {
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .hotspot-thresholds .threshold-item {
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            @* Brand / Logo *@
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+
+            @* Mobile hamburger *@
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    @* Module 1 — Order Processing *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart3 me-1"></i>Order Processing
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #2d7a4f; font-size: 0.7rem;">Module 1</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-plus-circle me-2" style="color: #2d7a4f;"></i>Place Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-search me-2" style="color: #2d7a4f;"></i>Track Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck me-2" style="color: #2d7a4f;"></i>Manage Dispatch</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-return-left me-2" style="color: #2d7a4f;"></i>Handle Returns</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin me-2" style="color: #2d7a4f;"></i>Deposit Refunds</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2" style="color: #2d7a4f;"></i>Order Notifications</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 2 — Inventory Management *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-boxes me-1"></i>Inventory Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 3 — Carbon Footprint *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tree"></i>Carbon Footprint
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0a9396; font-size: 0.7rem;">Module 3</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck-flatbed me-2" style="color: #0a9396;"></i>Shipment Carbon Tracker</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-signpost-2 me-2" style="color: #0a9396;"></i>Route Distance Determination</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-recycle me-2" style="color: #0a9396;"></i>Return Process Carbon Lifecycle</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-collection me-2" style="color: #0a9396;"></i>Batch Delivery Consolidation</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item active" href="/CarbonMonitoring/CarbonDashboardView"><i class="bi bi-graph-up-arrow me-2" style="color: #0a9396;"></i>Carbon Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/ProductFootprint"><i class="bi bi-calculator me-2" style="color: #0a9396;"></i>Product Carbon Calculator</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/StaffFootprintView"><i class="bi bi-person-badge me-2" style="color: #0a9396;"></i>Staff Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/BuildingFootprintView"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Building Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/PackagingFootprintView"><i class="bi bi-box2-heart me-2" style="color: #0a9396;"></i>Packaging Footprint</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/DisplayRewards"><i class="bi bi-gift me-2" style="color: #0a9396;"></i>Rewards Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-stars me-2" style="color: #0a9396;"></i>Eco Catalog</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/MyRewards"><i class="bi bi-award me-2" style="color: #0a9396;"></i>Eco Rewards</a></li>
+                        </ul>
+                    </li>
+
+                </ul>
+
+                @* Auth buttons *@
+                <div class="d-flex gap-2">
+                    @if (HttpContextAccessor.HttpContext!.Session.GetInt32("SessionId") != null)
+                    {
+                        <span class="navbar-text text-white-50 small me-1">
+                            <i class="bi bi-person-circle me-1"></i>@HttpContextAccessor.HttpContext!.Session.GetString("UserName")
+                            <span class="badge bg-secondary ms-1">@HttpContextAccessor.HttpContext!.Session.GetString("UserRole")</span>
+                            </span>
+                        <form asp-controller="Module1" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Module1/Login" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                        <a href="/Module1/Signup" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="carbon-dashboard py-5">
+        <div class="container">
+            <div class="dashboard-hero text-white p-4 p-lg-5 mb-4">
+                <div class="row align-items-center gy-4 position-relative">
+                    <div class="col-lg-8">
+                        <span class="badge rounded-pill text-bg-light text-success fw-semibold mb-3">Module 3 P2-5</span>
+                        <h1 class="display-6 fw-bold mb-3">Carbon Dashboard</h1>
+                        <p class="lead mb-0 text-white-50">
+                            Track product, building, and staff emissions in one place with trendlines, comparisons, and hotspot alerts.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Product Carbon Charts</h2>
+                    <p class="text-muted mb-4">Live charts from `ProductFootprint.calculatedAt` and `totalCo2`.</p>
+                    <div class="row g-4">
+                        <div class="col-lg-12"><div class="chart-canvas-wrap chart-canvas-wrap-lg"><canvas id="productTrendlineChart"></canvas></div></div>
+                        <div class="col-lg-8"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="productBarChart"></canvas></div></div>
+                        <div class="col-lg-4"><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="productPieChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Building Carbon Charts</h2>
+                    <p class="text-muted mb-4">Live charts from `BuildingFootprint.timeHourly` and `totalRoomCo2`.</p>
+                    <div class="row g-4">
+                        <div class="col-lg-12"><div class="chart-canvas-wrap chart-canvas-wrap-lg"><canvas id="buildingTrendlineChart"></canvas></div></div>
+                        <div class="col-lg-7"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="buildingBarChart"></canvas></div></div>
+                        <div class="col-lg-5"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="buildingPieChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Staff Carbon Charts</h2>
+                    <p class="text-muted mb-4">Live charts from `StaffFootprint.time` and `totalStaffCo2`.</p>
+                    <div class="row g-4">
+                        <div class="col-lg-12"><div class="chart-canvas-wrap chart-canvas-wrap-lg"><canvas id="staffTrendlineChart"></canvas></div></div>
+                        <div class="col-lg-7"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="staffBarChart"></canvas></div></div>
+                        <div class="col-lg-5"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="staffPieChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Packaging Carbon Charts</h2>
+                    <p class="text-muted mb-4">Footprint totals by packaging material across all orders.</p>
+                    <div class="row g-4">
+                        <div class="col-lg-8"><div class="chart-canvas-wrap chart-canvas-wrap-md"><canvas id="packagingBarChart"></canvas></div></div>
+                        <div class="col-lg-4"><div class="chart-canvas-wrap chart-canvas-wrap-sm"><canvas id="packagingPieChart"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                        <div>
+                            <h2 class="h4 mb-1">Carbon Hotspot Chart</h2>
+                            <p class="text-muted mb-4">Summary of total carbon footprint across product, building, staff, and packaging.</p>
+                        </div>
+                        @if (Model?.HotspotThresholds.Count > 0)
+                        {
+                            <div class="hotspot-thresholds">
+                                <div class="threshold-label">Thresholds</div>
+                                @foreach (var threshold in Model.HotspotThresholds)
+                                {
+                                    <div class="threshold-item">@threshold.Label threshold : @threshold.Value.ToString("0")</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (Model?.HotspotAlerts.Count > 0)
+                    {
+                        <div id="hotspotThresholdAlert" class="alert alert-danger" role="alert">
+                            @foreach (var alert in Model.HotspotAlerts)
+                            {
+                                <div>@alert</div>
+                            }
+                        </div>
+                    }
+                    <div class="chart-canvas-wrap chart-canvas-wrap-hotspot">
+                        <canvas id="hotspotChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal fade" id="hotspotThresholdModal" tabindex="-1" aria-labelledby="hotspotThresholdModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="hotspotThresholdModalLabel">CO2 Threshold Reached</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">The following hotspot segments exceeded their CO2 threshold:</p>
+                    <ul id="hotspotThresholdList" class="mb-0">
+                        @foreach (var alert in Model?.HotspotAlerts ?? [])
+                        {
+                            <li>@alert</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-light pt-5 pb-4">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/ProductFootprint" class="text-secondary text-decoration-none small">Product Carbon Calculator</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-cart3 me-1"></i>Order Processing</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-boxes me-1"></i>Inventory Management</a></li>
+                        <li class="mb-1"><a href="/ProductFootprint" class="text-secondary text-decoration-none small"><i class="bi bi-leaf me-1"></i>Carbon Footprint</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small"><i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-telephone me-2"></i>+65 6123 4567</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-envelope me-2"></i>support@@prorentals.sg</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT</li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 - Pro Rentals Order Processing System v1.0 - 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/chart.js/dist/chart.umd.js"></script>
+    <script>
+        const productTrendData = @Html.Raw(productTrendJson);
+        const productBarData = @Html.Raw(productBarJson);
+        const productPieData = @Html.Raw(productPieJson);
+        const staffTrendData = @Html.Raw(staffTrendJson);
+        const staffBarData = @Html.Raw(staffBarJson);
+        const staffPieData = @Html.Raw(staffPieJson);
+        const packagingBarData = @Html.Raw(packagingBarJson);
+        const packagingPieData = @Html.Raw(packagingPieJson);
+        const trendData = @Html.Raw(trendJson);
+        const barData = @Html.Raw(barJson);
+        const pieData = @Html.Raw(pieJson);
+        const hotspotData = @Html.Raw(hotspotJson);
+        const hotspotThresholds = @Html.Raw(hotspotThresholdsJson);
+
+        const palette = ['#1a936f', '#2ec4b6', '#ff9f1c', '#5b8e7d', '#0f4c3a', '#7bc8a4'];
+        const chartTextColor = '#35584a';
+        const gridColor = 'rgba(53, 88, 74, 0.12)';
+        const axisTitleFont = { size: 16, weight: '700' };
+        const tickFont = { size: 13, weight: '600' };
+        const piePercentagePlugin = {
+            id: 'piePercentagePlugin',
+            afterDatasetsDraw(chart) {
+                if (chart.config.type !== 'doughnut') return;
+                // Intentionally empty: we show labels in the legend instead.
+            }
+        };
+
+        const pieLegendOptions = {
+            display: true,
+            position: 'bottom',
+            align: 'start',
+            labels: {
+                boxWidth: 12,
+                boxHeight: 12,
+                padding: 12,
+                color: chartTextColor,
+                font: { size: 11, weight: '600' },
+                generateLabels(chart) {
+                    const data = chart.data;
+                    const dataset = data.datasets[0] || { data: [] };
+                    const total = dataset.data.reduce((sum, value) => sum + Number(value), 0);
+                    return data.labels.map((label, i) => {
+                        const value = Number(dataset.data[i] ?? 0);
+                        const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+                        return {
+                            text: `${label} ${percentage}%`,
+                            fillStyle: dataset.backgroundColor[i],
+                            strokeStyle: dataset.backgroundColor[i],
+                            lineWidth: 0,
+                            hidden: isNaN(value),
+                            index: i
+                        };
+                    });
+                }
+            }
+        };
+
+        new Chart(document.getElementById('productTrendlineChart'), { type: 'line', data: { labels: productTrendData.map(item => item.label), datasets: [{ data: productTrendData.map(item => item.value), borderColor: '#ff9f1c', backgroundColor: 'rgba(255, 159, 28, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('productBarChart'), { type: 'bar', data: { labels: productBarData.map(item => item.label), datasets: [{ data: productBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Product', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont, maxRotation: 0, minRotation: 0, callback(value) { const label = this.getLabelForValue(value); return typeof label === 'string' ? label.split(' ') : label; } }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('productPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: productPieData.map(item => item.label), datasets: [{ data: productPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('buildingTrendlineChart'), { type: 'line', data: { labels: trendData.map(item => item.label), datasets: [{ label: 'Building CO2', data: trendData.map(item => item.value), borderColor: '#1a936f', backgroundColor: 'rgba(26, 147, 111, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('buildingBarChart'), { type: 'bar', data: { labels: barData.map(item => item.label), datasets: [{ label: 'CO2 by Zone', data: barData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Zone', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('buildingPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: pieData.map(item => item.label), datasets: [{ data: pieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('staffTrendlineChart'), { type: 'line', data: { labels: staffTrendData.map(item => item.label), datasets: [{ data: staffTrendData.map(item => item.value), borderColor: '#5b8e7d', backgroundColor: 'rgba(91, 142, 125, 0.18)', fill: true, tension: 0.3, borderWidth: 3, pointRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Time', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('staffBarChart'), { type: 'bar', data: { labels: staffBarData.map(item => item.label), datasets: [{ data: staffBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Staff', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('staffPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: staffPieData.map(item => item.label), datasets: [{ data: staffPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('packagingBarChart'), { type: 'bar', data: { labels: packagingBarData.map(item => item.label), datasets: [{ data: packagingBarData.map(item => item.value), backgroundColor: palette, borderRadius: 10, categoryPercentage: 0.9, barPercentage: 0.9 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Material', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: { size: 8, weight: '600' }, autoSkip: false, maxRotation: 0, minRotation: 0, callback(value) { const label = this.getLabelForValue(value); return typeof label === 'string' ? label.split(' ') : label; } }, grid: { display: false } }, y: { title: { display: true, text: 'CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: { size: 9, weight: '600' } }, grid: { color: gridColor }, beginAtZero: true } } } });
+        new Chart(document.getElementById('packagingPieChart'), { type: 'doughnut', plugins: [piePercentagePlugin], data: { labels: packagingPieData.map(item => item.label), datasets: [{ data: packagingPieData.map(item => item.value), backgroundColor: palette, borderWidth: 0, radius: '78%', cutout: '60%' }] }, options: { responsive: true, maintainAspectRatio: false, layout: { padding: { top: 12, right: 12, bottom: 12, left: 12 } }, plugins: { legend: pieLegendOptions, tooltip: { callbacks: { label(context) { const value = Number(context.raw ?? 0); const total = context.dataset.data.reduce((sum, item) => sum + Number(item), 0); const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0'; return `${context.label}: ${value} CO2 (${percentage}%)`; } } } } } });
+        new Chart(document.getElementById('hotspotChart'), { type: 'bar', data: { labels: hotspotData.map(item => item.label), datasets: [{ data: hotspotData.map(item => item.value), backgroundColor: ['#ff9f1c', '#ffbf69', '#2ec4b6', '#5b8e7d', '#1a936f', '#8ecae6'], borderRadius: 10 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: 'Total CO2', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { color: gridColor }, beginAtZero: true }, y: { title: { display: true, text: 'Segment', color: chartTextColor, font: axisTitleFont }, ticks: { color: chartTextColor, font: tickFont }, grid: { display: false } } } } });
+
+        @if (Model?.HotspotAlerts.Count > 0)
+        {
+            <text>new bootstrap.Modal(document.getElementById('hotspotThresholdModal')).show();</text>
+        }
+    </script>
+</body>
+</html>

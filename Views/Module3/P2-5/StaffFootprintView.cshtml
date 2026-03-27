@@ -1,0 +1,961 @@
+@{
+    ViewData["Title"] = "Staff Carbon Footprint — Pro Rentals";
+    Layout = null;
+}
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pro Rentals — Staff Carbon Footprint</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+
+        .carbon-dashboard {
+            background:
+                radial-gradient(circle at top right, rgba(26, 147, 111, 0.18), transparent 28%),
+                linear-gradient(180deg, #f4fbf8 0%, #edf7f2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-hero {
+            background: linear-gradient(135deg, #113d2f 0%, #1a936f 55%, #2ec4b6 100%);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            content: "";
+            height: 18rem;
+            position: absolute;
+            right: -4rem;
+            top: -6rem;
+            width: 18rem;
+        }
+
+        .chart-card {
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(17, 61, 47, 0.08);
+        }
+
+        .chart-shell {
+            align-items: center;
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 2px dashed #b8d9c9;
+            border-radius: 1rem;
+            color: #4c6b5c;
+            display: flex;
+            flex-direction: column;
+            font-weight: 600;
+            gap: 0.5rem;
+            justify-content: center;
+            min-height: 240px;
+            text-align: center;
+        }
+
+        .chart-shell i {
+            color: #1a936f;
+            font-size: 2rem;
+        }
+
+        .chart-shell small {
+            max-width: 16rem;
+        }
+
+        .chart-shell-hotspot {
+            min-height: 320px;
+        }
+
+        .form-align-row .form-control,
+        .form-align-row .form-select {
+            min-height: 44px;
+        }
+
+        .calc-line {
+            background: #f8fcfa;
+            border: 1px solid #d9ece2;
+            border-radius: 0.75rem;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 0.9rem;
+        }
+
+        .calc-step-label {
+            color: #1a936f;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .sf-total-card {
+            background: linear-gradient(135deg, #0f5f46 0%, #1a936f 100%);
+            border: 1px solid #0d6a4d;
+        }
+
+        .sf-total-card h6,
+        .sf-total-card h3,
+        .sf-total-card small {
+            color: #ffffff !important;
+        }
+
+        .sf-total-card small {
+            opacity: 0.92;
+        }
+
+        .table-action-controls {
+            align-items: flex-end;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .table-sort-control {
+            min-width: 220px;
+        }
+
+        .table-sort-control .form-select {
+            min-height: 38px;
+        }
+
+        @@media (max-width: 576px) {
+            .table-sort-control {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            @* Brand / Logo *@
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+
+            @* Mobile hamburger *@
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    @* Module 1 — Order Processing *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart3 me-1"></i>Order Processing
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #2d7a4f; font-size: 0.7rem;">Module 1</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-plus-circle me-2" style="color: #2d7a4f;"></i>Place Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-search me-2" style="color: #2d7a4f;"></i>Track Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck me-2" style="color: #2d7a4f;"></i>Manage Dispatch</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-return-left me-2" style="color: #2d7a4f;"></i>Handle Returns</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin me-2" style="color: #2d7a4f;"></i>Deposit Refunds</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2" style="color: #2d7a4f;"></i>Order Notifications</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 2 — Inventory Management *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-boxes me-1"></i>Inventory Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 3 — Carbon Footprint *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tree"></i>Carbon Footprint
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0a9396; font-size: 0.7rem;">Module 3</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck-flatbed me-2" style="color: #0a9396;"></i>Shipment Carbon Tracker</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-signpost-2 me-2" style="color: #0a9396;"></i>Route Distance Determination</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-recycle me-2" style="color: #0a9396;"></i>Return Process Carbon Lifecycle</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-collection me-2" style="color: #0a9396;"></i>Batch Delivery Consolidation</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/CarbonMonitoring/CarbonDashboardView"><i class="bi bi-graph-up-arrow me-2" style="color: #0a9396;"></i>Carbon Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/ProductFootprint"><i class="bi bi-calculator me-2" style="color: #0a9396;"></i>Product Carbon Calculator</a></li>
+                            <li><a class="dropdown-item active" href="/CarbonFootprint/StaffFootprintView"><i class="bi bi-person-badge me-2" style="color: #0a9396;"></i>Staff Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/BuildingFootprintView"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Building Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/PackagingFootprintView"><i class="bi bi-box2-heart me-2" style="color: #0a9396;"></i>Packaging Footprint</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/DisplayRewards"><i class="bi bi-gift me-2" style="color: #0a9396;"></i>Rewards Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-stars me-2" style="color: #0a9396;"></i>Eco Catalog</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/MyRewards"><i class="bi bi-award me-2" style="color: #0a9396;"></i>Eco Rewards</a></li>
+                        </ul>
+                    </li>
+
+                </ul>
+
+                @* Auth buttons *@
+                <div class="d-flex gap-2">
+                    @if (HttpContextAccessor.HttpContext!.Session.GetInt32("SessionId") != null)
+                    {
+                        <span class="navbar-text text-white-50 small me-1">
+                            <i class="bi bi-person-circle me-1"></i>@HttpContextAccessor.HttpContext!.Session.GetString("UserName")
+                            <span class="badge bg-secondary ms-1">@HttpContextAccessor.HttpContext!.Session.GetString("UserRole")</span>
+                            </span>
+                        <form asp-controller="Module1" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Module1/Login" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                        <a href="/Module1/Signup" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="carbon-dashboard py-5">
+        <div class="container">
+            <div class="dashboard-hero text-white p-4 p-lg-5 mb-4">
+                <div class="row align-items-center gy-4 position-relative">
+                    <div class="col-lg-8">
+                        <span class="badge rounded-pill text-bg-light text-success fw-semibold mb-3">Module 3 P2-5</span>
+                        <h1 class="display-6 fw-bold mb-3">Staff Footprint Analysis</h1>
+                        <p class="lead mb-0 text-white-50">
+                            Detailed staff carbon footprint metrics, trendlines, and environmental impact data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-1">Formula: Staff Footprint Calculation</h2>
+                    <p class="text-muted mb-4">
+                        <strong>SF = H x Er x Dw</strong><br />
+                        <small>Where H = Hours Worked (Check-Out minus Check-In), Er = Emission Rate (3.53 kg CO2/hour), Dw = Department Weight</small>
+                    </p>
+
+                    <form id="staffFootprintForm">
+                        <div class="row g-3 mb-4 form-align-row">
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">Staff Information</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="department" class="form-label">Department</label>
+                                    <select class="form-select" id="department" required>
+                                        <option value="">-- Select Department --</option>
+                                    </select>
+                                    <div id="departmentError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="staffId" class="form-label">Staff ID</label>
+                                    <select class="form-select" id="staffId" required>
+                                        <option value="">-- Select Staff --</option>
+                                    </select>
+                                    <div id="staffIdError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">Working Hours</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="checkInTime" class="form-label">Check-In Time</label>
+                                    <input type="datetime-local" class="form-control" id="checkInTime" required />
+                                    <div id="checkInTimeError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="checkOutTime" class="form-label">Check-Out Time</label>
+                                    <input type="datetime-local" class="form-control" id="checkOutTime" required />
+                                    <div id="checkOutTimeError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-auto">
+                                <button type="submit" id="calculateBtn" class="btn btn-success">
+                                    <i class="bi bi-calculator me-2"></i>Calculate & Save Footprint
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" id="cancelEditBtn" class="btn btn-outline-secondary" style="display:none;">
+                                    Cancel Edit
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="feedbackBanner" role="status" class="mb-3" style="display:none"></div>
+                    </form>
+
+                    <div id="resultsSection" style="display: none;" class="mt-4 pt-4 border-top">
+                        <h4 class="text-success mb-3">Calculation Results</h4>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="alert alert-success sf-total-card">
+                                    <h6 class="text-white mb-2">Total Staff Footprint (SF)</h6>
+                                    <h3 class="text-white mb-0" id="totalResult">0.00 kg CO2</h3>
+                                    <small class="text-white-50">Calculated value for this staff submission</small>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-light border border-success">
+                                    <h6 class="text-success mb-2">How This Was Calculated</h6>
+                                    <div id="calcResults"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <div>
+                                <h4 class="text-success mb-1">Saved Staff Footprints</h4>
+                                <p class="text-muted mb-0">Create, update, and delete records on this same page.</p>
+                            </div>
+                            <div class="table-action-controls">
+                                <div class="table-sort-control">
+                                    <label for="staffSortBy" class="form-label mb-1 small text-muted">Order by</label>
+                                    <select id="staffSortBy" class="form-select form-select-sm">
+                                        <option value="id" selected>ID</option>
+                                        <option value="staffId">Staff ID</option>
+                                        <option value="department">Department (A-Z)</option>
+                                        <option value="checkInOldest">Check In (Oldest-Newest)</option>
+                                        <option value="checkInNewest">Check In (Newest-Oldest)</option>
+                                        <option value="checkOutOldest">Check Out (Oldest-Newest)</option>
+                                        <option value="checkOutNewest">Check Out (Newest-Oldest)</option>
+                                        <option value="hours">Hours (Low-High)</option>
+                                        <option value="totalCo2">Total CO2 (Low-High)</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="refreshStaffListBtn" class="btn btn-outline-success btn-sm">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Staff ID</th>
+                                        <th>Department</th>
+                                        <th>Check-In</th>
+                                        <th>Check-Out</th>
+                                        <th>Hours</th>
+                                        <th>Total CO2</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffRecordsBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">Loading records...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental
+                        operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/CarbonFootprint/StaffFootprintView" class="text-secondary text-decoration-none small">Staff Footprint</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Track My Order</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small">Contact Us</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-cart3 me-1"></i>Order Processing</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-boxes me-1"></i>Inventory Management</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small"><i class="bi bi-leaf me-1"></i>Carbon Footprint</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-bar-chart me-1"></i>Analytics &amp; Reports</a></li>
+                        <li class="mb-1"><a href="#" class="text-secondary text-decoration-none small"><i class="bi bi-shield-lock me-1"></i>Staff Portal</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-telephone me-2"></i>+65 6123 4567
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-envelope me-2"></i>support@@prorentals.sg
+                        </li>
+                        <li class="mb-2 text-secondary small">
+                            <i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 - Pro Rentals Order Processing System v1.0 - 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+        const EMISSION_RATE_PER_HOUR = 3.53;
+        let staffOptions = [];
+        let editingStaffFootprintId = null;
+
+        const form = document.getElementById('staffFootprintForm');
+        const feedbackBanner = document.getElementById('feedbackBanner');
+        const resultsSection = document.getElementById('resultsSection');
+        const calcResults = document.getElementById('calcResults');
+        const totalResult = document.getElementById('totalResult');
+        const departmentSelect = document.getElementById('department');
+        const staffIdSelect = document.getElementById('staffId');
+        const staffRecordsBody = document.getElementById('staffRecordsBody');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const refreshStaffListBtn = document.getElementById('refreshStaffListBtn');
+        const staffSortBy = document.getElementById('staffSortBy');
+
+        function clearFieldError(fieldName) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = '';
+        }
+
+        function setFieldError(fieldName, message) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = message;
+        }
+
+        function setFeedback(message, type) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            feedbackBanner.textContent = message;
+        }
+
+        function setInfoFeedback(message) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = 'alert alert-info';
+            feedbackBanner.textContent = message;
+        }
+
+        function resetFeedback() {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'none';
+            feedbackBanner.textContent = '';
+        }
+
+        function sanitiseInput(value) {
+            return value.toString().trim();
+        }
+
+        function hideCalculationBreakdown() {
+            if (resultsSection) resultsSection.style.display = 'none';
+            if (calcResults) calcResults.innerHTML = '';
+            if (totalResult) totalResult.textContent = '0.00 kg CO2';
+        }
+
+        function formatDateTimeForApi(localDateTimeString) {
+            const date = new Date(localDateTimeString);
+            return date.toISOString();
+        }
+
+        function formatDateTimeForDisplay(localDateTimeString) {
+            const date = new Date(localDateTimeString);
+            return date.toLocaleString();
+        }
+
+        function toLocalInputValue(dateTimeValue) {
+            const date = new Date(dateTimeValue);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function setCreateMode() {
+            editingStaffFootprintId = null;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-calculator me-2"></i>Calculate & Save Footprint';
+            cancelEditBtn.style.display = 'none';
+        }
+
+        function setEditMode(record) {
+            editingStaffFootprintId = record.staffCarbonFootprintId;
+            const btn = document.getElementById('calculateBtn');
+            btn.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Update & Save Footprint';
+            cancelEditBtn.style.display = 'inline-block';
+
+            departmentSelect.value = record.department;
+            populateStaffOptionsForDepartment(record.department);
+            staffIdSelect.value = String(record.staffId);
+            document.getElementById('checkInTime').value = toLocalInputValue(record.checkInTime);
+            document.getElementById('checkOutTime').value = toLocalInputValue(record.checkOutTime);
+            hideCalculationBreakdown();
+            setInfoFeedback(`Editing record #${record.staffCarbonFootprintId}. Update values and save.`);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function loadStaffOptions() {
+            try {
+                const response = await fetch('/api/staff-footprint/staff-options');
+                if (!response.ok) {
+                    throw new Error('Unable to load staff options');
+                }
+
+                staffOptions = await response.json();
+                const departments = [...new Map(
+                    staffOptions.map(option => [option.department, option.departmentWeight])
+                ).entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+                const departmentOptionsHtml = ['<option value="">-- Select Department --</option>'];
+                departments.forEach(([department, weight]) => {
+                    departmentOptionsHtml.push(
+                        `<option value="${department}" data-weight="${weight}">${department} (${Number(weight).toFixed(2)})</option>`
+                    );
+                });
+
+                departmentSelect.innerHTML = departmentOptionsHtml.join('');
+                populateStaffOptionsForDepartment('');
+            } catch {
+                setFeedback('Unable to load staff list. Please refresh and try again.', 'error');
+            }
+        }
+
+        function populateStaffOptionsForDepartment(department) {
+            const filteredStaff = department
+                ? staffOptions.filter(option => option.department === department)
+                : [];
+
+            const optionsHtml = ['<option value="">-- Select Staff --</option>'];
+            filteredStaff.forEach(option => {
+                optionsHtml.push(`<option value="${option.staffId}">Staff ${option.staffId}</option>`);
+            });
+
+            staffIdSelect.innerHTML = optionsHtml.join('');
+        }
+
+        function theValidate() {
+            let isValid = true;
+
+            const departmentRaw = sanitiseInput(departmentSelect.value);
+            const staffIdRaw = sanitiseInput(staffIdSelect.value);
+            const checkInRaw = sanitiseInput(document.getElementById('checkInTime').value);
+            const checkOutRaw = sanitiseInput(document.getElementById('checkOutTime').value);
+
+            clearFieldError('department');
+            clearFieldError('staffId');
+            clearFieldError('checkInTime');
+            clearFieldError('checkOutTime');
+
+            const selectedDepartmentOption = departmentSelect.options[departmentSelect.selectedIndex];
+            const staffId = parseInt(staffIdRaw, 10);
+            const department = departmentRaw;
+            const departmentWeight = parseFloat(selectedDepartmentOption?.dataset?.weight || '0');
+
+            if (!department) {
+                setFieldError('department', 'Please select a department');
+                isValid = false;
+            }
+
+            if (!staffIdRaw || isNaN(staffId) || staffId <= 0) {
+                setFieldError('staffId', 'Please select a staff member');
+                isValid = false;
+            }
+
+            if (!checkInRaw) {
+                setFieldError('checkInTime', 'Please select a check-in time');
+                isValid = false;
+            }
+
+            if (!checkOutRaw) {
+                setFieldError('checkOutTime', 'Please select a check-out time');
+                isValid = false;
+            }
+
+            if (checkInRaw && checkOutRaw) {
+                const checkInDate = new Date(checkInRaw);
+                const checkOutDate = new Date(checkOutRaw);
+
+                if (isNaN(checkInDate.getTime())) {
+                    setFieldError('checkInTime', 'Invalid check-in time');
+                    isValid = false;
+                }
+
+                if (isNaN(checkOutDate.getTime())) {
+                    setFieldError('checkOutTime', 'Invalid check-out time');
+                    isValid = false;
+                }
+
+                if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime()) && checkOutDate <= checkInDate) {
+                    setFieldError('checkOutTime', 'Check-out time must be later than check-in time');
+                    isValid = false;
+                }
+            }
+
+            return {
+                isValid,
+                staffId,
+                department,
+                departmentWeight,
+                checkInTime: checkInRaw,
+                checkOutTime: checkOutRaw
+            };
+        }
+
+        function renderCalculationBreakdown(validation) {
+            const checkInDate = new Date(validation.checkInTime);
+            const checkOutDate = new Date(validation.checkOutTime);
+            const rawHoursWorked = (checkOutDate - checkInDate) / 3600000;
+            const hoursWorked = parseFloat(rawHoursWorked.toFixed(2));
+            const rawTotal = hoursWorked * EMISSION_RATE_PER_HOUR * validation.departmentWeight;
+            const roundedTotal = parseFloat(rawTotal.toFixed(2));
+
+            calcResults.innerHTML = `
+                <p class="mb-2"><strong>Staff:</strong> ID ${validation.staffId}</p>
+                <p class="mb-2"><strong>Department:</strong> ${validation.department} (Dw = ${validation.departmentWeight.toFixed(2)})</p>
+                <p class="mb-2"><strong>Check-In:</strong> ${formatDateTimeForDisplay(validation.checkInTime)}<br /><strong>Check-Out:</strong> ${formatDateTimeForDisplay(validation.checkOutTime)}</p>
+                <div class="calc-line"><span class="calc-step-label">Formula</span>SF = H x Er x Dw</div>
+                <div class="calc-line"><span class="calc-step-label">Step 1</span>H = (${formatDateTimeForDisplay(validation.checkOutTime)} - ${formatDateTimeForDisplay(validation.checkInTime)}) = ${hoursWorked.toFixed(2)} hours</div>
+                <div class="calc-line"><span class="calc-step-label">Step 2</span>SF = ${hoursWorked.toFixed(2)} x ${EMISSION_RATE_PER_HOUR.toFixed(2)} x ${validation.departmentWeight.toFixed(2)} = ${rawTotal.toFixed(4)}</div>
+                <div class="calc-line mb-0"><span class="calc-step-label">Final</span>Rounded to 2 d.p. = <strong>${roundedTotal.toFixed(2)} kg CO2</strong></div>
+            `;
+
+            totalResult.textContent = `${roundedTotal.toFixed(2)} kg CO2`;
+            resultsSection.style.display = 'block';
+
+            return {
+                hoursWorked,
+                totalStaffCo2: roundedTotal
+            };
+        }
+
+        function createEmptyRow(message) {
+            return `<tr><td colspan="8" class="text-center text-muted py-4">${message}</td></tr>`;
+        }
+
+        function sortStaffRecords(records) {
+            const selectedSort = staffSortBy?.value || 'id';
+            const sorted = [...records];
+
+            sorted.sort((a, b) => {
+                if (selectedSort === 'staffId') {
+                    return (a.staffId || 0) - (b.staffId || 0);
+                }
+                if (selectedSort === 'department') {
+                    return (a.department || '').localeCompare(b.department || '');
+                }
+                if (selectedSort === 'checkInOldest') {
+                    return new Date(a.checkInTime).getTime() - new Date(b.checkInTime).getTime();
+                }
+                if (selectedSort === 'checkInNewest') {
+                    return new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime();
+                }
+                if (selectedSort === 'checkOutOldest') {
+                    return new Date(a.checkOutTime).getTime() - new Date(b.checkOutTime).getTime();
+                }
+                if (selectedSort === 'checkOutNewest') {
+                    return new Date(b.checkOutTime).getTime() - new Date(a.checkOutTime).getTime();
+                }
+                if (selectedSort === 'hours') {
+                    return Number(a.hoursWorked || 0) - Number(b.hoursWorked || 0);
+                }
+                if (selectedSort === 'totalCo2') {
+                    return Number(a.totalStaffCo2 || 0) - Number(b.totalStaffCo2 || 0);
+                }
+
+                return (a.staffCarbonFootprintId || 0) - (b.staffCarbonFootprintId || 0);
+            });
+
+            return sorted;
+        }
+
+        async function loadStaffRecords() {
+            try {
+                staffRecordsBody.innerHTML = createEmptyRow('Loading records...');
+                const response = await fetch('/api/staff-footprint');
+                if (!response.ok) {
+                    throw new Error('Unable to load staff footprint records');
+                }
+
+                const records = await response.json();
+                if (!Array.isArray(records) || records.length === 0) {
+                    staffRecordsBody.innerHTML = createEmptyRow('No staff footprint records yet.');
+                    return;
+                }
+
+                const sortedRecords = sortStaffRecords(records);
+                staffRecordsBody.innerHTML = sortedRecords.map(record => `
+                    <tr>
+                        <td>${record.staffCarbonFootprintId}</td>
+                        <td>${record.staffId}</td>
+                        <td>${record.department ?? ''}</td>
+                        <td>${formatDateTimeForDisplay(record.checkInTime)}</td>
+                        <td>${formatDateTimeForDisplay(record.checkOutTime)}</td>
+                        <td>${Number(record.hoursWorked).toFixed(2)}</td>
+                        <td>${Number(record.totalStaffCo2).toFixed(2)} kg CO2</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-outline-primary btn-sm me-1 edit-staff-btn"
+                                data-id="${record.staffCarbonFootprintId}"
+                                data-staff-id="${record.staffId}"
+                                data-department="${record.department ?? ''}"
+                                data-check-in="${record.checkInTime}"
+                                data-check-out="${record.checkOutTime}">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm delete-staff-btn"
+                                data-id="${record.staffCarbonFootprintId}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                staffRecordsBody.innerHTML = createEmptyRow(error.message || 'Unable to load records.');
+            }
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            resetFeedback();
+
+            const validation = theValidate();
+
+            if (!validation.isValid) {
+                hideCalculationBreakdown();
+                setFeedback('Please fix the errors below and resubmit.', 'error');
+                return;
+            }
+
+            const computed = renderCalculationBreakdown(validation);
+
+            const body = {
+                staffId: validation.staffId,
+                checkInTime: formatDateTimeForApi(validation.checkInTime),
+                checkOutTime: formatDateTimeForApi(validation.checkOutTime),
+                hoursWorked: computed.hoursWorked,
+                totalStaffCo2: computed.totalStaffCo2
+            };
+
+            const btn = document.getElementById('calculateBtn');
+            const initialBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+
+            try {
+                const isEditing = editingStaffFootprintId !== null;
+                const endpoint = isEditing
+                    ? `/api/staff-footprint/${editingStaffFootprintId}`
+                    : '/api/staff-footprint';
+
+                const response = await fetch(endpoint, {
+                    method: isEditing ? 'PUT' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to save staff footprint';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch {
+                        // ignore JSON parse errors
+                    }
+                    throw new Error(err);
+                }
+
+                setFeedback(
+                    isEditing
+                        ? `Staff footprint updated - totalStaffCo2: ${computed.totalStaffCo2.toFixed(2)} kg CO2`
+                        : `Staff footprint saved - totalStaffCo2: ${computed.totalStaffCo2.toFixed(2)} kg CO2`,
+                    'success');
+                document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+                form.reset();
+                populateStaffOptionsForDepartment('');
+                setCreateMode();
+                await loadStaffRecords();
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = initialBtnHtml;
+            }
+        });
+
+        document.querySelectorAll('#staffId, #checkInTime, #checkOutTime').forEach(input => {
+            input.addEventListener('input', () => {
+                clearFieldError(input.id);
+                resetFeedback();
+                hideCalculationBreakdown();
+            });
+        });
+
+        departmentSelect.addEventListener('change', () => {
+            const selectedDepartment = departmentSelect.value;
+            populateStaffOptionsForDepartment(selectedDepartment);
+            clearFieldError('department');
+            clearFieldError('staffId');
+            resetFeedback();
+            hideCalculationBreakdown();
+        });
+
+        staffIdSelect.addEventListener('change', () => {
+            clearFieldError('staffId');
+            resetFeedback();
+            hideCalculationBreakdown();
+        });
+
+        cancelEditBtn.addEventListener('click', () => {
+            form.reset();
+            populateStaffOptionsForDepartment('');
+            setCreateMode();
+            resetFeedback();
+            hideCalculationBreakdown();
+            document.querySelectorAll('.text-danger').forEach(el => el.textContent = '');
+        });
+
+        refreshStaffListBtn.addEventListener('click', () => {
+            loadStaffRecords();
+        });
+
+        staffSortBy.addEventListener('change', () => {
+            loadStaffRecords();
+        });
+
+        staffRecordsBody.addEventListener('click', async (event) => {
+            const editBtn = event.target.closest('.edit-staff-btn');
+            const deleteBtn = event.target.closest('.delete-staff-btn');
+
+            if (editBtn) {
+                setEditMode({
+                    staffCarbonFootprintId: parseInt(editBtn.dataset.id, 10),
+                    staffId: parseInt(editBtn.dataset.staffId, 10),
+                    department: editBtn.dataset.department,
+                    checkInTime: editBtn.dataset.checkIn,
+                    checkOutTime: editBtn.dataset.checkOut
+                });
+                return;
+            }
+
+            if (!deleteBtn) {
+                return;
+            }
+
+            const id = parseInt(deleteBtn.dataset.id, 10);
+            if (!confirm(`Delete staff footprint record #${id}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/staff-footprint/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to delete record';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch {
+                        // ignore JSON parse errors
+                    }
+                    throw new Error(err);
+                }
+
+                if (editingStaffFootprintId === id) {
+                    form.reset();
+                    populateStaffOptionsForDepartment('');
+                    setCreateMode();
+                    hideCalculationBreakdown();
+                }
+
+                setFeedback(`Deleted staff footprint record #${id}.`, 'success');
+                await loadStaffRecords();
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            }
+        });
+
+        async function initializePage() {
+            setCreateMode();
+            await loadStaffOptions();
+            await loadStaffRecords();
+        }
+
+        initializePage();
+    </script>
+</body>
+</html>

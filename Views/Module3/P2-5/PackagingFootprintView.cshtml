@@ -1,0 +1,671 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Packaging Carbon Footprint — Pro Rentals";
+    Layout = null;
+
+    var rows = Model?.ToList() ?? new List<dynamic>();
+    var totalGrams = rows.Sum(r => (float)r.Footprintg);
+    var groupedProfiles = rows.GroupBy(r => (int)r.ProfileId).Select(g => new {
+        ProfileId = g.Key,
+        OrderId = g.First().OrderId,
+        ProductName = g.First().ProductName,
+        FragilityLevel = g.First().FragilityLevel,
+        Volume = g.First().Volume,
+        TotalFootprint = g.Sum(x => (float)x.Footprintg),
+        PrimaryMaterial = g.FirstOrDefault(x => ((string)x.Category)?.ToLowerInvariant() == "primary"),
+        SecondaryMaterials = g.Where(x => ((string)x.Category)?.ToLowerInvariant() != "primary").ToList()
+    }).ToList();
+
+    var totalOrders = groupedProfiles.Select(p => p.OrderId).Distinct().Count();
+    var avgGrams = totalOrders > 0 ? totalGrams / totalOrders : 0f;
+    var maxFootprint = groupedProfiles.Any() ? groupedProfiles.Max(p => p.TotalFootprint) : 1f;
+}
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pro Rentals — Packaging Carbon Footprint</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { margin-bottom: 0; }
+
+        .carbon-dashboard {
+            background:
+                radial-gradient(circle at top right, rgba(26, 147, 111, 0.18), transparent 28%),
+                linear-gradient(180deg, #f4fbf8 0%, #edf7f2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-hero {
+            background: linear-gradient(135deg, #113d2f 0%, #1a936f 55%, #2ec4b6 100%);
+            border-radius: 1.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-hero::after {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            content: "";
+            height: 18rem;
+            position: absolute;
+            right: -4rem;
+            top: -6rem;
+            width: 18rem;
+        }
+
+        .stat-card {
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2.5rem rgba(17, 61, 47, 0.08);
+        }
+
+        .stat-icon {
+            background: linear-gradient(135deg, #e8f5ee, #d0ede0);
+            border-radius: 0.75rem;
+            color: #1a936f;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            font-size: 1.4rem;
+        }
+
+        .footprint-bar-track {
+            background: #e9ecef;
+            border-radius: 99px;
+            height: 6px;
+        }
+
+        .footprint-bar {
+            background: linear-gradient(90deg, #1a936f, #2ec4b6);
+            border-radius: 99px;
+            height: 6px;
+        }
+
+        .empty-state {
+            align-items: center;
+            background: linear-gradient(180deg, #f8fcfa 0%, #eef7f2 100%);
+            border: 2px dashed #b8d9c9;
+            border-radius: 1rem;
+            color: #4c6b5c;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            justify-content: center;
+            min-height: 240px;
+            text-align: center;
+        }
+
+        .expanded-row-bg {
+            background-color: #fcfdfd !important;
+            border-bottom: 2px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            @* Brand / Logo *@
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+            </a>
+
+            @* Mobile hamburger *@
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    @* Module 1 — Order Processing *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-cart3 me-1"></i>Order Processing
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #2d7a4f; font-size: 0.7rem;">Module 1</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-plus-circle me-2" style="color: #2d7a4f;"></i>Place Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-search me-2" style="color: #2d7a4f;"></i>Track Order</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck me-2" style="color: #2d7a4f;"></i>Manage Dispatch</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-return-left me-2" style="color: #2d7a4f;"></i>Handle Returns</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin me-2" style="color: #2d7a4f;"></i>Deposit Refunds</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2" style="color: #2d7a4f;"></i>Order Notifications</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 2 — Inventory Management *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-boxes me-1"></i>Inventory Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0d6efd; font-size: 0.7rem;">Module 2</h6></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-grid me-2" style="color: #0d6efd;"></i>Product Catalogue</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box-seam me-2" style="color: #0d6efd;"></i>Stock Management</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-arrow-repeat me-2" style="color: #0d6efd;"></i>Return Processing Pipeline</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building-check me-2" style="color: #0d6efd;"></i>Trusted Supplier Registry</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-bar-chart-line me-2" style="color: #0d6efd;"></i>Analytics &amp; Reports</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-tag me-2" style="color: #0d6efd;"></i>Product Clearance</a></li>
+                        </ul>
+                    </li>
+
+                    @* Module 3 — Carbon Footprint *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-tree"></i>Carbon Footprint
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header text-uppercase" style="color: #0a9396; font-size: 0.7rem;">Module 3</h6></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-truck-flatbed me-2" style="color: #0a9396;"></i>Shipment Carbon Tracker</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-signpost-2 me-2" style="color: #0a9396;"></i>Route Distance Determination</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Warehouse Storage Emissions</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-recycle me-2" style="color: #0a9396;"></i>Return Process Carbon Lifecycle</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-collection me-2" style="color: #0a9396;"></i>Batch Delivery Consolidation</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/CarbonMonitoring/CarbonDashboardView"><i class="bi bi-graph-up-arrow me-2" style="color: #0a9396;"></i>Carbon Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/ProductFootprint"><i class="bi bi-calculator me-2" style="color: #0a9396;"></i>Product Carbon Calculator</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/StaffFootprintView"><i class="bi bi-person-badge me-2" style="color: #0a9396;"></i>Staff Footprint</a></li>
+                            <li><a class="dropdown-item" href="/CarbonFootprint/BuildingFootprintView"><i class="bi bi-building me-2" style="color: #0a9396;"></i>Building Footprint</a></li>
+                            <li><a class="dropdown-item active" href="/CarbonFootprint/PackagingFootprintView"><i class="bi bi-box2-heart me-2" style="color: #0a9396;"></i>Packaging Footprint</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/DisplayRewards"><i class="bi bi-gift me-2" style="color: #0a9396;"></i>Rewards Dashboard</a></li>
+                            <li><a class="dropdown-item" href="/catalog/eco"><i class="bi bi-stars me-2" style="color: #0a9396;"></i>Eco Catalog</a></li>
+                            <li><a class="dropdown-item" href="/RewardsDashboard/MyRewards"><i class="bi bi-award me-2" style="color: #0a9396;"></i>Eco Rewards</a></li>
+                        </ul>
+                    </li>
+
+                </ul>
+
+                @* Auth buttons *@
+                <div class="d-flex gap-2">
+                    @if (HttpContextAccessor.HttpContext!.Session.GetInt32("SessionId") != null)
+                    {
+                        <span class="navbar-text text-white-50 small me-1">
+                            <i class="bi bi-person-circle me-1"></i>@HttpContextAccessor.HttpContext!.Session.GetString("UserName")
+                            <span class="badge bg-secondary ms-1">@HttpContextAccessor.HttpContext!.Session.GetString("UserRole")</span>
+                            </span>
+                        <form asp-controller="Module1" asp-action="Logout" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                                </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Module1/Login" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                        <a href="/Module1/Signup" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="carbon-dashboard py-5">
+        <div class="container">
+
+            <div class="dashboard-hero text-white p-4 p-lg-5 mb-4">
+                <div class="row align-items-center gy-4 position-relative">
+                    <div class="col-lg-8">
+                        <span class="badge rounded-pill text-bg-light text-success fw-semibold mb-3">
+                            Module 3 P2-5
+                        </span>
+                        <h1 class="display-6 fw-bold mb-3">
+                            <i class="bi bi-box2-heart me-2"></i>Packaging Carbon Footprint
+                        </h1>
+                        <p class="lead mb-0 text-white-50">
+                            Carbon footprint per order calculated from packaging profiles,
+                            configurations and materials linked through the packaging tables.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-stack"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Orders Tracked</div>
+                                <div class="fs-3 fw-bold text-dark">@totalOrders</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-cloud-haze2"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Total Packaging Carbon</div>
+                                <div class="fs-3 fw-bold text-dark">
+                                    @totalGrams.ToString("F2")
+                                    <small class="fs-6 fw-normal text-muted">g CO₂</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card stat-card h-100">
+                        <div class="card-body p-4 d-flex gap-3 align-items-center">
+                            <div class="stat-icon"><i class="bi bi-bar-chart-line"></i></div>
+                            <div>
+                                <div class="text-muted small mb-1">Average per Order</div>
+                                <div class="fs-3 fw-bold text-dark">
+                                    @avgGrams.ToString("F2")
+                                    <small class="fs-6 fw-normal text-muted">g CO₂</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mb-4">
+                <button class="btn btn-success rounded-pill px-4 shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#createProfileCard" aria-expanded="false" aria-controls="createProfileCard">
+                    <i class="bi bi-plus-circle me-2"></i>Create New Configuration
+                </button>
+            </div>
+
+            <div class="collapse" id="createProfileCard">
+                <div class="card stat-card mb-4 border-success" style="border-width: 2px;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <h2 class="h5 fw-semibold text-success"><i class="bi bi-magic me-2"></i>Generate Packaging Configuration</h2>
+                            <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#createProfileCard" aria-label="Close"></button>
+                        </div>
+                        <p class="text-muted small mb-4">
+                            Manually create a new packaging profile for an order. The system will automatically select the optimal primary and secondary materials based on volume and fragility to calculate the footprint.
+                        </p>
+
+                        <form id="createProfileForm">
+                            <div class="row g-3 mb-3 form-align-row">
+                                <div class="col-md-4">
+                                    <label for="orderId" class="form-label">OrderID</label>
+                                    <input type="number" class="form-control" id="orderId" placeholder="e.g., 1001" min="1" required />
+                                    <div id="orderIdError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="volume" class="form-label">Volume (m³)</label>
+                                    <input type="number" step="0.01" class="form-control" id="volume" placeholder="e.g., 1.5" required />
+                                    <div id="volumeError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="fragility" class="form-label">Fragility Level</label>
+                                    <select class="form-select" id="fragility" required>
+                                        <option value="">-- Select Level --</option>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                    <div id="fragilityError" class="text-danger small mt-1" aria-live="polite"></div>
+                                </div>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col">
+                                    <button type="submit" id="createBtn" class="btn btn-success">
+                                        <i class="bi bi-check2-circle me-2"></i>Save & Generate
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="feedbackBanner" role="status" class="mt-3" style="display:none"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            @if (!groupedProfiles.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-box2 fs-1" style="color: #1a936f;"></i>
+                    <div class="fw-semibold">No packaging footprint data found</div>
+                    <small class="text-muted">Results will appear here once orders have been processed.</small>
+                </div>
+            }
+            else
+            {
+                <div class="card stat-card">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-semibold mb-1">Packaging Carbon Footprint — Breakdown</h2>
+                        <p class="text-muted small mb-4">
+                            Detailed carbon footprint breakdown by individual packaging components across all orders.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ProfileID</th>
+                                        <th>Product</th>
+                                        <th>Fragility</th>
+                                        <th>Volume</th>
+                                        <th>Packaging Material</th>
+                                        <th class="text-end">Footprint</th>
+                                        <th class="text-end" style="min-width: 150px;">Total Footprint</th>
+                                        <th class="text-center">Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var profile in groupedProfiles)
+                                    {
+                                        var fragilityClass = ((string)profile.FragilityLevel) == "high" ? "danger" : ((string)profile.FragilityLevel) == "medium" ? "warning" : "success";
+                                        var vol = (double)profile.Volume;
+                                        var totalProfileFootprint = profile.TotalFootprint;
+                                        
+                                        var barPct = (int)Math.Min((totalProfileFootprint / (maxFootprint == 0 ? 1 : maxFootprint)) * 100, 100);
+                                        
+                                        var primaryName = profile.PrimaryMaterial != null ? (string)profile.PrimaryMaterial.MaterialName : "None Assigned";
+                                        var primaryType = profile.PrimaryMaterial != null ? (string)profile.PrimaryMaterial.MaterialType : "—";
+
+                                        <tr>
+                                            <td><span class="fw-semibold">#@profile.ProfileId</span></td>
+                                            <td><span class="fw-medium text-dark">@profile.ProductName</span></td>
+                                            <td>
+                                                <span class="badge bg-@fragilityClass rounded-pill">@profile.FragilityLevel</span>
+                                            </td>
+                                            <td>@vol.ToString("F2") <small class="text-muted">m³</small></td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <div>
+                                                            <span class="fw-semibold">@primaryName</span>
+                                                        </div>
+                                                        <div>
+                                                            @if(profile.PrimaryMaterial != null)
+                                                            {
+                                                                <span class="badge bg-success ms-1" style="font-size: 0.65em;">Primary</span>
+                                                            }
+                                                            <small class="text-muted">@primaryType</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                @if(profile.PrimaryMaterial != null)
+                                                {
+                                                    <span class="fw-medium">@(((float)profile.PrimaryMaterial.Footprintg).ToString("F2")) <small class="text-muted">g CO₂</small></span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">—</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="fw-bold fs-6">@totalProfileFootprint.ToString("F2") <small class="fw-normal text-muted">g CO₂</small></span>
+                                                <div class="mt-1 footprint-bar-track">
+                                                    <div class="footprint-bar" style="width:@barPct%;"></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-outline-success rounded-pill px-3 d-inline-flex align-items-center text-nowrap" data-bs-toggle="collapse" data-bs-target="#details-@profile.ProfileId">
+                                                    Expand <i class="bi bi-chevron-down ms-1"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        
+                                        <tr id="details-@profile.ProfileId" class="collapse expanded-row-bg">
+                                            <td colspan="8" class="p-4">
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <div>
+                                                        <small class="text-muted">Linked to OrderID: <span class="fw-semibold text-dark">#@profile.OrderId</span></small>
+                                                    </div>
+                                                </div>
+                                                
+                                                @if (profile.SecondaryMaterials.Any())
+                                                {
+                                                    <div class="table-responsive bg-white rounded shadow-sm border">
+                                                        <table class="table table-sm table-borderless mb-0">
+                                                            <thead class="table-light text-muted small border-bottom">
+                                                                <tr>
+                                                                    <th class="ps-3 py-2">Packaging Material</th>
+                                                                    <th class="py-2">Type</th>
+                                                                    <th class="text-center py-2">Qty</th>
+                                                                    <th class="text-center py-2">Recyclable</th>
+                                                                    <th class="text-center py-2">Reusable</th>
+                                                                    <th class="text-end pe-3 py-2">Material Footprint</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody class="small">
+                                                                @foreach (var mat in profile.SecondaryMaterials)
+                                                                {
+                                                                    var matFootprint = (float)mat.Footprintg;
+                                                                    <tr class="border-bottom">
+                                                                        <td class="ps-3 py-2 fw-medium text-dark">
+                                                                            @mat.MaterialName
+                                                                            <span class="badge bg-secondary ms-1" style="font-size: 0.65em;">Secondary</span>
+                                                                        </td>
+                                                                        <td class="py-2 text-muted">@mat.MaterialType</td>
+                                                                        <td class="text-center py-2">
+                                                                            <span class="badge bg-light text-dark border">@mat.Quantity</span>
+                                                                        </td>
+                                                                        <td class="text-center py-2">
+                                                                            @if ((bool)mat.Recyclable) { <i class="bi bi-check-circle-fill text-success"></i> }
+                                                                            else { <i class="bi bi-x-circle-fill text-danger"></i> }
+                                                                        </td>
+                                                                        <td class="text-center py-2">
+                                                                            @if ((bool)mat.Reusable) { <i class="bi bi-check-circle-fill text-success"></i> }
+                                                                            else { <i class="bi bi-x-circle-fill text-danger"></i> }
+                                                                        </td>
+                                                                        <td class="text-end pe-3 py-2 fw-semibold">
+                                                                            @matFootprint.ToString("F2") <span class="text-muted fw-normal">g CO₂</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="alert alert-light border text-muted small mb-0">
+                                                        <i class="bi bi-info-circle me-2"></i> No secondary materials required for this configuration.
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="6" class="text-end fw-semibold">Platform Grand Total:</td>
+                                        <td class="text-end fw-bold text-success fs-5">
+                                            @totalGrams.ToString("F2") <small class="text-muted fw-normal fs-6 text-nowrap">g CO<sub>2</sub></small>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+
+    <footer class="bg-dark text-light pt-5 pb-3">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-box-seam-fill me-2" style="color: #2d7a4f;"></i>Pro Rentals
+                    </h5>
+                    <p class="text-secondary small">
+                        A unified order processing and inventory management platform for modern rental
+                        operations - fast, efficient, and sustainable.
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        &copy; @DateTime.Now.Year Pro Rentals. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/" class="text-secondary text-decoration-none small">Home</a></li>
+                        <li class="mb-1"><a href="/CarbonMonitoring/CarbonDashboardView" class="text-secondary text-decoration-none small">Carbon Dashboard</a></li>
+                        <li class="mb-1"><a href="/CarbonFootprint/PackagingFootprintView" class="text-secondary text-decoration-none small">Packaging Footprint</a></li>
+                        <li class="mb-1"><a href="/catalog/eco" class="text-secondary text-decoration-none small">Eco Catalog</a></li>
+                        <li class="mb-1"><a href="/Home/Privacy" class="text-secondary text-decoration-none small">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">P2-5 Modules</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-1"><a href="/CarbonFootprint/StaffFootprintView" class="text-secondary text-decoration-none small"><i class="bi bi-person-badge me-1"></i>Staff Footprint</a></li>
+                        <li class="mb-1"><a href="/CarbonFootprint/BuildingFootprintView" class="text-secondary text-decoration-none small"><i class="bi bi-building me-1"></i>Building Footprint</a></li>
+                        <li class="mb-1"><a href="/RewardsDashboard/DisplayRewards" class="text-secondary text-decoration-none small"><i class="bi bi-gift me-1"></i>Rewards Dashboard</a></li>
+                        <li class="mb-1"><a href="/RewardsDashboard/MyRewards" class="text-secondary text-decoration-none small"><i class="bi bi-award me-1"></i>My Eco Rewards</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase text-secondary fw-semibold small mb-3" style="letter-spacing: 0.05em;">Contact</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 text-secondary small"><i class="bi bi-geo-alt me-2"></i>123 Rental Avenue, Singapore 123456</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-telephone me-2"></i>+65 6123 4567</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-envelope me-2"></i>support@@prorentals.sg</li>
+                        <li class="mb-2 text-secondary small"><i class="bi bi-clock me-2"></i>Mon - Fri, 9 AM - 6 PM SGT</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="border-secondary mt-3 mb-3" />
+            <p class="text-center text-secondary small mb-0">
+                Built with Bootstrap 5.3.3 · Pro Rentals Order Processing System v1.0 · 2026
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const form = document.getElementById('createProfileForm');
+        const feedbackBanner = document.getElementById('feedbackBanner');
+
+        function clearFieldError(fieldName) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = '';
+        }
+
+        function setFieldError(fieldName, message) {
+            const errorEl = document.getElementById(`${fieldName}Error`);
+            if (errorEl) errorEl.textContent = message;
+        }
+
+        function setFeedback(message, type) {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'block';
+            feedbackBanner.className = type === 'success' ? 'alert alert-success' : 'alert alert-danger';
+            feedbackBanner.innerHTML = message;
+        }
+
+        function resetFeedback() {
+            if (!feedbackBanner) return;
+            feedbackBanner.style.display = 'none';
+            feedbackBanner.textContent = '';
+        }
+
+        function validateForm() {
+            let isValid = true;
+            let orderIdRaw = document.getElementById('orderId').value;
+            let volumeRaw = document.getElementById('volume').value;
+            let fragilityValue = document.getElementById('fragility').value;
+
+            clearFieldError('orderId');
+            clearFieldError('volume');
+            clearFieldError('fragility');
+
+            const orderId = parseInt(orderIdRaw, 10);
+            if (isNaN(orderId) || orderId <= 0) {
+                setFieldError('orderId', 'Order ID must be a positive integer.');
+                isValid = false;
+            }
+
+            const volume = parseFloat(volumeRaw);
+            if (isNaN(volume) || volume <= 0) {
+                setFieldError('volume', 'Volume must be a positive decimal.');
+                isValid = false;
+            }
+
+            if (!fragilityValue) {
+                setFieldError('fragility', 'Please select a fragility level.');
+                isValid = false;
+            }
+
+            return { isValid, orderId, volume, fragilityLevel: fragilityValue };
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            resetFeedback();
+
+            const validation = validateForm();
+
+            if (!validation.isValid) {
+                setFeedback('Please fix the errors below before submitting.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('createBtn');
+            const initialBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
+
+            try {
+                const response = await fetch('/CarbonFootprint/CreatePackagingProfile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: validation.orderId,
+                        volume: validation.volume,
+                        fragilityLevel: validation.fragilityLevel
+                    })
+                });
+
+                if (!response.ok) {
+                    let err = 'Unable to create profile.';
+                    try {
+                        const data = await response.json();
+                        err = data.error || data.message || err;
+                    } catch { }
+                    throw new Error(err);
+                }
+
+                setFeedback('Profile successfully generated! Refreshing table...', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+
+            } catch (error) {
+                setFeedback(error.message || 'An unexpected error occurred.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = initialBtnHtml;
+            }
+        });
+
+        document.querySelectorAll('#orderId, #volume, #fragility').forEach(input => {
+            input.addEventListener('input', () => {
+                clearFieldError(input.id);
+                resetFeedback();
+            });
+        });
+    </script>
+</body>
+</html>

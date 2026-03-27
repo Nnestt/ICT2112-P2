@@ -118,13 +118,14 @@
                     }
                 </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
-    @* ================================================================
-       MAIN CONTENT
-       ================================================================ *@
-    <div class="container py-4">
+    <!-- ================================================================
+         MAIN CONTENT — Individual view output is injected here via RenderBody().
+         Do NOT add additional containers or wrappers inside view files.
+         ================================================================ -->
+    <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
